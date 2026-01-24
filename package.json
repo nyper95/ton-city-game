@@ -1,15 +1,14 @@
 {
-  "name": "ton-city-bot",
+  "name": "ton-city-game",
   "version": "1.0.0",
-  "description": "Bot para Ton City Game",
+  "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-  "node-telegram-bot-api": "^0.64.0",
-  "express": "^4.18.2",
-  "@supabase/supabase-js": "^2.39.0"
+    "node-telegram-bot-api": "^0.64.0",
+    "express": "^4.18.2",
+    "@supabase/supabase-js": "^2.39.0"
   }
-  
-    
+}
