@@ -1,7 +1,7 @@
 {
   "name": "ton-city-game",
   "version": "1.0.0",
-  "description": "",
+  "description": "Bot para ganar dinero en Cuba",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
