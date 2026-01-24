@@ -1,39 +1,40 @@
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
-const { createClient } = require('@supabase/supabase-js');
+const path = require('path');
 
-// Variables de entorno
-const token = process.env.TELEGRAM_TOKEN;
+// Reemplaza con tu Token real
+const token = '7997479192:AAHbKx61FzMBawpYtptQO7WlRLkJJWa9K1k'; 
 const url = 'https://drab-janean-juegaygana-31185170.koyeb.app';
 const port = process.env.PORT || 8000;
 
-// Inicializar Express y Bot
 const app = express();
 app.use(express.json());
-const bot = new TelegramBot(token);
 
-// Ruta para que Koyeb sepa que el servidor está vivo
-app.get('/', (req, res) => res.send('Bot Online 🚀'));
+// Esta línea le dice al servidor que muestre tu juego (index.html)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+const bot = new TelegramBot(token);
 
 // Ruta para recibir mensajes de Telegram
 app.post(`/bot${token}`, (req, res) => {
-  bot.processUpdate(req.body);
-  res.sendStatus(200);
+    bot.processUpdate(req.body);
+    res.sendStatus(200);
 });
 
-// Mensaje de bienvenida y botón de juego
+// Comando de bienvenida
 bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, "¡Bienvenido! 💎\nTus ganancias: 80% | Admin: 20%", {
-    reply_markup: {
-      inline_keyboard: [[
-        { text: "🎮 Jugar ahora", web_app: { url: url } }
-      ]]
-    }
-  });
+    bot.sendMessage(msg.chat.id, "¡Bienvenido a Ton City! 💎\nPresiona el botón de abajo para empezar a minar.", {
+        reply_markup: {
+            inline_keyboard: [[
+                { text: "🎮 Jugar Ahora", web_app: { url: url } }
+            ]]
+        }
+    });
 });
 
-// Encender servidor
 app.listen(port, () => {
-  console.log(`Servidor en puerto ${port}`);
-  bot.setWebHook(`${url}/bot${token}`);
+    console.log(`Servidor en puerto ${port}`);
+    bot.setWebHook(`${url}/bot${token}`);
 });
