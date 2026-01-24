@@ -1,20 +1,19 @@
-# Usamos una versión estable de Node.js
 FROM node:18
 
-# Creamos la carpeta de la app
+# Crear carpeta de trabajo
 WORKDIR /usr/src/app
 
-# Copiamos los archivos de dependencias
+# Copiar archivos de configuración
 COPY package*.json ./
 
-# Instalamos las librerías
+# Instalar las librerías necesarias (Esto soluciona tu error de 'module not found')
 RUN npm install
 
-# Copiamos el resto del código (incluyendo tu nuevo index.js)
+# Copiar el resto del código
 COPY . .
 
-# Exponemos el puerto que usa Koyeb
+# Exponer el puerto de Koyeb
 EXPOSE 8000
 
-# Comando para arrancar el bot
-CMD [ "node", "index.js" ]
+# Arrancar la aplicación
+CMD ["node", "index.js"]
