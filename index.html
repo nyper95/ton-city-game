@@ -1,18 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Ton City Game</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ton City Mining</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #000; color: #fff; text-align: center; font-family: sans-serif; padding-top: 50px; }
-        .boton { background: #0088cc; color: white; padding: 15px; border-radius: 10px; text-decoration: none; display: inline-block; margin-top: 20px; }
+        body {
+            background: linear-gradient(180deg, #001f3f 0%, #000000 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .logo { font-size: 80px; margin-bottom: 10px; }
+        h1 { color: #0088cc; margin: 10px 0; }
+        .balance-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 20px;
+            margin: 20px 0;
+            border: 1px solid #0088cc;
+        }
+        .btn-mine {
+            background: #0088cc;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 15px #0088cc;
+        }
+        .btn-mine:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
-    <h1>💎 Ton City 💎</h1>
-    <p>¡Bienvenido a tu centro de minería!</p>
-    <div id="stats">
-        <p>Tu balance: 0.00 TON</p>
+    <div class="logo">💎</div>
+    <h1>TON CITY</h1>
+    <p>Minería Automática 24/7</p>
+
+    <div class="balance-card">
+        <p>Tu Balance Actual</p>
+        <h2 id="balance">0.0000 TON</h2>
     </div>
-    <a href="#" class="boton" onclick="alert('Minería iniciada...')">Comenzar a Minar</a>
+
+    <button class="btn-mine" onclick="minar()">MINAR AHORA</button>
+
+    <script>
+        let balance = 0;
+        function minar() {
+            balance += 0.0001;
+            document.getElementById('balance').innerText = balance.toFixed(4) + " TON";
+            // Aquí luego conectaremos con tu base de datos
+        }
+        // Avisar a Telegram que la WebApp está lista
+        window.Telegram.WebApp.ready();
+    </script>
 </body>
 </html>
