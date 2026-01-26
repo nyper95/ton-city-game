@@ -151,3 +151,8 @@
         let balance = 0.0019;
         setInterval(() => {
             balance += 0.00000001;
+            document.getElementById('balance').innerText = balance.toFixed(8);
+        }, 1000);
+    </script>
+</body>
+</html>
