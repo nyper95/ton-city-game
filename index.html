@@ -6,153 +6,103 @@
     <title>Ton City - Global Economy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            background-color: #050a10;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-            height: 100vh;
-        }
+        body { background-color: #050a10; color: white; font-family: sans-serif; overflow: hidden; height: 100vh; }
         .grid-bg {
             background-image: linear-gradient(rgba(0, 152, 234, 0.1) 1px, transparent 1px),
                               linear-gradient(90deg, rgba(0, 152, 234, 0.1) 1px, transparent 1px);
             background-size: 40px 40px;
-            perspective: 1000px;
         }
         .city-container {
             transform: rotateX(45deg) rotateZ(-30deg);
             transform-style: preserve-3d;
-            transition: all 0.5s ease;
         }
-        .building {
-            position: relative;
-            transition: transform 0.3s;
-            cursor: pointer;
-        }
-        .building:hover {
-            transform: translateZ(10px) scale(1.05);
-        }
+        .building { position: relative; transition: transform 0.3s; cursor: pointer; }
+        .building:hover { transform: translateZ(10px) scale(1.1); }
         .building-label {
             transform: rotateZ(30deg) rotateX(-45deg);
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
             border: 1px solid #0098ea;
-            padding: 2px 8px;
+            padding: 2px 6px;
             border-radius: 4px;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             position: absolute;
-            top: -20px;
+            top: -25px;
             white-space: nowrap;
-        }
-        .stats-bar {
-            background: rgba(13, 20, 30, 0.9);
-            border-bottom: 2px solid #0098ea;
-        }
-        .btn-action {
-            background: #1a2433;
-            border: 1px solid #334155;
-            padding: 10px;
-            border-radius: 12px;
-            text-align: center;
-            flex: 1;
         }
         .energy-fill {
             height: 100%;
-            background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
-            width: 98.1%;
-            transition: width 0.3s;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+            width: 100%; /* Inicia lleno */
+            transition: width 0.5s;
         }
-        /* Estilo para el Edificio Central */
-        .core-building {
-            filter: drop-shadow(0 0 15px #0098ea);
-        }
+        .core-glow { filter: drop-shadow(0 0 15px #0098ea); }
     </style>
 </head>
 <body class="flex flex-col">
 
-    <div class="stats-bar p-4 text-center">
-        <p class="text-xs text-gray-400 uppercase tracking-widest">Tu Capital en TON</p>
-        <div class="flex justify-center items-center gap-2 mt-1">
-            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" width="24" alt="TON">
-            <span id="balance" class="text-3xl font-bold">0.0019</span>
+    <div class="p-4 bg-[#0d141e] border-b-2 border-blue-500 text-center">
+        <p class="text-[10px] text-gray-400 uppercase tracking-widest">Capital Disponible</p>
+        <div class="flex justify-center items-center gap-2">
+            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" width="22" alt="TON">
+            <span id="balance" class="text-3xl font-bold font-mono">0.00000000</span>
         </div>
-        <p class="text-blue-400 text-sm mt-1 font-mono">+0.00000001 TON/sec</p>
+        <p id="tasa" class="text-blue-400 text-xs mt-1 font-mono">+0.00000000 TON/sec</p>
     </div>
 
-    <div class="flex-grow grid-bg relative overflow-hidden flex items-center justify-center">
-        <div class="city-container grid grid-cols-3 gap-8 p-12">
+    <div class="flex-grow grid-bg relative flex items-center justify-center overflow-hidden">
+        <div class="city-container grid grid-cols-3 gap-12 p-10">
             
-            <div class="building core-building col-start-2 row-start-2" onclick="openModal('central')">
-                <div class="building-label font-bold text-blue-400"><i class="fas fa-microchip"></i> CITY HALL</div>
-                <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" class="w-24 h-24" alt="Core">
+            <div class="building core-glow col-start-2 row-start-2" onclick="openModal('central')">
+                <div class="building-label border-blue-400 text-blue-300">CENTRAL HUB</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" class="w-24 h-24">
             </div>
 
             <div class="building" onclick="openModal('banco')">
-                <div class="building-label"><i class="fas fa-university text-yellow-500"></i> Banco</div>
-                <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" class="w-20 h-20" alt="Banco">
+                <div class="building-label"><i class="fas fa-university text-yellow-500"></i> BANCO</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" class="w-20 h-20">
             </div>
 
             <div class="building" onclick="openModal('casino')">
-                <div class="building-label"><i class="fas fa-dice text-red-500"></i> Casino</div>
-                <img src="https://cdn-icons-png.flaticon.com/512/1055/1055823.png" class="w-20 h-20" alt="Casino">
+                <div class="building-label"><i class="fas fa-dice text-red-500"></i> CASINO</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/1055/1055823.png" class="w-20 h-20">
             </div>
 
             <div class="building" onclick="openModal('tienda')">
-                <div class="building-label"><i class="fas fa-shopping-cart text-green-500"></i> Tienda</div>
-                <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png" class="w-20 h-20" alt="Tienda">
+                <div class="building-label"><i class="fas fa-shopping-cart text-green-500"></i> TIENDA</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png" class="w-20 h-20">
             </div>
 
             <div class="building" onclick="openModal('piscina')">
-                <div class="building-label"><i class="fas fa-swimmer text-blue-300"></i> Piscina</div>
-                <img src="https://cdn-icons-png.flaticon.com/512/2555/2555020.png" class="w-20 h-20" alt="Piscina">
+                <div class="building-label"><i class="fas fa-swimming-pool text-blue-400"></i> PISCINA</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/2555/2555020.png" class="w-20 h-20">
             </div>
-
         </div>
     </div>
 
-    <div class="p-4 bg-[#0a0f16]">
-        <div class="flex justify-between text-xs mb-1">
-            <span class="text-yellow-500 font-bold"><i class="fas fa-bolt"></i> Energía</span>
-            <span>981/1000</span>
+    <div class="p-4 bg-[#0a0f16] border-t border-gray-800">
+        <div class="flex justify-between text-[10px] mb-1 px-1">
+            <span class="text-yellow-500 font-bold uppercase underline">Energía Ciudadana</span>
+            <span id="energia-texto">1000/1000</span>
         </div>
-        <div class="w-full bg-gray-800 rounded-full h-3 mb-6 overflow-hidden">
-            <div class="energy-fill"></div>
+        <div class="w-full bg-gray-900 rounded-full h-2 mb-4">
+            <div id="energy-bar" class="energy-fill" style="width: 100%;"></div>
         </div>
 
-        <div class="flex gap-4">
-            <button class="btn-action">
-                <i class="fas fa-rocket text-red-400 block text-xl mb-1"></i>
-                <span class="text-xs">Mejoras</span>
+        <div class="flex gap-2">
+            <button class="flex-1 bg-gray-800 p-3 rounded-xl border border-gray-700 text-xs" onclick="alert('Tienda de Mejoras próximamente')">
+                <i class="fas fa-rocket text-orange-500 block text-lg mb-1"></i> MEJORAS
             </button>
-            <button class="btn-action">
-                <i class="fas fa-users text-blue-400 block text-xl mb-1"></i>
-                <span class="text-xs">Amigos</span>
+            <button class="flex-1 bg-gray-800 p-3 rounded-xl border border-gray-700 text-xs">
+                <i class="fas fa-users text-blue-400 block text-lg mb-1"></i> AMIGOS
             </button>
-            <button class="btn-action border-blue-500 bg-blue-900/20">
-                <i class="fas fa-wallet text-yellow-400 block text-xl mb-1"></i>
-                <span class="text-xs font-bold uppercase">Retirar</span>
+            <button class="flex-1 bg-blue-900/30 p-3 rounded-xl border border-blue-500 text-xs font-bold" onclick="alert('Mínimo de retiro: 0.1 TON')">
+                <i class="fas fa-wallet text-yellow-400 block text-lg mb-1"></i> RETIRAR
             </button>
         </div>
     </div>
 
-    <script>
-        function openModal(tipo) {
-            const msgs = {
-                'central': '📊 CITY HALL: Resumen de Ingresos\n\nCasinos: 0.0005 TON/h\nBancos: 0.0012 TON/h\nTiendas: 0.0002 TON/h',
-                'banco': '🏦 BANCO: Depósitos seguros y Staking de TON.',
-                'casino': '🎰 CASINO: Multiplica tus ganancias (80% para usuarios).',
-                'tienda': '🛒 TIENDA: Compra mejoras para tu producción.',
-                'piscina': '🏊 PISCINA: Recupera energía para seguir operando.'
-            };
-            alert(msgs[tipo]);
-        }
-
-        // Simulación de minado básico
-        let balance = 0.0019;
-        setInterval(() => {
-            balance += 0.00000001;
-            document.getElementById('balance').innerText = balance.toFixed(8);
-        }, 1000);
-    </script>
+    <script src="index.js"></script>
 </body>
 </html>
