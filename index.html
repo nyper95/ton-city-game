@@ -2,90 +2,58 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ton City Pro</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root { --primary: #0088cc; --bg: #050a0f; }
-        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; margin: 0; overflow: hidden; touch-action: manipulation; }
-        .app-container { display: flex; flex-direction: column; height: 100vh; align-items: center; justify-content: space-between; padding: 20px; box-sizing: border-box; }
-        .header { text-align: center; width: 100%; }
-        .balance-label { font-size: 14px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
-        .balance-amount { font-size: 42px; font-weight: 800; margin: 5px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .main-button-container { position: relative; width: 250px; height: 250px; }
-        .mining-button { 
-            width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle, #0088cc 0%, #004466 100%);
-            border: 8px solid rgba(255,255,255,0.1); box-shadow: 0 0 50px rgba(0,136,204,0.4);
-            cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 80px; transition: transform 0.1s;
-        }
-        .mining-button:active { transform: scale(0.92); }
-        .footer-nav { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
-        .nav-item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 15px; text-align: center; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); }
-        .energy-bar { width: 100%; height: 12px; background: #222; border-radius: 10px; overflow: hidden; margin-top: 10px; }
-        .energy-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #0088cc, #00ffcc); transition: width 0.3s; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ton City - Business Metaverse</title>
+    <link rel="stylesheet" href="style.css"> <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
-    <div class="app-container">
+    <div id="game-container">
         <div class="header">
-            <div class="balance-label">Tu Capital en TON</div>
-            <div class="balance-amount">💎 <span id="balance">0.0000</span></div>
-        </div>
-
-        <div class="main-button-container">
-            <div class="mining-button" onclick="mine(event)">⛏️</div>
-        </div>
-
-        <div style="width: 100%;">
-            <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px;">
-                <span>⚡ Energía</span>
-                <span id="energy-text">1000/1000</span>
+            <p>TU CAPITAL EN TON</p>
+            <div class="balance-container">
+                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" width="30" alt="TON">
+                <span id="ton-balance">0.0019</span>
             </div>
-            <div class="energy-bar"><div class="energy-fill" id="energy-fill"></div></div>
+            <p class="profit-rate">+<span id="pps">0.00000001</span> TON/sec</p>
         </div>
 
-        <div class="footer-nav">
-            <div class="nav-item">🚀<br>Mejoras</div>
-            <div class="nav-item">👥<br>Amigos</div>
-            <div class="nav-item">💰<br>Retirar</div>
+        <div class="city-map">
+            <div class="building-slot" onclick="openBusiness('banco')">
+                <div class="icon">🏦</div>
+                <span>Banco</span>
+            </div>
+            <div class="building-slot" onclick="openBusiness('casino')">
+                <div class="icon">🎰</div>
+                <span>Casino</span>
+            </div>
+            <div class="building-slot" onclick="openBusiness('tienda')">
+                <div class="icon">🛒</div>
+                <span>Tienda</span>
+            </div>
+            <div class="building-slot" onclick="openBusiness('piscina')">
+                <div class="icon">🏊</div>
+                <span>Piscina</span>
+            </div>
+        </div>
+
+        <div class="energy-section">
+            <div class="energy-info">
+                <span>⚡ Energía</span>
+                <span id="energy-text">981/1000</span>
+            </div>
+            <div class="energy-bar-bg">
+                <div id="energy-fill" style="width: 98%;"></div>
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <button class="nav-btn" onclick="showSection('mejoras')">🚀 Mejoras</button>
+            <button class="nav-btn" onclick="showSection('amigos')">👥 Amigos</button>
+            <button class="nav-btn" onclick="showSection('retirar')">💰 Retirar</button>
         </div>
     </div>
 
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
-        let balance = 0;
-        let energy = 1000;
-
-        function mine(event) {
-            if (energy > 0) {
-                balance += 0.0001;
-                energy -= 1;
-                updateDisplay();
-                createFloatingText(event);
-                tg.HapticFeedback.impactOccurred('medium');
-            }
-        }
-
-        function updateDisplay() {
-            document.getElementById('balance').innerText = balance.toFixed(4);
-            document.getElementById('energy-text').innerText = energy + "/1000";
-            document.getElementById('energy-fill').style.width = (energy / 10) + "%";
-        }
-
-        function createFloatingText(e) {
-            const text = document.createElement('div');
-            text.innerText = '+0.0001';
-            text.style.position = 'absolute';
-            text.style.left = e.clientX + 'px';
-            text.style.top = e.clientY + 'px';
-            text.style.color = '#0088cc';
-            text.style.fontWeight = 'bold';
-            text.style.pointerEvents = 'none';
-            text.animate([{ transform: 'translateY(0)', opacity: 1 }, { transform: 'translateY(-100px)', opacity: 0 }], { duration: 1000 });
-            document.body.appendChild(text);
-            setTimeout(() => text.remove(), 1000);
-        }
-    </script>
+    <script src="index.js"></script>
 </body>
-</html>
+                                </html>
+                                
