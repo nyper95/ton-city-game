@@ -64,4 +64,34 @@ window.onload = () => {
     actualizarInterfaz();
     // cargarCiudad(); // Descomentar cuando la tabla esté lista en Supabase
 };
-    
+    // Configuración de beneficios
+const REPARTO = {
+    USUARIO: 0.80,
+    DUENO: 0.20
+};
+
+// Ampliando la lógica del Edificio Central
+function abrirDetallesEdificioCentral() {
+    const modalContent = document.getElementById('detalles-negocios');
+    let htmlBusinesList = "";
+    let produccionTotalHora = 0;
+
+    for (const [nombre, info] of Object.entries(cityData.negocios)) {
+        // Cálculo de la producción neta para el usuario (80%)
+        const produccionUsuario = info.produccion * REPARTO.USUARIO;
+        produccionTotalHora += produccionUsuario;
+
+        htmlBusinesList += `
+            <div class="business-item">
+                <span class="name">${nombre.toUpperCase()}</span>
+                <span class="level">Nivel: ${info.nivel}</span>
+                <span class="profit">Ganancia: +${produccionUsuario.toFixed(4)} TON/h</span>
+            </div>
+        `;
+    }
+
+    // Inyectar en el DOM (Asegúrate de tener este contenedor en tu HTML)
+    document.getElementById('lista-negocios-central').innerHTML = htmlBusinesList;
+    document.getElementById('total-produccion').innerText = `Total: ${produccionTotalHora.toFixed(4)} TON/h`;
+}
+
