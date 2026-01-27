@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ton City - Complete 2D</title>
+    <title>Ton City - Full Interface</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -14,6 +14,7 @@
             --text-dim: #7d8b99;
             --accent-green: #31b545;
             --border-glow: #1a242f;
+            --nav-bg: #121b26;
         }
 
         body {
@@ -25,46 +26,58 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-bottom: 80px; /* Espacio para el menú inferior si lo añades luego */
+            padding-bottom: 90px; /* Espacio para el menú inferior */
         }
 
-        /* --- HEADER & BALANCE --- */
-        #user-display {
+        /* --- NOMBRE DE USUARIO LLAMATIVO --- */
+        .user-badge {
+            background: rgba(0, 136, 204, 0.1);
+            border: 1px solid var(--ton-blue);
+            padding: 5px 15px;
+            border-radius: 20px;
             color: var(--ton-blue);
-            font-size: 14px;
-            margin-bottom: 15px;
-            font-weight: 500;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 0 10px rgba(0, 136, 204, 0.2);
         }
 
-        .top-stats {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
+        /* --- BALANCE Y CAPITAL --- */
+        .top-stats { text-align: center; margin-bottom: 25px; }
         .capital-label {
-            font-size: 11px;
-            letter-spacing: 1px;
+            font-size: 10px;
+            letter-spacing: 1.5px;
             color: var(--ton-blue);
             text-transform: uppercase;
-            font-weight: bold;
+            font-weight: 800;
+            margin-bottom: 8px;
         }
 
         .balance-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            margin-top: 5px;
+            gap: 12px;
         }
 
-        .ton-logo { width: 30px; height: 30px; }
-        .balance-val { font-size: 36px; font-weight: 800; font-style: italic; }
-        .mining-rate { color: var(--accent-green); font-size: 13px; margin-top: 5px; font-family: monospace; }
+        .ton-logo-circle {
+            width: 35px;
+            height: 35px;
+            background: var(--ton-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ton-logo-circle img { width: 22px; height: 22px; }
+        .balance-val { font-size: 42px; font-weight: 800; font-style: italic; }
+        .mining-rate { color: var(--accent-green); font-size: 13px; margin-top: 5px; font-family: 'Courier New', Courier, monospace; }
 
         /* --- EDIFICIO CENTRAL --- */
         .central-building {
-            width: 100%;
-            max-width: 380px;
+            width: 100%; max-width: 380px;
             background: var(--card-bg);
             border: 1px solid #f1c40f;
             border-radius: 15px;
@@ -77,25 +90,21 @@
             position: relative;
             box-sizing: border-box;
         }
-
         .dot {
-            position: absolute;
-            top: 10px; right: 12px;
+            position: absolute; top: 10px; right: 12px;
             width: 8px; height: 8px;
             background: var(--accent-green);
             border-radius: 50%;
-            box-shadow: 0 0 5px var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
         }
 
         /* --- GRID DE NEGOCIOS --- */
         .grid-negocios {
-            width: 100%;
-            max-width: 380px;
+            width: 100%; max-width: 380px;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
-
         .card-negocio {
             background: var(--card-bg);
             border: 1px solid var(--border-glow);
@@ -107,73 +116,76 @@
             align-items: center;
             box-sizing: border-box;
         }
-
         .icon-img { font-size: 32px; margin-bottom: 8px; }
-        .title { font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .title { font-weight: bold; font-size: 13px; text-transform: uppercase; }
         .subtitle { font-size: 10px; color: var(--text-dim); margin-top: 4px; }
 
-        /* Colores específicos según capturas */
         .t-central { color: #f1c40f; }
         .t-casino { color: #ff4d4d; }
         .t-piscinas { color: #4db8ff; }
         .t-parque { color: #31b545; }
         .t-diversion { color: #a55eea; }
 
-        /* Botón Recolectar del Parque */
         .btn-recolectar {
             background: var(--accent-green);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 5px 12px;
-            font-size: 10px;
-            font-weight: bold;
-            margin-top: 8px;
-            text-transform: uppercase;
-            cursor: pointer;
+            color: white; border: none; border-radius: 6px;
+            padding: 5px 12px; font-size: 10px; font-weight: bold;
+            margin-top: 8px; text-transform: uppercase;
         }
 
         /* --- ENERGÍA --- */
-        .energy-section {
-            width: 100%;
-            max-width: 380px;
-            margin-top: 25px;
-        }
-
+        .energy-section { width: 100%; max-width: 380px; margin-top: 20px; }
         .energy-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 11px;
-            font-weight: bold;
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 8px;
+            font-size: 11px; font-weight: bold;
         }
-
         .energy-bar-container {
-            width: 100%;
-            height: 8px;
-            background: #1a242f;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid #2c3e50;
+            width: 100%; height: 8px;
+            background: #1a242f; border-radius: 10px;
+            overflow: hidden; border: 1px solid #2c3e50;
         }
-
         .energy-fill {
-            width: 95%; /* Basado en 950/1000 */
-            height: 100%;
+            width: 95%; height: 100%;
             background: linear-gradient(90deg, #0088cc, #4db8ff);
         }
+
+        /* --- MENÚ INFERIOR --- */
+        .nav-bar {
+            position: fixed;
+            bottom: 0; left: 0;
+            width: 100%;
+            background: var(--nav-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid var(--border-glow);
+            z-index: 100;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-dim);
+            transition: 0.3s;
+        }
+        .nav-item.active { color: var(--ton-blue); }
+        .nav-icon { font-size: 20px; margin-bottom: 4px; }
+        .nav-label { font-size: 10px; font-weight: bold; text-transform: uppercase; }
 
     </style>
 </head>
 <body>
 
-    <div id="user-display">@Usuario_Ton</div>
+    <div id="user-display" class="user-badge">Cargando...</div>
 
     <div class="top-stats">
         <div class="capital-label">Capital Disponible</div>
         <div class="balance-container">
-            <img src="https://ton.org/download/ton_symbol.png" class="ton-logo">
+            <div class="ton-logo-circle">
+                <img src="https://ton.org/download/ton_symbol.png" alt="TON">
+            </div>
             <span class="balance-val">0.0025</span>
         </div>
         <div class="mining-rate">+0.00000002 TON/sec</div>
@@ -230,6 +242,25 @@
         </div>
     </div>
 
+    <nav class="nav-bar">
+        <a href="#" class="nav-item active">
+            <span class="nav-icon">🚀</span>
+            <span class="nav-label">Mejoras</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">👥</span>
+            <span class="nav-label">Amigos</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">💳</span>
+            <span class="nav-label">Retirar</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Perfil</span>
+        </a>
+    </nav>
+
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
@@ -238,9 +269,9 @@
         const user = tg.initDataUnsafe?.user;
 
         if (user) {
-            userDisplay.innerText = user.username ? `@${user.username}` : user.first_name;
+            userDisplay.innerText = user.username ? `@${user.username}` : user.first_name.toUpperCase();
         } else {
-            userDisplay.innerText = "@Usuario_Ton";
+            userDisplay.innerText = "@USUARIO_TON";
         }
     </script>
 </body>
