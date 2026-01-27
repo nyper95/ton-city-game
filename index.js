@@ -1,77 +1,28 @@
-// 1. CONFIGURACIÓN SUPABASE (Para completar más adelante)
-const SUPABASE_URL = 'TU_URL_AQUI';
-const SUPABASE_KEY = 'TU_KEY_AQUI';
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
-
-// 2. VARIABLES DE ESTADO (Inician en 0)
-let userData = {
-    balance: 0.0,
-    energia: 1000,
-    tasaProduccion: 0.00000000, // Empieza en 0 hasta que compre mejoras o haga algo
-    lastUpdate: Date.now()
+// Inicialización de datos de Ton City
+const userData = {
+    username: "Cargando...",
+    balance: 0.00000000,
+    incomePerSecond: 0.00000000,
+    energy: 0,
+    maxEnergy: 1000,
+    minWithdrawal: 5.0 // Ejemplo de mínimo de retiro
 };
 
-// 3. CARGAR DATOS (Primero de LocalStorage, luego intentaría de Supabase)
-function loadData() {
-    const saved = localStorage.getItem('ton_city_player');
-    if (saved) {
-        userData = JSON.parse(saved);
-    }
-    updateUI();
-}
-
-// 4. GUARDAR DATOS (En el teléfono y en la nube)
-async function saveData() {
-    // Guardar en teléfono
-    localStorage.setItem('ton_city_player', JSON.stringify(userData));
-
-    // Guardar en Supabase (Si está configurado)
-    if (supabase) {
-        const { data, error } = await supabase
-            .from('players')
-            .upsert({ 
-                id: 'ID_DEL_JUGADOR', // Esto se obtendrá del login de Telegram
-                balance: userData.balance,
-                energia: userData.energia
-            });
-    }
-}
-
-// 5. ACTUALIZACIÓN VISUAL
-function updateUI() {
-    document.getElementById('balance').innerText = userData.balance.toFixed(8);
-    document.getElementById('energia-val').innerText = `${Math.floor(userData.energia)}/1000`;
-    document.getElementById('prod-rate').innerText = `+${userData.tasaProduccion.toFixed(8)} TON/sec`;
-}
-
-// 6. CICLO DEL JUEGO (Se ejecuta cada segundo)
-setInterval(() => {
-    if (userData.tasaProduccion > 0) {
-        userData.balance += userData.tasaProduccion;
-    }
+// Función para actualizar el DOM al cargar
+function initCity() {
+    document.getElementById('balance').innerText = userData.balance.toFixed(4);
+    document.getElementById('income-per-second').innerText = userData.incomePerSecond.toFixed(8);
+    document.getElementById('energy-text').innerText = `${userData.energy} / ${userData.maxEnergy}`;
+    document.getElementById('energy-fill').style.width = "0%";
     
-    // Recuperación de energía lenta
-    if (userData.energia < 1000) userData.energia += 0.1;
+    // Aquí conectarías con la API de Telegram para el nombre real
+    // document.getElementById('user-name').innerText = `@${Telegram.WebApp.user.username}`;
+}
 
-    updateUI();
-    saveData(); // Guarda progreso automáticamente
-}, 1000);
+// Lógica para el botón del Parque (Opción gratuita)
+document.getElementById('collect-park').addEventListener('click', () => {
+    console.log("Recolectando TON gratuito...");
+    // Aquí disparas la función de Smart Contract o backend
+});
 
-// 7. FUNCIONES DE LOS EDIFICIOS
-window.openModal = function(tipo) {
-    const msgs = {
-        'central': `📊 CITY HALL\nResumen de Ton City\n\nProducción: ${userData.tasaProduccion} TON/s\nEstado: Global`,
-        'banco': '🏦 BANCO: Aquí podrás depositar tus ganancias para ganar interés.',
-        'casino': '🎰 CASINO: Juegos de azar transparentes. Próximamente.',
-        'tienda': '🛒 TIENDA: ¡Compra tu primera mejora para empezar a generar TON!',
-        'piscina': '🏊 PISCINA: Usa TON para recargar tu energía al instante.',
-        'mejoras': '🚀 MEJORAS: Sube de nivel tus edificios.',
-        'amigos': '👥 REFERIDOS: Invita y gana el 10% de lo que ellos generen.',
-        'retirar': '💰 RETIROS: Mínimo de retiro 0.5 TON (Automático).'
-    };
-    alert(msgs[tipo] || 'Próximamente');
-};
-
-// Iniciar juego
-loadData();
-                    
+window.onload = initCity;
