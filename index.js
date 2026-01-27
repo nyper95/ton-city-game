@@ -1,97 +1,78 @@
-// Configuración de Supabase (Asegúrate de poner tus credenciales reales)
-const SUPABASE_URL = 'https://xkkifqxxglcuyruwkbih.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// --- CONFIGURACIÓN INICIAL ---
+const tg = window.Telegram.WebApp;
+tg.expand();
 
-// Estructura de datos inicializada en 0
-let cityData = {
-    user: {
-        username: "",
-        balance_total: 0.0000,
-        energy: 1000
-    },
-    negocios: {
-        banco: { produccion: 0.00, nivel: 0 },
-        tienda: { produccion: 0.00, nivel: 0 },
-        casino: { produccion: 0.00, nivel: 0 },
-        piscinas: { produccion: 0.00, nivel: 0 },
-        parque: { produccion: 0.00, nivel: 0 }, // Opción gratuita
-        parque_diversiones: { produccion: 0.00, nivel: 0 } // Opción gratuita
-    }
+// Estado del usuario (Esto luego lo conectarás a una base de datos)
+let userData = {
+    balance: 0.00000000,
+    prodPerSec: 0.00000000, // Empieza en 0
+    lastUpdate: Date.now(),
+    lastParkClaim: 0 // Timestamp del último reclamo en el parque
 };
 
-// Función para cargar datos desde Supabase
-async function cargarCiudad() {
-    const { data, error } = await supabase
-        .from('ton_city_users')
-        .select('*')
-        .eq('username', cityData.user.username)
-        .single();
+// --- ELEMENTOS DEL DOM ---
+const balanceEl = document.getElementById('balance-val');
+const rateEl = document.getElementById('mining-rate');
+const userDisplay = document.getElementById('user-display');
 
-    if (data) {
-        // Mapear datos de la nube al objeto local
-        actualizarInterfaz();
-    }
+// Mostrar nombre de Telegram
+if (tg.initDataUnsafe?.user) {
+    const user = tg.initDataUnsafe.user;
+    userDisplay.innerText = user.username ? `@${user.username}` : user.first_name.toUpperCase();
 }
 
-// Lógica del Edificio Central: Mostrar detalles de cada negocio
-function abrirDetallesEdificioCentral() {
-    console.log("Mostrando balance de todos los negocios...");
-    // Aquí podrías abrir un modal que diga:
-    // Banco: +0.002 TON/h
-    // Casino: +0.005 TON/h
-    // etc.
-}
+// --- LÓGICA DE PRODUCCIÓN ---
 
-// Actualizar la UI
-function actualizarInterfaz() {
-    document.getElementById('balance').innerText = cityData.user.balance_total.toFixed(4);
-    document.getElementById('energy-val').innerText = `${cityData.user.energy} / 1000`;
+function updateMining() {
+    const now = Date.now();
+    const deltaTime = (now - userData.lastUpdate) / 1000; // Segundos transcurridos
     
-    const energyPercent = (cityData.user.energy / 1000) * 100;
-    document.getElementById('energy-fill').style.width = `${energyPercent}%`;
-}
-
-// Event Listeners
-document.querySelector('.card-central').addEventListener('click', abrirDetallesEdificioCentral);
-
-// Inicialización
-window.onload = () => {
-    // El nombre se carga desde el script de Telegram en el HTML
-    const tgName = document.getElementById('user-display').innerText.replace('@', '');
-    cityData.user.username = tgName;
-    
-    actualizarInterfaz();
-    // cargarCiudad(); // Descomentar cuando la tabla esté lista en Supabase
-};
-    // Configuración de beneficios
-const REPARTO = {
-    USUARIO: 0.80,
-    DUENO: 0.20
-};
-
-// Ampliando la lógica del Edificio Central
-function abrirDetallesEdificioCentral() {
-    const modalContent = document.getElementById('detalles-negocios');
-    let htmlBusinesList = "";
-    let produccionTotalHora = 0;
-
-    for (const [nombre, info] of Object.entries(cityData.negocios)) {
-        // Cálculo de la producción neta para el usuario (80%)
-        const produccionUsuario = info.produccion * REPARTO.USUARIO;
-        produccionTotalHora += produccionUsuario;
-
-        htmlBusinesList += `
-            <div class="business-item">
-                <span class="name">${nombre.toUpperCase()}</span>
-                <span class="level">Nivel: ${info.nivel}</span>
-                <span class="profit">Ganancia: +${produccionUsuario.toFixed(4)} TON/h</span>
-            </div>
-        `;
+    if (userData.prodPerSec > 0) {
+        userData.balance += userData.prodPerSec * deltaTime;
+        renderBalance();
     }
-
-    // Inyectar en el DOM (Asegúrate de tener este contenedor en tu HTML)
-    document.getElementById('lista-negocios-central').innerHTML = htmlBusinesList;
-    document.getElementById('total-produccion').innerText = `Total: ${produccionTotalHora.toFixed(4)} TON/h`;
+    
+    userData.lastUpdate = now;
+    requestAnimationFrame(updateMining); // Bucle suave
 }
 
+function renderBalance() {
+    // Mostramos 8 decimales para que se vea el movimiento tipo "faucet"
+    balanceEl.innerText = userData.balance.toFixed(8);
+    rateEl.innerText = `+${userData.prodPerSec.toFixed(8)} TON/sec`;
+}
+
+// --- ACCIONES DE LOS NEGOCIOS ---
+
+// Función para el Parque (Gratis cada 2 horas)
+function recolectarParque() {
+    const now = Date.now();
+    const cooldown = 2 * 60 * 60 * 1000; // 2 horas en milisegundos
+
+    if (now - userData.lastParkClaim >= cooldown) {
+        const premio = 0.0005; // Cantidad de TON gratis
+        userData.balance += premio;
+        userData.lastParkClaim = now;
+        
+        tg.showAlert(`¡Has recolectado ${premio} TON en el Parque!`);
+        renderBalance();
+    } else {
+        const restante = Math.ceil((cooldown - (now - userData.lastParkClaim)) / 60000);
+        tg.showAlert(`El parque está vacío. Vuelve en ${restante} minutos.`);
+    }
+}
+
+// Función para simular compra de mejoras en la Tienda
+function comprarMejora(costo, aumentoProd) {
+    if (userData.balance >= costo) {
+        userData.balance -= costo;
+        userData.prodPerSec += aumentoProd;
+        tg.HapticFeedback.notificationOccurred('success');
+        renderBalance();
+    } else {
+        tg.showAlert("No tienes suficiente TON para esta mejora.");
+    }
+}
+
+// Iniciar el loop
+requestAnimationFrame(updateMining);
