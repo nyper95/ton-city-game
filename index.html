@@ -2,279 +2,227 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ton City - Business Sim</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ton City - Panel de Control</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-dark: #0b111b;
-            --card-bg: #161f2c;
-            --ton-blue: #0088cc;
-            --text-gray: #8a96a3;
-            /* Colores de bordes según tu diseño */
-            --border-central: #f1c40f;
-            --border-banco: #3498db;
-            --border-tienda: #e67e22;
-            --border-casino: #e74c3c;
-            --border-piscinas: #3498db;
-            --border-parque: #2ecc71;
-            --border-diversion: #9b59b6;
+            --primary: #0088cc; /* Color TON */
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --accent: #22c55e; /* Ganancias */
         }
 
         body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             margin: 0;
-            background-color: var(--bg-dark);
-            color: white;
-            font-family: 'Segoe UI', sans-serif;
+            padding: 15px;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* Sección Superior: Usuario y Balance General */
-        header {
-            padding: 20px;
-            text-align: center;
-        }
-
-        .user-header {
-            display: flex;
             align-items: center;
-            justify-content: flex-start;
-            gap: 10px;
+        }
+
+        /* Header y Balance */
+        .header {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
             margin-bottom: 20px;
         }
 
-        .user-header span {
-            color: #5bb7f5;
-            font-weight: bold;
-        }
-
-        .capital-container {
-            margin-bottom: 10px;
-        }
-
-        .label-capital {
-            color: #5bb7f5;
-            font-size: 12px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        .balance-main {
-            font-size: 32px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin: 5px 0;
-        }
-
-        .balance-main img { width: 35px; }
-
-        .pps-main {
-            color: #2ecc71;
-            font-size: 14px;
-        }
-
-        /* Botón Recolectar Global */
-        .btn-collect-main {
-            background-color: #27ae60;
-            border: none;
-            color: white;
-            padding: 10px 30px;
-            border-radius: 10px;
-            font-weight: bold;
-            margin-top: 10px;
-            cursor: pointer;
-        }
-
-        /* Grid de Negocios */
-        .city-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            padding: 15px;
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid transparent;
+        .balance-container {
+            background: linear-gradient(135deg, var(--primary), #005580);
+            padding: 20px;
             border-radius: 20px;
-            padding: 15px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
         }
 
-        /* Estilo específico por negocio */
-        .card-central { grid-column: span 2; border-color: var(--border-central); }
-        .card-banco { border-color: var(--border-banco); }
-        .card-tienda { border-color: var(--border-tienda); }
-        .card-casino { border-color: var(--border-casino); }
-        .card-piscinas { border-color: var(--border-piscinas); }
-        .card-parque { border-color: var(--border-parque); }
-        .card-diversiones { border-color: var(--border-diversion); }
-
-        .card img { width: 40px; margin-bottom: 10px; }
-        .card h3 { margin: 5px 0; font-size: 14px; text-transform: uppercase; color: white; }
-        .card p { margin: 0; font-size: 10px; color: var(--text-gray); }
-
-        /* Punto de estatus en Edificio Central */
-        .status-dot {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 8px;
-            height: 8px;
-            background-color: #2ecc71;
-            border-radius: 50%;
-            box-shadow: 0 0 5px #2ecc71;
-        }
-
-        /* Barras de Energía */
-        .footer-stats { padding: 10px 20px; }
-        .energy-box { margin-bottom: 10px; }
-        .energy-info {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .energy-bar {
-            height: 8px;
-            background: #1c2838;
+        #user-display { font-weight: bold; color: #bae6fd; }
+        .balance-amount { font-size: 2.5rem; font-weight: 800; margin: 10px 0; }
+        
+        /* Energía */
+        .energy-container {
+            width: 100%;
+            background: #334155;
+            height: 12px;
             border-radius: 10px;
+            margin-top: 10px;
             overflow: hidden;
         }
-        .energy-fill {
+        #energy-fill {
+            background: #fbbf24;
             height: 100%;
-            background: linear-gradient(90deg, #f39c12, #d35400);
-            width: 0%;
+            width: 100%;
+            transition: width 0.3s ease;
         }
 
-        /* Nav Inferior */
-        .bottom-nav {
-            display: flex;
-            justify-content: space-around;
-            background-color: #0d141f;
-            padding: 15px 0;
-            border-top: 1px solid #1c2838;
+        /* Edificio Central (Dashboard) */
+        .card-central {
+            width: 100%;
+            max-width: 400px;
+            background: var(--card);
+            border: 2px solid var(--primary);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: transform 0.2s;
         }
-        .nav-item {
+        .card-central:active { transform: scale(0.98); }
+
+        /* Lista de Negocios en el Edificio Central */
+        .negocios-grid {
+            width: 100%;
+            max-width: 400px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .negocio-card {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 12px;
             text-align: center;
-            color: var(--text-gray);
-            font-size: 10px;
-            text-decoration: none;
+            font-size: 0.9rem;
         }
-        .nav-item.active { color: #5bb7f5; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 350px;
+        }
+
+        .business-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #334155;
+        }
+
+        .profit { color: var(--accent); font-weight: bold; }
+        
+        .btn-close {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="user-header">
-            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" width="20">
-            <span id="user-display">@Cargando...</span>
-        </div>
-
-        <div class="capital-container">
-            <div class="label-capital">CAPITAL DISPONIBLE</div>
-            <div class="balance-main">
-                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" alt="TON">
-                <span id="balance">0.0000</span>
-            </div>
-            <div class="pps-main">+<span id="income">0.00000002</span> TON/sec</div>
-        </div>
-
-        <button class="btn-collect-main">RECOLECTAR</button>
-    </header>
-
-    <main class="city-grid">
-        <section class="card card-central">
-            <div class="status-dot"></div>
-            <img src="https://cdn-icons-png.flaticon.com/512/3661/3661331.png" alt="Central">
-            <h3>EDIFICIO CENTRAL</h3>
-            <p>Balance de Negocios & Datos</p>
-        </section>
-
-        <section class="card card-banco">
-            <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" alt="Banco">
-            <h3>BANCO</h3>
-            <p>Interés por Depósito</p>
-        </section>
-
-        <section class="card card-tienda">
-            <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png" alt="Tienda">
-            <h3>TIENDA</h3>
-            <p>Mejoras de Producción</p>
-        </section>
-
-        <section class="card card-casino">
-            <img src="https://cdn-icons-png.flaticon.com/512/1055/1055823.png" alt="Casino">
-            <h3>CASINO</h3>
-            <p>Apuesta tu Suerte</p>
-        </section>
-
-        <section class="card card-piscinas">
-            <img src="https://cdn-icons-png.flaticon.com/512/3144/3144573.png" alt="Piscinas">
-            <h3>PISCINAS</h3>
-            <p>Staking Comunitario</p>
-        </section>
-
-        <section class="card card-parque">
-            <img src="https://cdn-icons-png.flaticon.com/512/489/489969.png" alt="Parque">
-            <h3>PARQUE</h3>
-            <p>TON Gratis cada 2h</p>
-        </section>
-
-        <section class="card card-diversiones">
-            <img src="https://cdn-icons-png.flaticon.com/512/2619/2619441.png" alt="Diversiones">
-            <h3>PARQUE DE DIVERSIONES</h3>
-            <p>Tareas y Juegos</p>
-        </section>
-    </main>
-
-    <section class="footer-stats">
-        <div class="energy-box">
-            <div class="energy-info">
-                <span>⚡ ENERGÍA CIUDADANA</span>
-                <span id="energy-val">0 / 1000</span>
-            </div>
-            <div class="energy-bar">
-                <div class="energy-fill" id="energy-fill"></div>
+    <div class="header">
+        <div id="user-display">@Cargando...</div>
+        <div class="balance-container">
+            <div>Balance TON</div>
+            <div class="balance-amount"><span id="balance">0.0000</span></div>
+            <div style="font-size: 0.8rem;">Energía: <span id="energy-val">1000 / 1000</span></div>
+            <div class="energy-container">
+                <div id="energy-fill"></div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <nav class="bottom-nav">
-        <a href="#" class="nav-item active">🚀<br>MEJORAS</a>
-        <a href="#" class="nav-item">👥<br>AMIGOS</a>
-        <a href="#" class="nav-item">💳<br>RETIRAR</a>
-        <a href="#" class="nav-item">⚙️<br>PERFIL</a>
-    </nav>
+    <div class="card-central">
+        <h3 style="margin: 0;">🏢 Edificio Central</h3>
+        <p style="font-size: 0.8rem; opacity: 0.8;">Ver balance y datos de tus negocios</p>
+    </div>
+
+    <div class="negocios-grid">
+        <div class="negocio-card">🏦 Banco</div>
+        <div class="negocio-card">🛒 Tienda</div>
+        <div class="negocio-card">🎰 Casino</div>
+        <div class="negocio-card">🏊 Piscinas</div>
+    </div>
+
+    <div id="modal-central" class="modal">
+        <div class="modal-content">
+            <h3>Balance de Ciudad</h3>
+            <div id="lista-negocios-central">
+                </div>
+            <hr style="border: 0; border-top: 1px solid #334155; margin: 15px 0;">
+            <div style="text-align: right; font-weight: bold;" id="total-produccion"></div>
+            <button class="btn-close" onclick="cerrarModal()">Cerrar</button>
+        </div>
+    </div>
 
     <script>
-        // Lógica inicial para capturar datos de Telegram
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        
-        const userDisplay = document.getElementById('user-display');
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            userDisplay.innerText = `@${tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.first_name}`;
-        } else {
-            userDisplay.innerText = "@Usuario_Ton";
+        // --- TU LÓGICA DE JAVASCRIPT ---
+        const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
+        const SUPABASE_KEY = 'TU_ANON_KEY';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const REPARTO = { USUARIO: 0.80, DUENO: 0.20 };
+
+        let cityData = {
+            user: { username: "", balance_total: 0.0000, energy: 1000 },
+            negocios: {
+                banco: { produccion: 0.015, nivel: 1 },
+                tienda: { produccion: 0.005, nivel: 1 },
+                casino: { produccion: 0.050, nivel: 1 },
+                piscinas: { produccion: 0.020, nivel: 1 }
+            }
+        };
+
+        function actualizarInterfaz() {
+            document.getElementById('balance').innerText = cityData.user.balance_total.toFixed(4);
+            document.getElementById('energy-val').innerText = `${cityData.user.energy} / 1000`;
+            const energyPercent = (cityData.user.energy / 1000) * 100;
+            document.getElementById('energy-fill').style.width = `${energyPercent}%`;
         }
+
+        function abrirDetallesEdificioCentral() {
+            const lista = document.getElementById('lista-negocios-central');
+            let html = "";
+            let total = 0;
+
+            for (const [nombre, info] of Object.entries(cityData.negocios)) {
+                const gananciaNeta = info.produccion * REPARTO.USUARIO;
+                total += gananciaNeta;
+                html += `
+                    <div class="business-item">
+                        <span>${nombre.charAt(0).toUpperCase() + nombre.slice(1)}</span>
+                        <span class="profit">+${gananciaNeta.toFixed(4)}/h</span>
+                    </div>`;
+            }
+
+            lista.innerHTML = html;
+            document.getElementById('total-produccion').innerText = `Total Neto: ${total.toFixed(4)} TON/h`;
+            document.getElementById('modal-central').style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-central').style.display = 'none';
+        }
+
+        document.querySelector('.card-central').addEventListener('click', abrirDetallesEdificioCentral);
+
+        window.onload = () => {
+            // Simulación de carga de nombre de Telegram
+            cityData.user.username = "Usuario_Ton"; 
+            document.getElementById('user-display').innerText = `@${cityData.user.username}`;
+            actualizarInterfaz();
+        };
     </script>
-    <script src="index.js"></script>
 </body>
 </html>
