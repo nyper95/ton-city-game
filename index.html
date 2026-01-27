@@ -3,237 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ton City - Flat 2D</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Ton City - Complete 2D</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --primary: #0088cc;
-            --bg-dark: #0b141d; /* Fondo más sólido, menos gradiente */
-            --card-flat: #17212b; /* Estilo Telegram Desktop */
+            --bg-black: #050a0e;
+            --card-bg: #0f1721;
+            --ton-blue: #0088cc;
             --text-main: #ffffff;
-            --text-dim: #708499;
+            --text-dim: #7d8b99;
             --accent-green: #31b545;
-            --energy-yellow: #f1c40f;
-            --border-color: #242f3d;
+            --border-glow: #1a242f;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-dark);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: var(--bg-black);
             color: var(--text-main);
             margin: 0;
             padding: 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 80px; /* Espacio para el menú inferior si lo añades luego */
         }
 
-        /* --- HEADER 2D --- */
-        .header {
-            width: 100%;
-            max-width: 420px;
-            margin-bottom: 20px;
-        }
-
+        /* --- HEADER & BALANCE --- */
         #user-display {
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--primary);
-            margin-bottom: 8px;
+            color: var(--ton-blue);
+            font-size: 14px;
+            margin-bottom: 15px;
             font-weight: 500;
         }
 
-        .balance-card-2d {
-            background-color: var(--primary); /* Color sólido para efecto 2D */
-            padding: 24px;
-            border-radius: 12px; /* Menos redondeado para estilo técnico */
+        .top-stats {
             text-align: center;
+            margin-bottom: 25px;
         }
 
-        .balance-label { font-size: 0.85rem; opacity: 0.9; }
-        .balance-amount { font-size: 2.8rem; font-weight: 700; margin: 5px 0; letter-spacing: -1px; }
-
-        /* --- ENERGÍA FLAT --- */
-        .energy-box { margin-top: 15px; }
-        .energy-text { font-size: 0.75rem; margin-bottom: 5px; }
-        .energy-bar-bg {
-            background: rgba(0,0,0,0.2);
-            height: 8px;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        #energy-fill {
-            background: var(--energy-yellow);
-            height: 100%;
-            width: 100%;
-            border-radius: 4px;
+        .capital-label {
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--ton-blue);
+            text-transform: uppercase;
+            font-weight: bold;
         }
 
-        /* --- EDIFICIO CENTRAL (Dashboard Flat) --- */
-        .card-central-2d {
-            width: 100%;
-            max-width: 420px;
-            background: var(--card-flat);
-            border: 1px solid var(--primary); /* Borde simple sin brillo */
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 20px;
+        .balance-container {
             display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .ton-logo { width: 30px; height: 30px; }
+        .balance-val { font-size: 36px; font-weight: 800; font-style: italic; }
+        .mining-rate { color: var(--accent-green); font-size: 13px; margin-top: 5px; font-family: monospace; }
+
+        /* --- EDIFICIO CENTRAL --- */
+        .central-building {
+            width: 100%;
+            max-width: 380px;
+            background: var(--card-bg);
+            border: 1px solid #f1c40f;
+            border-radius: 15px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 12px;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .dot {
+            position: absolute;
+            top: 10px; right: 12px;
+            width: 8px; height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 5px var(--accent-green);
+        }
+
+        /* --- GRID DE NEGOCIOS --- */
+        .grid-negocios {
+            width: 100%;
+            max-width: 380px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .card-negocio {
+            background: var(--card-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 15px;
+            padding: 18px 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
             align-items: center;
             box-sizing: border-box;
         }
 
-        .icon-square {
-            font-size: 24px;
-            margin-right: 15px;
-        }
+        .icon-img { font-size: 32px; margin-bottom: 8px; }
+        .title { font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .subtitle { font-size: 10px; color: var(--text-dim); margin-top: 4px; }
 
-        /* --- GRILLA DE NEGOCIOS 2D --- */
-        .negocios-grid {
-            width: 100%;
-            max-width: 420px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 15px;
-        }
+        /* Colores específicos según capturas */
+        .t-central { color: #f1c40f; }
+        .t-casino { color: #ff4d4d; }
+        .t-piscinas { color: #4db8ff; }
+        .t-parque { color: #31b545; }
+        .t-diversion { color: #a55eea; }
 
-        .negocio-item-2d {
-            background: var(--card-flat);
-            border: 1px solid var(--border-color);
-            padding: 20px 10px;
-            border-radius: 12px;
-            text-align: center;
-            transition: background 0.2s;
-        }
-
-        .negocio-item-2d:active { background: #242f3d; }
-        .negocio-label { display: block; margin-top: 8px; font-size: 0.9rem; font-weight: 500; }
-
-        /* --- MODAL FLAT --- */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); /* Oscurecido sólido */
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content-2d {
-            background: var(--card-flat);
-            border: 1px solid var(--border-color);
-            padding: 24px;
-            border-radius: 16px;
-            width: 85%;
-            max-width: 340px;
-        }
-
-        .modal-title { margin-top: 0; font-size: 1.2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-
-        .business-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 0.9rem;
-        }
-
-        .profit-2d { color: var(--accent-green); font-weight: 600; }
-        
-        .btn-flat {
-            background: var(--primary);
+        /* Botón Recolectar del Parque */
+        .btn-recolectar {
+            background: var(--accent-green);
             color: white;
             border: none;
-            padding: 12px;
-            width: 100%;
-            border-radius: 8px;
-            margin-top: 20px;
-            font-weight: 600;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 8px;
+            text-transform: uppercase;
             cursor: pointer;
+        }
+
+        /* --- ENERGÍA --- */
+        .energy-section {
+            width: 100%;
+            max-width: 380px;
+            margin-top: 25px;
+        }
+
+        .energy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .energy-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #1a242f;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #2c3e50;
+        }
+
+        .energy-fill {
+            width: 95%; /* Basado en 950/1000 */
+            height: 100%;
+            background: linear-gradient(90deg, #0088cc, #4db8ff);
         }
 
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div id="user-display">@Usuario_Ton</div>
-        <div class="balance-card-2d">
-            <div class="balance-label">Balance TON</div>
-            <div class="balance-amount" id="balance">0.0000</div>
-            
-            <div class="energy-box">
-                <div class="energy-text">Energía: <span id="energy-val">1000 / 1000</span></div>
-                <div class="energy-bar-bg">
-                    <div id="energy-fill"></div>
-                </div>
-            </div>
+    <div id="user-display">@Usuario_Ton</div>
+
+    <div class="top-stats">
+        <div class="capital-label">Capital Disponible</div>
+        <div class="balance-container">
+            <img src="https://ton.org/download/ton_symbol.png" class="ton-logo">
+            <span class="balance-val">0.0025</span>
+        </div>
+        <div class="mining-rate">+0.00000002 TON/sec</div>
+    </div>
+
+    <div class="central-building">
+        <div class="dot"></div>
+        <div class="icon-img">🏛️</div>
+        <div class="title t-central">Edificio Central</div>
+        <div class="subtitle">Balance de Negocios & Datos</div>
+    </div>
+
+    <div class="grid-negocios">
+        <div class="card-negocio">
+            <div class="icon-img">🏦</div>
+            <div class="title">Banco</div>
+            <div class="subtitle">Interés por Depósito</div>
+        </div>
+        <div class="card-negocio">
+            <div class="icon-img">🛒</div>
+            <div class="title">Tienda</div>
+            <div class="subtitle">Mejoras de Producción</div>
+        </div>
+        <div class="card-negocio">
+            <div class="icon-img">🎰</div>
+            <div class="title t-casino">Casino</div>
+            <div class="subtitle">Apuesta tu Suerte</div>
+        </div>
+        <div class="card-negocio">
+            <div class="icon-img">🏊</div>
+            <div class="title t-piscinas">Piscinas</div>
+            <div class="subtitle">Staking Comunitario</div>
+        </div>
+        <div class="card-negocio">
+            <div class="icon-img">🌳</div>
+            <div class="title t-parque">Parque</div>
+            <div class="subtitle">TON Gratis cada 2h</div>
+            <button class="btn-recolectar">Recolectar</button>
+        </div>
+        <div class="card-negocio">
+            <div class="icon-img">🎡</div>
+            <div class="title t-diversion">Diversión</div>
+            <div class="subtitle">Tareas y Juegos</div>
         </div>
     </div>
 
-    <div class="card-central-2d" onclick="abrirDetalles()">
-        <div class="icon-square">🏢</div>
-        <div>
-            <div style="font-weight: bold; font-size: 1rem;">Edificio Central</div>
-            <div style="font-size: 0.75rem; color: var(--text-dim);">Balance y datos de negocios</div>
+    <div class="energy-section">
+        <div class="energy-header">
+            <span>⚡ ENERGÍA CIUDADANA 🌳</span>
+            <span>950 / 1000</span>
         </div>
-    </div>
-
-    <div class="negocios-grid">
-        <div class="negocio-item-2d"><span>🏦</span><span class="negocio-label">Banco</span></div>
-        <div class="negocio-item-2d"><span>🛒</span><span class="negocio-label">Tienda</span></div>
-        <div class="negocio-item-2d"><span>🎰</span><span class="negocio-label">Casino</span></div>
-        <div class="negocio-item-2d"><span>🏊</span><span class="negocio-label">Piscinas</span></div>
-    </div>
-
-    <div id="modal-central" class="modal">
-        <div class="modal-content-2d">
-            <h3 class="modal-title">Estado de la Ciudad</h3>
-            <div id="lista-negocios">
-                </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 15px; font-weight: bold;">
-                <span>Total (80%)</span>
-                <span id="total-neto" class="profit-2d">0.0000 TON/h</span>
-            </div>
-            <button class="btn-flat" onclick="cerrarModal()">Entendido</button>
+        <div class="energy-bar-container">
+            <div class="energy-fill"></div>
         </div>
     </div>
 
     <script>
-        const REPARTO_USUARIO = 0.80;
-        
-        // Datos de ejemplo para visualizar
-        const negocios = [
-            { nombre: "Banco", prod: 0.0150 },
-            { nombre: "Tienda", prod: 0.0050 },
-            { nombre: "Casino", prod: 0.0500 },
-            { nombre: "Piscinas", prod: 0.0200 }
-        ];
+        const tg = window.Telegram.WebApp;
+        tg.expand();
 
-        function abrirDetalles() {
-            const container = document.getElementById('lista-negocios');
-            let suma = 0;
-            container.innerHTML = "";
+        const userDisplay = document.getElementById('user-display');
+        const user = tg.initDataUnsafe?.user;
 
-            negocios.forEach(n => {
-                const neto = n.prod * REPARTO_USUARIO;
-                suma += neto;
-                container.innerHTML += `
-                    <div class="business-row">
-                        <span>${n.nombre}</span>
-                        <span class="profit-2d">+${neto.toFixed(4)}</span>
-                    </div>`;
-            });
-
-            document.getElementById('total-neto').innerText = `${suma.toFixed(4)} TON/h`;
-            document.getElementById('modal-central').style.display = 'flex';
-        }
-
-        function cerrarModal() {
-            document.getElementById('modal-central').style.display = 'none';
+        if (user) {
+            userDisplay.innerText = user.username ? `@${user.username}` : user.first_name;
+        } else {
+            userDisplay.innerText = "@Usuario_Ton";
         }
     </script>
 </body>
