@@ -2,95 +2,227 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ton City - Business Sim</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://kit.fontawesome.com/your-kit-code.js" crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ton City</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #0d141f;
+            --card-bg: #161f2c;
+            --text-main: #ffffff;
+            --text-dim: #8a96a3;
+            --accent-blue: #0088cc;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header Estilo Captura */
+        header {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-tag {
+            color: #5bb7f5;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* Grid de Negocios */
+        .city-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 10px 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .business-card {
+            background-color: var(--card-bg);
+            border-radius: 18px;
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+            position: relative;
+        }
+
+        /* Colores de bordes según captura */
+        .card-central { border-color: #f1c40f; grid-column: span 2; padding: 20px; }
+        .card-banco { border-color: #2ecc71; }
+        .card-tienda { border-color: #e67e22; }
+        .card-casino { border-color: #e74c3c; }
+        .card-piscinas { border-color: #3498db; }
+        .card-parque { border-color: #27ae60; }
+        .card-diversion { border-color: #9b59b6; }
+
+        .business-card img { width: 45px; margin-bottom: 8px; }
+        .business-card h3 { margin: 5px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .business-card p { margin: 0; font-size: 10px; color: var(--text-dim); }
+
+        /* Edificio Central Especial */
+        .card-central .header-central {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .balance-info { text-align: left; }
+        .balance-info .cap { font-size: 10px; color: #5bb7f5; font-weight: bold; }
+        .balance-info .amount { font-size: 24px; font-weight: bold; margin: 4px 0; }
+        .balance-info .sec { font-size: 10px; color: #2ecc71; }
+
+        /* Botón Parque */
+        .btn-recolectar {
+            background-color: #2ecc71;
+            border: none;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        /* Barra de Energía */
+        .energy-section {
+            padding: 10px 15px;
+        }
+        .energy-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .energy-bar {
+            height: 6px;
+            background: #1c2838;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .energy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f1c40f, #e67e22);
+            width: 0%;
+        }
+
+        /* Nav Inferior */
+        .bottom-nav {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background-color: #111a27;
+            padding: 10px 0;
+            border-top: 1px solid #1c2838;
+        }
+        .nav-item {
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-dim);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .nav-item.active { color: #5bb7f5; }
+        .nav-item i { font-size: 18px; }
+
+    </style>
 </head>
 <body>
 
-    <div id="app-container">
-        <header>
-            <div class="user-info">
-                <span id="user-name">@Usuario_Ton</span>
-            </div>
-            <div class="capital-section">
-                <p class="label">CAPITAL DISPONIBLE</p>
-                <div class="balance-container">
-                    <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" alt="TON" class="ton-icon">
-                    <span id="balance">0.0000</span>
+    <header>
+        <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" width="24" alt="TON">
+        <span class="user-tag" id="user-display">@Cargando...</span>
+    </header>
+
+    <main class="city-grid">
+        <section class="business-card card-central">
+            <div class="header-central">
+                <div class="balance-info">
+                    <div class="cap">CAPITAL DISPONIBLE</div>
+                    <div class="amount"><span id="balance">0.0000</span> <small style="font-size: 12px;">TON</small></div>
+                    <div class="sec">+<span id="pps">0.00000000</span> TON/sec</div>
                 </div>
-                <p class="income-rate">+ <span id="income-per-second">0.00000000</span> TON/sec</p>
+                <img src="https://cdn-icons-png.flaticon.com/512/3661/3661331.png" alt="Central" style="width: 50px;">
             </div>
-        </header>
-
-        <main class="city-grid">
-            <section class="business-card wide-card" id="central-hub">
-                <div class="icon">🏛️</div>
-                <div class="info">
-                    <h3>EDIFICIO CENTRAL</h3>
-                    <p>Balance de Negocios & Datos</p>
-                </div>
-                <div class="status-dot"></div>
-            </section>
-
-            <section class="business-card">
-                <div class="icon">🏦</div>
-                <h3>BANCO</h3>
-                <p>Interés por Depósito</p>
-            </section>
-
-            <section class="business-card">
-                <div class="icon">🛒</div>
-                <h3>TIENDA</h3>
-                <p>Mejoras de Producción</p>
-            </section>
-
-            <section class="business-card">
-                <div class="icon">🎰</div>
-                <h3>CASINO</h3>
-                <p>Apuesta tu Suerte</p>
-            </section>
-
-            <section class="business-card">
-                <div class="icon">🏊</div>
-                <h3>PISCINAS</h3>
-                <p>Staking Comunitario</p>
-            </section>
-
-            <section class="business-card free-zone">
-                <div class="icon">🌳</div>
-                <h3>PARQUE</h3>
-                <p>TON Gratis cada 2h</p>
-                <button class="btn-recolectar" id="collect-park">RECOLECTAR</button>
-            </section>
-
-            <section class="business-card free-zone">
-                <div class="icon">🎡</div>
-                <h3>DIVERSIÓN</h3>
-                <p>Tareas y Juegos</p>
-            </section>
-        </main>
-
-        <section class="energy-container">
-            <div class="energy-header">
-                <span>⚡ ENERGÍA CIUDADANA</span>
-                <span id="energy-text">0 / 1000</span>
-            </div>
-            <div class="energy-bar">
-                <div class="energy-fill" id="energy-fill" style="width: 0%;"></div>
-            </div>
+            <h3>Edificio Central</h3>
+            <p>Balance de Negocios & Datos</p>
         </section>
 
-        <nav class="bottom-nav">
-            <div class="nav-item active">🚀<span>MEJORAS</span></div>
-            <div class="nav-item">👥<span>AMIGOS</span></div>
-            <div class="nav-item">💳<span>RETIRAR</span></div>
-            <div class="nav-item">⚙️<span>PERFIL</span></div>
-        </nav>
-    </div>
+        <section class="business-card card-banco">
+            <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" alt="Banco">
+            <h3>Banco</h3>
+            <p>Interés por Depósito</p>
+        </section>
+
+        <section class="business-card card-tienda">
+            <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png" alt="Tienda">
+            <h3>Tienda</h3>
+            <p>Mejoras de Producción</p>
+        </section>
+
+        <section class="business-card card-casino">
+            <img src="https://cdn-icons-png.flaticon.com/512/1055/1055823.png" alt="Casino">
+            <h3>Casino</h3>
+            <p>Apuesta tu Suerte</p>
+        </section>
+
+        <section class="business-card card-piscinas">
+            <img src="https://cdn-icons-png.flaticon.com/512/3144/3144573.png" alt="Piscinas">
+            <h3>Piscinas</h3>
+            <p>Staking Comunitario</p>
+        </section>
+
+        <section class="business-card card-parque">
+            <img src="https://cdn-icons-png.flaticon.com/512/489/489969.png" alt="Parque">
+            <h3>Parque</h3>
+            <p>TON Gratis cada 2h</p>
+            <button class="btn-recolectar">RECOLECTAR</button>
+        </section>
+
+        <section class="business-card card-diversion">
+            <img src="https://cdn-icons-png.flaticon.com/512/2619/2619441.png" alt="Diversión">
+            <h3>Diversión</h3>
+            <p>Tareas y Juegos</p>
+        </section>
+    </main>
+
+    <section class="energy-section">
+        <div class="energy-header">
+            <span>⚡ ENERGÍA CIUDADANA</span>
+            <span id="energy-text">0 / 1000</span>
+        </div>
+        <div class="energy-bar">
+            <div class="energy-fill" id="energy-fill"></div>
+        </div>
+    </section>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active">🚀<br>MEJORAS</div>
+        <div class="nav-item">👥<br>AMIGOS</div>
+        <div class="nav-item">💳<br>RETIRAR</div>
+        <div class="nav-item">⚙️<br>PERFIL</div>
+    </nav>
 
     <script src="index.js"></script>
 </body>
-                </html>
-                
+            </html>
+            
