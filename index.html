@@ -3,237 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TON City | Tu Negocio en la Blockchain</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root {
-            --ton-blue: #0088cc;
-            --dark-bg: #050a10;
-            --card-bg: rgba(15, 23, 42, 0.8);
-        }
-
-        body {
-            background-color: var(--dark-bg);
-            color: white;
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        /* Contenedor Isométrico */
-        .city-container {
-            perspective: 1200px;
-            padding: 20px;
-            padding-bottom: 120px;
-            margin-top: 10px;
-        }
-
-        .city-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            transform: rotateX(20deg) rotateZ(-5deg);
-            transition: transform 0.5s ease;
-        }
-
-        /* Tarjetas de Edificios 3D */
-        .building {
-            background: var(--card-bg);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 16px;
-            padding: 15px;
-            text-align: center;
-            position: relative;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-            backdrop-filter: blur(5px);
-        }
-
-        .building:hover {
-            transform: translateZ(30px) translateY(-5px);
-            border-color: var(--ton-blue);
-            box-shadow: 0 20px 40px rgba(0, 136, 204, 0.3);
-        }
-
-        .building-icon {
-            font-size: 2.5rem;
-            margin-bottom: 8px;
-            display: block;
-            filter: drop-shadow(0 0 8px rgba(255,255,255,0.2));
-        }
-
-        .status-dot {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            box-shadow: 0 0 8px #10b981;
-        }
-
-        /* Especiales */
-        .main-hub { grid-column: span 2; border-color: #fbbf24; }
-        .free-zone { border-color: #10b981; }
-        .fun-zone { border-color: #a855f7; }
-
-        /* Barra de Energía */
-        .energy-section {
-            position: fixed;
-            bottom: 85px;
-            left: 0;
-            width: 100%;
-            padding: 0 20px;
-            z-index: 40;
-        }
-
-        .bar-bg {
-            background: #1e293b;
-            height: 10px;
-            border-radius: 5px;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .bar-fill {
-            background: linear-gradient(90deg, #3b82f6, #60a5fa);
-            width: 85%;
-            height: 100%;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-        }
-
-        /* Navegación */
-        .nav-bar {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: rgba(10, 20, 32, 0.95);
-            border-top: 1px solid rgba(59, 130, 246, 0.2);
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            backdrop-filter: blur(10px);
-            z-index: 50;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 0.7rem;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .nav-item.active { color: var(--ton-blue); }
-        .nav-item i { font-size: 1.2rem; margin-bottom: 4px; }
-
-        .btn-collect {
-            background: #10b981;
-            font-size: 0.6rem;
-            padding: 2px 8px;
-            border-radius: 4px;
-            margin-top: 5px;
-            font-weight: bold;
-        }
-    </style>
+    <title>Ton City - Business Sim</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://kit.fontawesome.com/your-kit-code.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
-    <header class="pt-10 pb-4 text-center">
-        <p class="text-blue-400 text-xs font-bold tracking-widest mb-1">CAPITAL DISPONIBLE</p>
-        <div class="flex justify-center items-center gap-2">
-            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" width="30" alt="TON">
-            <span class="text-4xl font-black italic">0.0025</span>
-        </div>
-        <div class="text-green-400 text-xs mt-1 font-mono">+0.00000002 TON/sec</div>
-    </header>
+    <div id="app-container">
+        <header>
+            <div class="user-info">
+                <span id="user-name">@Usuario_Ton</span>
+            </div>
+            <div class="capital-section">
+                <p class="label">CAPITAL DISPONIBLE</p>
+                <div class="balance-container">
+                    <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" alt="TON" class="ton-icon">
+                    <span id="balance">0.0000</span>
+                </div>
+                <p class="income-rate">+ <span id="income-per-second">0.00000000</span> TON/sec</p>
+            </div>
+        </header>
 
-    <div class="city-container">
-        <div class="city-grid">
-            
-            <div class="building main-hub">
+        <main class="city-grid">
+            <section class="business-card wide-card" id="central-hub">
+                <div class="icon">🏛️</div>
+                <div class="info">
+                    <h3>EDIFICIO CENTRAL</h3>
+                    <p>Balance de Negocios & Datos</p>
+                </div>
                 <div class="status-dot"></div>
-                <span class="building-icon">🏛️</span>
-                <h3 class="text-yellow-500 font-bold text-sm uppercase">Edificio Central</h3>
-                <p class="text-[10px] text-gray-400 italic">Balance de Negocios & Datos</p>
-            </div>
+            </section>
 
-            <div class="building">
-                <span class="building-icon">🏦</span>
-                <h3 class="font-bold text-sm">BANCO</h3>
-                <p class="text-[10px] text-gray-400">Interés por Depósito</p>
-            </div>
+            <section class="business-card">
+                <div class="icon">🏦</div>
+                <h3>BANCO</h3>
+                <p>Interés por Depósito</p>
+            </section>
 
-            <div class="building">
-                <span class="building-icon">🛒</span>
-                <h3 class="font-bold text-sm">TIENDA</h3>
-                <p class="text-[10px] text-gray-400">Mejoras de Producción</p>
-            </div>
+            <section class="business-card">
+                <div class="icon">🛒</div>
+                <h3>TIENDA</h3>
+                <p>Mejoras de Producción</p>
+            </section>
 
-            <div class="building">
-                <span class="building-icon">🎰</span>
-                <h3 class="font-bold text-sm text-red-400">CASINO</h3>
-                <p class="text-[10px] text-gray-400">Apuesta tu Suerte</p>
-            </div>
+            <section class="business-card">
+                <div class="icon">🎰</div>
+                <h3>CASINO</h3>
+                <p>Apuesta tu Suerte</p>
+            </section>
 
-            <div class="building">
-                <span class="building-icon">🏊‍♂️</span>
-                <h3 class="font-bold text-sm text-cyan-400">PISCINAS</h3>
-                <p class="text-[10px] text-gray-400">Staking Comunitario</p>
-            </div>
+            <section class="business-card">
+                <div class="icon">🏊</div>
+                <h3>PISCINAS</h3>
+                <p>Staking Comunitario</p>
+            </section>
 
-            <div class="building free-zone">
-                <span class="building-icon">🌳</span>
-                <h3 class="font-bold text-sm text-green-400">PARQUE</h3>
-                <p class="text-[10px] text-gray-400">TON Gratis cada 2h</p>
-                <button class="btn-collect">RECOLECTAR</button>
-            </div>
+            <section class="business-card free-zone">
+                <div class="icon">🌳</div>
+                <h3>PARQUE</h3>
+                <p>TON Gratis cada 2h</p>
+                <button class="btn-recolectar" id="collect-park">RECOLECTAR</button>
+            </section>
 
-            <div class="building fun-zone">
-                <span class="building-icon">🎡</span>
-                <h3 class="font-bold text-sm text-purple-400">DIVERSIÓN</h3>
-                <p class="text-[10px] text-gray-400">Tareas y Juegos</p>
-            </div>
+            <section class="business-card free-zone">
+                <div class="icon">🎡</div>
+                <h3>DIVERSIÓN</h3>
+                <p>Tareas y Juegos</p>
+            </section>
+        </main>
 
-        </div>
+        <section class="energy-container">
+            <div class="energy-header">
+                <span>⚡ ENERGÍA CIUDADANA</span>
+                <span id="energy-text">0 / 1000</span>
+            </div>
+            <div class="energy-bar">
+                <div class="energy-fill" id="energy-fill" style="width: 0%;"></div>
+            </div>
+        </section>
+
+        <nav class="bottom-nav">
+            <div class="nav-item active">🚀<span>MEJORAS</span></div>
+            <div class="nav-item">👥<span>AMIGOS</span></div>
+            <div class="nav-item">💳<span>RETIRAR</span></div>
+            <div class="nav-item">⚙️<span>PERFIL</span></div>
+        </nav>
     </div>
 
-    <div class="energy-section">
-        <div class="flex justify-between text-[10px] mb-1 font-bold">
-            <span>⚡ ENERGÍA CIUDADANA</span>
-            <span>950 / 1000</span>
-        </div>
-        <div class="bar-bg">
-            <div class="bar-fill"></div>
-        </div>
-    </div>
-
-    <nav class="nav-bar">
-        <a href="#" class="nav-item active">
-            <i class="fas fa-rocket"></i>
-            <span>Mejoras</span>
-        </a>
-        <a href="#" class="nav-item">
-            <i class="fas fa-users"></i>
-            <span>Amigos</span>
-        </a>
-        <a href="#" class="nav-item">
-            <i class="fas fa-wallet"></i>
-            <span>Retirar</span>
-        </a>
-        <a href="#" class="nav-item">
-            <i class="fas fa-user-gear"></i>
-            <span>Perfil</span>
-        </a>
-    </nav>
-
+    <script src="index.js"></script>
 </body>
-</html>
+                </html>
+                
