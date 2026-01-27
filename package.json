@@ -1,14 +1,12 @@
 {
-  "name": "ton-city-game",
+  "name": "ton-city",
   "version": "1.0.0",
-  "description": "Bot para ganar dinero en Cuba",
+  "description": "Ton City Game",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "npx serve ."
   },
   "dependencies": {
-    "node-telegram-bot-api": "^0.64.0",
-    "express": "^4.18.2",
-    "@supabase/supabase-js": "^2.39.0"
+    "serve": "^14.2.0"
   }
 }
