@@ -3,41 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ton City</title>
+    <title>Ton City - Business Sim</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-color: #0d141f;
+            --bg-dark: #0b111b;
             --card-bg: #161f2c;
-            --text-main: #ffffff;
-            --text-dim: #8a96a3;
-            --accent-blue: #0088cc;
+            --ton-blue: #0088cc;
+            --text-gray: #8a96a3;
+            /* Colores de bordes según tu diseño */
+            --border-central: #f1c40f;
+            --border-banco: #3498db;
+            --border-tienda: #e67e22;
+            --border-casino: #e74c3c;
+            --border-piscinas: #3498db;
+            --border-parque: #2ecc71;
+            --border-diversion: #9b59b6;
         }
 
         body {
             margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
-        /* Header Estilo Captura */
+        /* Sección Superior: Usuario y Balance General */
         header {
-            padding: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .user-header {
             display: flex;
             align-items: center;
+            justify-content: flex-start;
             gap: 10px;
+            margin-bottom: 20px;
         }
 
-        .user-tag {
+        .user-header span {
             color: #5bb7f5;
             font-weight: bold;
+        }
+
+        .capital-container {
+            margin-bottom: 10px;
+        }
+
+        .label-capital {
+            color: #5bb7f5;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .balance-main {
+            font-size: 32px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 5px 0;
+        }
+
+        .balance-main img { width: 35px; }
+
+        .pps-main {
+            color: #2ecc71;
             font-size: 14px;
+        }
+
+        /* Botón Recolectar Global */
+        .btn-collect-main {
+            background-color: #27ae60;
+            border: none;
+            color: white;
+            padding: 10px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 10px;
+            cursor: pointer;
         }
 
         /* Grid de Negocios */
@@ -45,68 +97,53 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            padding: 10px 15px;
-            flex-grow: 1;
+            padding: 15px;
             overflow-y: auto;
+            flex-grow: 1;
         }
 
-        .business-card {
+        .card {
             background-color: var(--card-bg);
-            border-radius: 18px;
+            border: 1px solid transparent;
+            border-radius: 20px;
             padding: 15px;
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            border: 1px solid transparent;
             position: relative;
         }
 
-        /* Colores de bordes según captura */
-        .card-central { border-color: #f1c40f; grid-column: span 2; padding: 20px; }
-        .card-banco { border-color: #2ecc71; }
-        .card-tienda { border-color: #e67e22; }
-        .card-casino { border-color: #e74c3c; }
-        .card-piscinas { border-color: #3498db; }
-        .card-parque { border-color: #27ae60; }
-        .card-diversion { border-color: #9b59b6; }
+        /* Estilo específico por negocio */
+        .card-central { grid-column: span 2; border-color: var(--border-central); }
+        .card-banco { border-color: var(--border-banco); }
+        .card-tienda { border-color: var(--border-tienda); }
+        .card-casino { border-color: var(--border-casino); }
+        .card-piscinas { border-color: var(--border-piscinas); }
+        .card-parque { border-color: var(--border-parque); }
+        .card-diversiones { border-color: var(--border-diversion); }
 
-        .business-card img { width: 45px; margin-bottom: 8px; }
-        .business-card h3 { margin: 5px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .business-card p { margin: 0; font-size: 10px; color: var(--text-dim); }
+        .card img { width: 40px; margin-bottom: 10px; }
+        .card h3 { margin: 5px 0; font-size: 14px; text-transform: uppercase; color: white; }
+        .card p { margin: 0; font-size: 10px; color: var(--text-gray); }
 
-        /* Edificio Central Especial */
-        .card-central .header-central {
-            display: flex;
-            width: 100%;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 10px;
-        }
-        .balance-info { text-align: left; }
-        .balance-info .cap { font-size: 10px; color: #5bb7f5; font-weight: bold; }
-        .balance-info .amount { font-size: 24px; font-weight: bold; margin: 4px 0; }
-        .balance-info .sec { font-size: 10px; color: #2ecc71; }
-
-        /* Botón Parque */
-        .btn-recolectar {
+        /* Punto de estatus en Edificio Central */
+        .status-dot {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 8px;
+            height: 8px;
             background-color: #2ecc71;
-            border: none;
-            color: white;
-            padding: 6px 15px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 11px;
-            margin-top: 10px;
-            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #2ecc71;
         }
 
-        /* Barra de Energía */
-        .energy-section {
-            padding: 10px 15px;
-        }
-        .energy-header {
+        /* Barras de Energía */
+        .footer-stats { padding: 10px 20px; }
+        .energy-box { margin-bottom: 10px; }
+        .energy-info {
             display: flex;
             justify-content: space-between;
             font-size: 11px;
@@ -114,115 +151,130 @@
             margin-bottom: 5px;
         }
         .energy-bar {
-            height: 6px;
+            height: 8px;
             background: #1c2838;
             border-radius: 10px;
             overflow: hidden;
         }
         .energy-fill {
             height: 100%;
-            background: linear-gradient(90deg, #f1c40f, #e67e22);
+            background: linear-gradient(90deg, #f39c12, #d35400);
             width: 0%;
         }
 
         /* Nav Inferior */
         .bottom-nav {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            background-color: #111a27;
-            padding: 10px 0;
+            display: flex;
+            justify-content: space-around;
+            background-color: #0d141f;
+            padding: 15px 0;
             border-top: 1px solid #1c2838;
         }
         .nav-item {
             text-align: center;
+            color: var(--text-gray);
             font-size: 10px;
-            color: var(--text-dim);
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            text-decoration: none;
         }
         .nav-item.active { color: #5bb7f5; }
-        .nav-item i { font-size: 18px; }
-
     </style>
 </head>
 <body>
 
     <header>
-        <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" width="24" alt="TON">
-        <span class="user-tag" id="user-display">@Cargando...</span>
+        <div class="user-header">
+            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" width="20">
+            <span id="user-display">@Cargando...</span>
+        </div>
+
+        <div class="capital-container">
+            <div class="label-capital">CAPITAL DISPONIBLE</div>
+            <div class="balance-main">
+                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" alt="TON">
+                <span id="balance">0.0000</span>
+            </div>
+            <div class="pps-main">+<span id="income">0.00000002</span> TON/sec</div>
+        </div>
+
+        <button class="btn-collect-main">RECOLECTAR</button>
     </header>
 
     <main class="city-grid">
-        <section class="business-card card-central">
-            <div class="header-central">
-                <div class="balance-info">
-                    <div class="cap">CAPITAL DISPONIBLE</div>
-                    <div class="amount"><span id="balance">0.0000</span> <small style="font-size: 12px;">TON</small></div>
-                    <div class="sec">+<span id="pps">0.00000000</span> TON/sec</div>
-                </div>
-                <img src="https://cdn-icons-png.flaticon.com/512/3661/3661331.png" alt="Central" style="width: 50px;">
-            </div>
-            <h3>Edificio Central</h3>
+        <section class="card card-central">
+            <div class="status-dot"></div>
+            <img src="https://cdn-icons-png.flaticon.com/512/3661/3661331.png" alt="Central">
+            <h3>EDIFICIO CENTRAL</h3>
             <p>Balance de Negocios & Datos</p>
         </section>
 
-        <section class="business-card card-banco">
+        <section class="card card-banco">
             <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" alt="Banco">
-            <h3>Banco</h3>
+            <h3>BANCO</h3>
             <p>Interés por Depósito</p>
         </section>
 
-        <section class="business-card card-tienda">
+        <section class="card card-tienda">
             <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png" alt="Tienda">
-            <h3>Tienda</h3>
+            <h3>TIENDA</h3>
             <p>Mejoras de Producción</p>
         </section>
 
-        <section class="business-card card-casino">
+        <section class="card card-casino">
             <img src="https://cdn-icons-png.flaticon.com/512/1055/1055823.png" alt="Casino">
-            <h3>Casino</h3>
+            <h3>CASINO</h3>
             <p>Apuesta tu Suerte</p>
         </section>
 
-        <section class="business-card card-piscinas">
+        <section class="card card-piscinas">
             <img src="https://cdn-icons-png.flaticon.com/512/3144/3144573.png" alt="Piscinas">
-            <h3>Piscinas</h3>
+            <h3>PISCINAS</h3>
             <p>Staking Comunitario</p>
         </section>
 
-        <section class="business-card card-parque">
+        <section class="card card-parque">
             <img src="https://cdn-icons-png.flaticon.com/512/489/489969.png" alt="Parque">
-            <h3>Parque</h3>
+            <h3>PARQUE</h3>
             <p>TON Gratis cada 2h</p>
-            <button class="btn-recolectar">RECOLECTAR</button>
         </section>
 
-        <section class="business-card card-diversion">
-            <img src="https://cdn-icons-png.flaticon.com/512/2619/2619441.png" alt="Diversión">
-            <h3>Diversión</h3>
+        <section class="card card-diversiones">
+            <img src="https://cdn-icons-png.flaticon.com/512/2619/2619441.png" alt="Diversiones">
+            <h3>PARQUE DE DIVERSIONES</h3>
             <p>Tareas y Juegos</p>
         </section>
     </main>
 
-    <section class="energy-section">
-        <div class="energy-header">
-            <span>⚡ ENERGÍA CIUDADANA</span>
-            <span id="energy-text">0 / 1000</span>
-        </div>
-        <div class="energy-bar">
-            <div class="energy-fill" id="energy-fill"></div>
+    <section class="footer-stats">
+        <div class="energy-box">
+            <div class="energy-info">
+                <span>⚡ ENERGÍA CIUDADANA</span>
+                <span id="energy-val">0 / 1000</span>
+            </div>
+            <div class="energy-bar">
+                <div class="energy-fill" id="energy-fill"></div>
+            </div>
         </div>
     </section>
 
     <nav class="bottom-nav">
-        <div class="nav-item active">🚀<br>MEJORAS</div>
-        <div class="nav-item">👥<br>AMIGOS</div>
-        <div class="nav-item">💳<br>RETIRAR</div>
-        <div class="nav-item">⚙️<br>PERFIL</div>
+        <a href="#" class="nav-item active">🚀<br>MEJORAS</a>
+        <a href="#" class="nav-item">👥<br>AMIGOS</a>
+        <a href="#" class="nav-item">💳<br>RETIRAR</a>
+        <a href="#" class="nav-item">⚙️<br>PERFIL</a>
     </nav>
 
+    <script>
+        // Lógica inicial para capturar datos de Telegram
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        const userDisplay = document.getElementById('user-display');
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            userDisplay.innerText = `@${tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.first_name}`;
+        } else {
+            userDisplay.innerText = "@Usuario_Ton";
+        }
+    </script>
     <script src="index.js"></script>
 </body>
-            </html>
-            
+</html>
