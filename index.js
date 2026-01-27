@@ -1,6 +1,6 @@
 // Configuración de Supabase (Asegúrate de poner tus credenciales reales)
-const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
-const SUPABASE_KEY = 'TU_ANON_KEY';
+const SUPABASE_URL = 'https://xkkifqxxglcuyruwkbih.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE';
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Estructura de datos inicializada en 0
