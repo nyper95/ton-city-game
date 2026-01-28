@@ -1,114 +1,108 @@
-// 1. CONFIGURACIÓN DE CREDENCIALES
+// CONFIGURACIÓN DE SEGURIDAD
+const MI_BILLETERA_DUEÑO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw";
 const SUPABASE_URL = 'https://xkkifqxxglcuyruwkbih.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const tg = window.Telegram.WebApp;
-tg.expand();
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    manifestUrl: 'https://tu-sitio-web.com/tonconnect-manifest.json', // Cambia por tu URL real
+    buttonRootId: 'ton-connect-button'
+});
 
-// 2. ESTADO INICIAL DEL NEGOCIO
 let stats = {
     balance: 0.00000000,
-    tasa: 0.00000000,    // Producción real por segundo (80% para el usuario)
-    invBanco: 0.00,      // Total depositado en Staking
-    comisionReferidos: 0.00000000, // Tu 10% por amigos invitados
-    negocios: {
-        banco: 0.0,
-        tienda: 0.0,
-        casino: 0.0,
-        piscina: 0.0
-    }
+    tasa: 0.00000000,
+    invBanco: 0.00,
+    negocios: { banco: 0.0, tienda: 0.0, casino: 0.0, piscina: 0.0 },
+    comisionReferidos: 0.00
 };
 
-// 3. IDENTIFICACIÓN DE USUARIO
-function cargarPerfil() {
-    const user = tg.initDataUnsafe.user;
-    const userDisplay = document.getElementById('user-display');
-    if (user) {
-        userDisplay.innerText = `@${user.username || user.first_name}`;
-    } else {
-        userDisplay.innerText = "@Usuario_Cuba";
+// 1. FUNCIÓN DE INVERSIÓN CON ENVÍO AUTOMÁTICO
+async function invertirEnBanco() {
+    if (!tonConnectUI.connected) {
+        alert("Primero conecta tu billetera con el botón de arriba.");
+        return;
+    }
+
+    const montoStr = prompt("¿Cuánto TON deseas poner en Staking?");
+    if (montoStr && !isNaN(montoStr)) {
+        const cantidad = parseFloat(montoStr);
+        const montoNano = Math.floor(cantidad * 1000000000); // TON a NanoTON
+        
+        // El 20% que va directo a ti
+        const montoTuComision = Math.floor(montoNano * 0.20);
+        // El 80% que se queda en el sistema/contrato para el usuario
+        const montoStaking = montoNano - montoTuComision;
+
+        const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 300,
+            messages: [
+                {
+                    address: MI_BILLETERA_DUEÑO, 
+                    amount: montoTuComision.toString(), // Tu 20% automático
+                },
+                {
+                    address: "DIRECCION_DE_TU_BOVEDA_O_CONTRATO", // El 80% restante
+                    amount: montoStaking.toString(),
+                }
+            ]
+        };
+
+        try {
+            const result = await tonConnectUI.sendTransaction(transaction);
+            // Si la blockchain confirma, activamos la producción
+            activarProduccionReal(cantidad);
+        } catch (e) {
+            alert("La transacción fue cancelada o falló.");
+        }
     }
 }
 
-// 4. LÓGICA DE STAKING AUTOMÁTICO (BANCO)
-window.invertirEnBanco = function() {
-    const monto = prompt("¿Cuánto TON deseas poner en Staking?\nGeneración automática 24/7.");
+function activarProduccionReal(montoInvertido) {
+    stats.invBanco += montoInvertido;
     
-    if (monto && !isNaN(monto) && parseFloat(monto) > 0) {
-        const cantidad = parseFloat(monto);
-        
-        // Simulación de depósito exitoso
-        stats.invBanco += cantidad;
-        
-        // CÁLCULO DE PRODUCCIÓN (Modelo 80/20)
-        // Ejemplo: 12% interés anual -> Usuario recibe el 80% de eso.
-        const interesAnual = 0.12; 
-        const gananciaUsuarioSeg = (cantidad * interesAnual * 0.80) / 31536000;
-        
-        // Sumamos a la tasa actual para que los números corran
-        stats.tasa += gananciaUsuarioSeg;
-        
-        // Simulamos también un pequeño ingreso por referidos (10% de lo que genera el sistema)
-        stats.comisionReferidos += (cantidad * interesAnual * 0.10) / 31536000;
+    // El usuario gana sobre el 80% de su inversión real
+    // Ejemplo: 12% anual.
+    const gananciaUsuarioSeg = (montoInvertido * 0.12 * 0.80) / 31536000;
+    
+    stats.tasa += gananciaUsuarioSeg;
+    
+    // Actualizamos el 10% de referidos en el Edificio Central
+    stats.comisionReferidos += (montoInvertido * 0.12 * 0.10) / 31536000;
+    
+    actualizarPantalla();
+    tg.HapticFeedback.notificationOccurred('success');
+    alert("✅ ¡Transacción exitosa! El 20% ha sido enviado al dueño y tu Staking ha comenzado.");
+}
 
-        actualizarPantalla();
-        tg.HapticFeedback.impactOccurred('medium');
-        alert("🏦 ¡Staking Activado! Tus ganancias están creciendo.");
-    }
-};
-
-// 5. MOTOR DE PRODUCCIÓN (EL CONTADOR)
+// 2. MOTOR DEL SISTEMA
 function iniciarMotor() {
     setInterval(() => {
         if (stats.tasa > 0) {
-            // El balance principal sube
             stats.balance += stats.tasa;
-            
-            // Registramos el crecimiento específico del Banco para el Edificio Central
             stats.negocios.banco += stats.tasa;
-            
             actualizarPantalla();
         }
     }, 1000);
 }
 
-// 6. ACTUALIZACIÓN DE INTERFAZ
 function actualizarPantalla() {
     document.getElementById('balance').innerText = stats.balance.toFixed(8);
     document.getElementById('income-rate').innerText = `+${stats.tasa.toFixed(8)} TON/sec`;
-    
     const invLabel = document.getElementById('inv-banco');
-    if (invLabel) invLabel.innerText = `Staking: ${stats.invBanco.toFixed(2)} TON`;
+    if(invLabel) invLabel.innerText = `Staking: ${stats.invBanco.toFixed(2)} TON`;
 }
 
-// 7. DATOS DEL EDIFICIO CENTRAL (MODAL)
+// 3. EDIFICIO CENTRAL
 window.actualizarModal = function() {
     document.getElementById('data-banco').innerText = stats.negocios.banco.toFixed(8);
-    document.getElementById('data-tienda').innerText = stats.negocios.tienda.toFixed(8);
-    document.getElementById('data-casino').innerText = stats.negocios.casino.toFixed(8);
-    document.getElementById('data-piscina').innerText = stats.negocios.piscina.toFixed(8);
-    
-    // Suma total de todos los negocios
-    const totalNegocios = Object.values(stats.negocios).reduce((a, b) => a + b, 0);
-    document.getElementById('data-total').innerText = totalNegocios.toFixed(8);
-    
-    // Mostramos tu 10% de comisión por amigos
+    document.getElementById('data-total').innerText = stats.negocios.banco.toFixed(8);
     document.getElementById('data-amigos').innerText = stats.comisionReferidos.toFixed(8);
 };
 
-// 8. PARQUE (BONO GRATIS)
-window.recolectarParque = function() {
-    const bono = 0.00002;
-    stats.balance += bono;
-    actualizarPantalla();
-    tg.HapticFeedback.notificationOccurred('success');
-    alert("🌳 Has recolectado un bono del Parque.");
-};
-
-// INICIO AL CARGAR
 window.onload = () => {
-    cargarPerfil();
     iniciarMotor();
+    const user = tg.initDataUnsafe.user;
+    document.getElementById('user-display').innerText = user ? `@${user.username}` : "@Usuario_Cuba";
 };
-                            
