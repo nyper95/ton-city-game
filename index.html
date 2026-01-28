@@ -4,96 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ton City</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            background-color: #0d1117;
-            color: white;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            margin: 0;
-            padding: 10px;
-            padding-bottom: 90px;
-        }
-
-        /* Encabezado Capital */
+        /* Mantenemos el estilo de la captura 3 y 4 que ya configuramos */
+        body { background-color: #0d1117; color: white; font-family: sans-serif; margin: 0; padding: 10px; padding-bottom: 90px; }
         .header { text-align: center; padding: 15px 0; }
+        .user-id { color: #58a6ff; font-size: 14px; margin-bottom: 5px; font-weight: bold; }
         .capital-label { color: #58a6ff; font-size: 12px; font-weight: bold; text-transform: uppercase; }
         .balance-main { font-size: 38px; font-weight: bold; margin: 10px 0; display: flex; justify-content: center; align-items: center; gap: 10px; }
         .income-rate { color: #4ade80; font-size: 15px; }
-
-        /* Edificio Central (Copiado de la Foto 3) */
-        .main-card {
-            background: #161b22;
-            border: 1px solid #f1c40f; 
-            border-radius: 20px;
-            padding: 25px;
-            margin: 20px 10px;
-            text-align: center;
-            cursor: pointer;
-        }
+        
+        .main-card { background: #161b22; border: 1px solid #f1c40f; border-radius: 20px; padding: 25px; margin: 20px 10px; text-align: center; cursor: pointer; }
         .main-card .icon-building { font-size: 45px; color: #cbd5e0; margin-bottom: 10px; }
         .main-card h2 { color: #f1c40f; margin: 5px 0; font-size: 22px; text-transform: uppercase; }
-        .main-card p { color: #8b949e; font-size: 13px; margin: 0; }
-
-        /* Cuadrícula de Negocios (2 Columnas - Foto 4) */
-        .grid-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            padding: 10px;
-        }
-        .card {
-            background: #1c2128;
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            border: 1px solid #30363d;
-        }
+        
+        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px; }
+        .card { background: #1c2128; border-radius: 15px; padding: 20px; text-align: center; border: 1px solid #30363d; }
         .card .emoji { font-size: 30px; margin-bottom: 10px; display: block; }
-        .card h3 { font-size: 14px; margin: 5px 0; text-transform: uppercase; color: #ffffff; }
-        .card p { font-size: 11px; color: #8b949e; margin: 0; }
+        
+        .btn-park { background: #238636; color: white; border: none; padding: 8px 15px; border-radius: 8px; margin-top: 12px; font-weight: bold; cursor: pointer; width: 100%; }
 
-        /* Botón Parque */
-        .btn-park {
-            background: #238636;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 8px;
-            margin-top: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        /* Menú Inferior */
-        .nav-bar {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: #161b22;
-            display: flex;
-            justify-content: space-around;
-            padding: 15px 0;
-            border-top: 1px solid #30363d;
-        }
-        .nav-item { text-align: center; font-size: 11px; color: #8b949e; text-decoration: none; }
-        .nav-item.active { color: #58a6ff; }
-
-        /* Modal de Datos */
-        #modal-datos {
-            display: none;
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1c2128;
-            border: 2px solid #f1c40f;
-            padding: 25px;
-            border-radius: 20px;
-            z-index: 1000;
-            width: 85%;
-        }
+        /* Modal y Navegación */
+        #modal-datos { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c2128; border: 2px solid #f1c40f; padding: 25px; border-radius: 20px; z-index: 1000; width: 85%; }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 999; }
         .data-line { display: flex; justify-content: space-between; font-size: 14px; margin: 10px 0; }
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #161b22; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #30363d; }
+        .nav-item { text-align: center; font-size: 11px; color: #8b949e; text-decoration: none; }
+        .nav-item.active { color: #58a6ff; }
         .close-btn { background: #f1c40f; color: #000; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
@@ -114,9 +52,10 @@
     </div>
 
     <div class="header">
+        <div id="user-display" class="user-id">Cargando usuario...</div>
         <div class="capital-label">Capital Disponible</div>
         <div class="balance-main">💎 <span id="balance">0.00000000</span></div>
-        <div class="income-rate">+0.00000005 TON/sec</div>
+        <div id="income-rate" class="income-rate">+0.00000000 TON/sec</div>
     </div>
 
     <div class="main-card" onclick="abrirModal()">
@@ -158,5 +97,4 @@
         }
     </script>
 </body>
-    </html>
-    
+</html>
