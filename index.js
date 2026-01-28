@@ -4,49 +4,73 @@ const SUPABASE_KEY = 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const tg = window.Telegram.WebApp;
-tg.expand();
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    manifestUrl: 'https://tu-sitio-web.com/tonconnect-manifest.json',
+    buttonRootId: 'ton-connect-button'
+});
 
 let stats = {
-    balance: 0.00010000, // Saldo inicial de prueba
-    tasa: 0.00000000,    // Producción real por segundo
+    balance: 0.00000000,
+    tasa: 0.00000000,
     invBanco: 0.00,
-    comisionReferidos: 0.00000000,
-    negocios: { banco: 0.0, tienda: 0.0, casino: 0.0, piscina: 0.0 }
+    negocios: { banco: 0.0, tienda: 0.0, casino: 0.0, piscina: 0.0 },
+    comisionReferidos: 0.00
 };
 
-// Configurar nombre real de Telegram
+// 1. CARGAR USUARIO TELEGRAM
 function cargarUsuario() {
     const user = tg.initDataUnsafe.user;
     document.getElementById('user-display').innerText = user ? `@${user.username || user.first_name}` : "@Invitado";
 }
 
-// Lógica del Banco: Inversión libre
-function abrirMenuBanco() {
-    const monto = prompt("¿Cuánto TON deseas depositar en el Banco?\n(Mientras más inviertas, más ganas)");
-    if (monto && !isNaN(monto) && parseFloat(monto) <= stats.balance) {
+// 2. LÓGICA DEL BANCO (CONTRATO DIRECTO)
+async function menuBanco() {
+    if (!tonConnectUI.connected) {
+        alert("Por favor, conecta tu billetera primero.");
+        return;
+    }
+
+    const monto = prompt("¿Cuánto TON deseas invertir?");
+    if (monto && !isNaN(monto)) {
         const cantidad = parseFloat(monto);
-        stats.balance -= cantidad;
-        stats.invBanco += cantidad;
         
-        // El 80% genera para el usuario, el 20% es tu ganancia
-        // Tasa ejemplo: 10% mensual -> 0.80 para usuario
-        const tasaMensual = 0.10;
-        stats.tasa += (cantidad * tasaMensual) / 2592000 * 0.80; 
-        
-        document.getElementById('inv-banco').innerText = `Inv: ${stats.invBanco.toFixed(2)}`;
-        actualizarPantalla();
-        alert("🏦 Depósito realizado. ¡Producción activada!");
-    } else {
-        alert("Monto inválido o saldo insuficiente.");
+        // TRANSACCIÓN REAL EN LA BLOCKCHAIN
+        const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 360,
+            messages: [{
+                address: "TU_BILLETERA_AQUI", // Reemplaza con tu dirección de TON
+                amount: (cantidad * 1000000000).toString(), // En NanoTON
+            }]
+        };
+
+        try {
+            await tonConnectUI.sendTransaction(transaction);
+            procesarInversionExitosa(cantidad);
+        } catch (e) {
+            alert("Pago cancelado o fallido.");
+        }
     }
 }
 
-// Contador de producción real
+function procesarInversionExitosa(cantidad) {
+    stats.invBanco += cantidad;
+    
+    // REPARTO 80/20: Solo el 80% genera para el usuario
+    // Tasa anual del 15% ejemplo:
+    const tasaAnual = 0.15;
+    const gananciaUsuarioSeg = (cantidad * tasaAnual) / 31536000 * 0.80;
+    
+    stats.tasa += gananciaUsuarioSeg;
+    document.getElementById('inv-banco').innerText = `Invertido: ${stats.invBanco.toFixed(2)}`;
+    actualizarPantalla();
+    alert("🏦 Inversión confirmada. ¡Tu ciudad está produciendo!");
+}
+
+// 3. ACTUALIZACIONES
 function iniciarContador() {
     setInterval(() => {
         if (stats.tasa > 0) {
             stats.balance += stats.tasa;
-            // Registramos lo que genera el banco específicamente para el Edificio Central
             stats.negocios.banco += stats.tasa; 
             actualizarPantalla();
         }
@@ -58,26 +82,13 @@ function actualizarPantalla() {
     document.getElementById('income-rate').innerText = `+${stats.tasa.toFixed(8)} TON/sec`;
 }
 
-// Datos detallados para el Edificio Central
 window.actualizarModal = function() {
     document.getElementById('data-banco').innerText = stats.negocios.banco.toFixed(8);
-    document.getElementById('data-tienda').innerText = stats.negocios.tienda.toFixed(8);
-    document.getElementById('data-casino').innerText = stats.negocios.casino.toFixed(8);
-    document.getElementById('data-piscina').innerText = stats.negocios.piscina.toFixed(8);
-    
-    const total = Object.values(stats.negocios).reduce((a, b) => a + b, 0);
-    document.getElementById('data-total').innerText = total.toFixed(8);
+    document.getElementById('data-total').innerText = stats.negocios.banco.toFixed(8);
     document.getElementById('data-amigos').innerText = stats.comisionReferidos.toFixed(8);
-}
-
-function recolectarParque() {
-    stats.balance += 0.00005;
-    actualizarPantalla();
-    tg.HapticFeedback.notificationOccurred('success');
 }
 
 window.onload = () => {
     cargarUsuario();
     iniciarContador();
 };
-        
