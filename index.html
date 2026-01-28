@@ -7,141 +7,128 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
-        :root { --primary: #facc15; --bg: #0b0f1a; --card: #161d2f; --text: #ffffff; --accent: #38bdf8; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; }
+        :root { --primary: #facc15; --bg: #0b0f1a; --card: #161d2f; --accent: #38bdf8; --purple: #a855f7; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
         
-        /* Cabecera */
-        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; color: var(--accent); }
-        .user-tag { font-weight: bold; font-size: 0.9rem; }
+        /* Cabecera Premium */
+        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .user-badge { background: rgba(56, 189, 248, 0.15); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--accent); color: var(--accent); font-weight: bold; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); display: flex; align-items: center; gap: 8px; }
 
         /* Balance Principal */
-        .main-balance { text-align: center; margin: 15px 0; }
-        .label { font-size: 0.7rem; color: var(--accent); letter-spacing: 1px; font-weight: bold; margin-bottom: 5px; }
-        .amount { font-size: 2.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .rate { color: #4ade80; font-size: 0.85rem; margin-top: 5px; }
+        .main-balance { text-align: center; margin: 20px 0; }
+        .label { font-size: 0.75rem; color: var(--accent); font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; }
+        .amount { font-size: 2.8rem; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 12px; margin: 8px 0; }
+        .rate { color: #4ade80; font-size: 0.9rem; font-weight: 500; }
 
-        /* Cuadrícula de la Ciudad */
-        .city-container { padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        /* Cuadrícula de Edificios */
+        .city-container { padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         
-        .card { background: var(--card); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid #1e293b; cursor: pointer; position: relative; }
-        .card img { width: 35px; margin-bottom: 8px; }
-        .card h3 { margin: 5px 0; font-size: 0.8rem; text-transform: uppercase; }
-        .card p { margin: 0; font-size: 0.65rem; color: #94a3b8; line-height: 1.2; }
-        .card .status { color: #4ade80; margin-top: 5px; font-size: 0.65rem; font-weight: bold; }
+        .card { background: var(--card); border-radius: 20px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: 0.3s; position: relative; }
+        .card:active { transform: scale(0.95); }
+        .card img { width: 45px; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.2)); }
+        .card h3 { margin: 5px 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card p { margin: 0; font-size: 0.7rem; color: #94a3b8; line-height: 1.3; }
+        .card .status { color: #4ade80; font-size: 0.7rem; font-weight: bold; margin-top: 10px; }
 
-        /* Edificio Central - Grande */
-        .card-large { grid-column: span 2; border: 1px solid var(--primary); background: linear-gradient(145deg, #161d2f, #1e293b); }
-        .card-large h3 { color: var(--primary); font-size: 1.1rem; }
+        /* Edificio Central Neón Amarillo */
+        .card-central { grid-column: span 2; border: 1.5px solid var(--primary); box-shadow: 0 0 20px rgba(250, 204, 21, 0.15); }
+        .card-central h3 { color: var(--primary); font-size: 1.3rem; text-shadow: 0 0 10px rgba(250, 204, 21, 0.3); }
 
-        /* Menú Inferior */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #0f172a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #1e293b; z-index: 1000; }
-        .nav-item { text-align: center; color: #94a3b8; font-size: 0.65rem; cursor: pointer; flex: 1; }
-        .nav-item img { width: 22px; display: block; margin: 0 auto 4px; }
+        /* Bordes Neón */
+        .border-blue { border-bottom: 4px solid var(--accent); box-shadow: 0 5px 15px rgba(56, 189, 248, 0.1); }
+        .border-purple { border-bottom: 4px solid var(--purple); box-shadow: 0 5px 15px rgba(168, 85, 247, 0.1); }
+
+        /* Menú Inferior Navegación */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #0f172a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #1e293b; z-index: 100; }
+        .nav-item { text-align: center; color: #94a3b8; font-size: 0.7rem; flex: 1; font-weight: bold; }
+        .nav-item img { width: 24px; display: block; margin: 0 auto 5px; }
         .nav-item.active { color: var(--accent); }
 
         /* Modales */
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #161d2f; width: 85%; padding: 20px; border-radius: 15px; z-index: 1100; border: 1px solid var(--primary); }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1050; }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #161d2f; width: 85%; padding: 25px; border-radius: 20px; z-index: 200; border: 1px solid var(--primary); }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 150; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="user-tag" id="user-display">@nypermusic</div>
+        <div class="user-badge">
+            <span>💎</span> <span id="user-display">@nypermusic</span>
+        </div>
         <div id="ton-connect-button"></div>
     </div>
 
     <div class="main-balance">
-        <div class="label">CAPITAL DISPONIBLE</div>
+        <div class="label">Capital Disponible</div>
         <div class="amount">
-            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" width="30">
+            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" width="38">
             <span id="balance">0.00000000</span>
         </div>
         <div class="rate" id="income-rate">+0.00000000 TON/sec</div>
     </div>
 
     <div class="city-container">
-        <div class="card card-large" onclick="abrirCentral()">
+        <div class="card card-central" onclick="abrirCentral()">
             <img src="https://cdn-icons-png.flaticon.com/512/2823/2823050.png">
-            <h3>EDIFICIO CENTRAL</h3>
-            <p>Balance de Negocios & Datos</p>
+            <h3>Edificio Central</h3>
+            <p>Balance de Negocios & Referidos (10%)</p>
         </div>
 
-        <div class="card" onclick="invertirEnBanco()">
+        <div class="card border-blue" onclick="invertirEnBanco()">
             <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png">
-            <h3>BANCO</h3>
+            <h3>Banco</h3>
             <p>Staking Automático</p>
             <div class="status">Invertido: <span id="inv-banco-text">0.00</span> TON</div>
         </div>
 
-        <div class="card">
+        <div class="card border-blue">
             <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png">
-            <h3>TIENDA</h3>
+            <h3>Tienda</h3>
             <p>Mejoras de Producción</p>
             <div class="status" style="color:#94a3b8">Nivel 0</div>
         </div>
 
-        <div class="card">
+        <div class="card border-blue">
             <img src="https://cdn-icons-png.flaticon.com/512/1055/1055823.png">
-            <h3>CASINO</h3>
+            <h3>Casino</h3>
             <p>Apuesta tu Suerte</p>
         </div>
 
-        <div class="card">
+        <div class="card border-blue">
             <img src="https://cdn-icons-png.flaticon.com/512/3100/3100611.png">
-            <h3>PISCINAS</h3>
+            <h3>Piscinas</h3>
             <p>Staking Comunitario</p>
         </div>
 
-        <div class="card">
+        <div class="card border-purple">
             <img src="https://cdn-icons-png.flaticon.com/512/3032/3032220.png">
-            <h3>PARQUE</h3>
+            <h3>Parque</h3>
             <p>Bono de Ciudadanos</p>
         </div>
 
-        <div class="card">
+        <div class="card border-purple">
             <img src="https://cdn-icons-png.flaticon.com/512/4323/4323425.png">
-            <h3>DIVERSIONES</h3>
+            <h3>Diversiones</h3>
             <p>Parque de Atracciones</p>
         </div>
     </div>
 
     <div class="nav-bar">
-        <div class="nav-item active">
-            <img src="https://cdn-icons-png.flaticon.com/512/1042/1042502.png"> MEJORAS
-        </div>
-        <div class="nav-item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1216/1216712.png"> AMIGOS
-        </div>
-        <div class="nav-item" onclick="retirarGanancias()">
-            <img src="https://cdn-icons-png.flaticon.com/512/2611/2611110.png"> RETIRAR
-        </div>
+        <div class="nav-item active"><img src="https://cdn-icons-png.flaticon.com/512/1042/1042502.png"> MEJORAS</div>
+        <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/1216/1216712.png"> AMIGOS</div>
+        <div class="nav-item" onclick="retirarGanancias()"><img src="https://cdn-icons-png.flaticon.com/512/2611/2611110.png"> RETIRAR</div>
     </div>
 
     <div class="overlay" id="overlay" onclick="cerrarTodo()"></div>
     <div class="modal" id="modal-central">
-        <h2 style="color:var(--primary); text-align:center;">CIUDAD TON</h2>
-        <hr style="border:0; border-top:1px solid #1e293b;">
-        <p>🏦 Banco: <span id="data-banco">0.00</span> TON</p>
-        <p>🎡 Diversiones: <span id="data-parque">0.00</span> TON</p>
+        <h2 style="color:var(--primary); text-align:center; margin-top:0;">CIUDAD TON</h2>
+        <p>🏦 Balance Banco: <span id="data-banco">0.00</span> TON</p>
         <p>👥 Referidos (10%): <span id="data-amigos">0.00</span> TON</p>
-        <hr style="border:0; border-top:1px solid #1e293b;">
-        <p style="font-weight:bold;">Tu 20% Acumulado: <span id="data-total">0.00</span> TON</p>
-        <button onclick="cerrarTodo()" style="width:100%; padding:12px; background:var(--primary); border:none; border-radius:8px; font-weight:bold; margin-top:10px;">VOLVER</button>
+        <hr style="border:0; border-top:1px solid #1e293b; margin:15px 0;">
+        <p style="font-weight:bold; font-size:1.1rem;">Tu 20% Directo: <span id="data-total">0.00</span> TON</p>
+        <button onclick="cerrarTodo()" style="width:100%; padding:12px; background:var(--primary); border:none; border-radius:10px; font-weight:bold; margin-top:15px;">VOLVER</button>
     </div>
 
     <script src="index.js"></script>
-    <script>
-        function abrirCentral() {
-            if(window.actualizarModalCentral) window.actualizarModalCentral();
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById('modal-central').style.display = 'block';
-        }
-        function cerrarTodo() {
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('modal-central').style.display = 'none';
-        }
-    </script>
 </body>
-    </html>
-            
+</html>
