@@ -7,28 +7,33 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Mantenemos el estilo de la captura 3 y 4 que ya configuramos */
-        body { background-color: #0d1117; color: white; font-family: sans-serif; margin: 0; padding: 10px; padding-bottom: 90px; }
+        body { background-color: #0d1117; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; padding-bottom: 90px; }
         .header { text-align: center; padding: 15px 0; }
         .user-id { color: #58a6ff; font-size: 14px; margin-bottom: 5px; font-weight: bold; }
         .capital-label { color: #58a6ff; font-size: 12px; font-weight: bold; text-transform: uppercase; }
         .balance-main { font-size: 38px; font-weight: bold; margin: 10px 0; display: flex; justify-content: center; align-items: center; gap: 10px; }
         .income-rate { color: #4ade80; font-size: 15px; }
         
+        /* Edificio Central Estilo Captura 3 */
         .main-card { background: #161b22; border: 1px solid #f1c40f; border-radius: 20px; padding: 25px; margin: 20px 10px; text-align: center; cursor: pointer; }
         .main-card .icon-building { font-size: 45px; color: #cbd5e0; margin-bottom: 10px; }
         .main-card h2 { color: #f1c40f; margin: 5px 0; font-size: 22px; text-transform: uppercase; }
         
+        /* Grilla de Negocios Estilo Captura 4 */
         .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px; }
-        .card { background: #1c2128; border-radius: 15px; padding: 20px; text-align: center; border: 1px solid #30363d; }
+        .card { background: #1c2128; border-radius: 15px; padding: 20px; text-align: center; border: 1px solid #30363d; cursor: pointer; }
         .card .emoji { font-size: 30px; margin-bottom: 10px; display: block; }
+        .card h3 { font-size: 14px; margin: 5px 0; text-transform: uppercase; color: #ffffff; }
+        .card p { font-size: 11px; color: #8b949e; margin: 0; }
         
         .btn-park { background: #238636; color: white; border: none; padding: 8px 15px; border-radius: 8px; margin-top: 12px; font-weight: bold; cursor: pointer; width: 100%; }
 
-        /* Modal y Navegación */
+        /* Modal de Datos del Edificio Central */
         #modal-datos { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c2128; border: 2px solid #f1c40f; padding: 25px; border-radius: 20px; z-index: 1000; width: 85%; }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 999; }
         .data-line { display: flex; justify-content: space-between; font-size: 14px; margin: 10px 0; }
+        
+        /* Navegación Inferior */
         .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #161b22; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #30363d; }
         .nav-item { text-align: center; font-size: 11px; color: #8b949e; text-decoration: none; }
         .nav-item.active { color: #58a6ff; }
@@ -48,11 +53,11 @@
         <div style="border-top: 1px solid #30363d; margin: 10px 0;"></div>
         <div class="data-line" style="color: #4ade80;"><span>💰 Ganancia Negocios:</span> <span id="data-total">0.00000000</span></div>
         <div class="data-line" style="color: #58a6ff;"><span>👥 Amigos (10%):</span> <span id="data-amigos">0.00000000</span></div>
-        <button class="close-btn" onclick="cerrarModal()">OK</button>
+        <button class="close-btn" onclick="cerrarModal()">CERRAR</button>
     </div>
 
     <div class="header">
-        <div id="user-display" class="user-id">Cargando usuario...</div>
+        <div id="user-display" class="user-id">@usuario</div>
         <div class="capital-label">Capital Disponible</div>
         <div class="balance-main">💎 <span id="balance">0.00000000</span></div>
         <div id="income-rate" class="income-rate">+0.00000000 TON/sec</div>
@@ -65,17 +70,22 @@
     </div>
 
     <div class="grid-container">
-        <div class="card"><span class="emoji">🏦</span><h3>BANCO</h3><p>Interés por Depósito</p></div>
-        <div class="card"><span class="emoji">🛒</span><h3>TIENDA</h3><p>Mejoras de Producción</p></div>
-        <div class="card"><span class="emoji">🎰</span><h3>CASINO</h3><p>Apuesta tu Suerte</p></div>
-        <div class="card"><span class="emoji">🏊</span><h3>PISCINAS</h3><p>Staking Comunitario</p></div>
+        <div class="card" onclick="abrirMenuBanco()">
+            <span class="emoji">🏦</span>
+            <h3>BANCO</h3>
+            <p>Interés por Depósito</p>
+            <small id="inv-banco" style="color:#4ade80; font-size:9px;">Inv: 0.00</small>
+        </div>
+        <div class="card"><span class="emoji">🛒</span><h3>TIENDA</h3><p>Próximamente</p></div>
+        <div class="card"><span class="emoji">🎰</span><h3>CASINO</h3><p>Próximamente</p></div>
+        <div class="card"><span class="emoji">🏊</span><h3>PISCINAS</h3><p>Próximamente</p></div>
         <div class="card">
             <span class="emoji" style="color: #238636;">🌳</span>
             <h3 style="color: #238636;">PARQUE</h3>
-            <p>TON Gratis cada 2h</p>
+            <p>TON Gratis</p>
             <button class="btn-park" onclick="recolectarParque()">RECOLECTAR</button>
         </div>
-        <div class="card"><span class="emoji" style="color: #a371f7;">🎡</span><h3 style="color: #a371f7;">DIVERSIÓN</h3><p>Tareas y Juegos</p></div>
+        <div class="card"><span class="emoji" style="color: #a371f7;">🎡</span><h3 style="color: #a371f7;">DIVERSIÓN</h3><p>Próximamente</p></div>
     </div>
 
     <nav class="nav-bar">
@@ -86,15 +96,8 @@
 
     <script src="index.js"></script>
     <script>
-        function abrirModal() {
-            document.getElementById('modal-datos').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-            if(typeof actualizarModal === 'function') actualizarModal();
-        }
-        function cerrarModal() {
-            document.getElementById('modal-datos').style.display = 'none';
-            document.getElementById('overlay').style.display = 'none';
-        }
+        function abrirModal() { document.getElementById('modal-datos').style.display = 'block'; document.getElementById('overlay').style.display = 'block'; actualizarModal(); }
+        function cerrarModal() { document.getElementById('modal-datos').style.display = 'none'; document.getElementById('overlay').style.display = 'none'; }
     </script>
 </body>
 </html>
