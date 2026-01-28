@@ -7,82 +7,127 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
-        :root { --primary: #0088cc; --bg: #0f172a; --card: #1e293b; --text: #ffffff; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; }
+        :root { --primary: #facc15; --bg: #0b0f1a; --card: #161d2f; --text: #ffffff; --accent: #38bdf8; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; }
         
-        /* Cabecera con Usuario */
-        .header { width: 90%; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        #user-info { background: var(--card); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--primary); font-weight: bold; }
+        /* Cabecera */
+        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; color: var(--accent); }
+        .user-tag { font-weight: bold; font-size: 0.9rem; }
 
-        .stats-main { text-align: center; margin: 20px 0; }
-        #balance { font-size: 2.5rem; color: #00d4ff; }
+        /* Balance Principal */
+        .main-balance { text-align: center; margin: 15px 0; }
+        .label { font-size: 0.7rem; color: var(--accent); letter-spacing: 1px; font-weight: bold; margin-bottom: 5px; }
+        .amount { font-size: 2.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .rate { color: #4ade80; font-size: 0.85rem; margin-top: 5px; }
 
-        /* Mapa de la Ciudad */
-        .city-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 92%; }
-        .building { background: var(--card); padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; border-bottom: 3px solid var(--primary); }
+        /* Cuadrícula de la Ciudad */
+        .city-container { padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         
-        /* Edificios Especiales */
-        .central { grid-column: span 2; border-bottom-color: #f59e0b; background: linear-gradient(to right, #1e293b, #334155); }
-        .parque { border-bottom-color: #a855f7; } /* Color morado para el parque */
+        .card { background: var(--card); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid #1e293b; cursor: pointer; position: relative; }
+        .card img { width: 35px; margin-bottom: 8px; }
+        .card h3 { margin: 5px 0; font-size: 0.8rem; text-transform: uppercase; }
+        .card p { margin: 0; font-size: 0.65rem; color: #94a3b8; line-height: 1.2; }
+        .card .status { color: #4ade80; margin-top: 5px; font-size: 0.65rem; font-weight: bold; }
 
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card); width: 80%; padding: 20px; border-radius: 15px; z-index: 100; border: 1px solid var(--primary); }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 99; }
+        /* Edificio Central - Grande */
+        .card-large { grid-column: span 2; border: 1px solid var(--primary); background: linear-gradient(145deg, #161d2f, #1e293b); }
+        .card-large h3 { color: var(--primary); font-size: 1.1rem; }
+
+        /* Menú Inferior */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #0f172a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #1e293b; z-index: 1000; }
+        .nav-item { text-align: center; color: #94a3b8; font-size: 0.65rem; cursor: pointer; flex: 1; }
+        .nav-item img { width: 22px; display: block; margin: 0 auto 4px; }
+        .nav-item.active { color: var(--accent); }
+
+        /* Modales */
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #161d2f; width: 85%; padding: 20px; border-radius: 15px; z-index: 1100; border: 1px solid var(--primary); }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1050; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div id="user-info">👤 <span id="user-display">@Usuario</span></div>
+        <div class="user-tag" id="user-display">@nypermusic</div>
         <div id="ton-connect-button"></div>
     </div>
 
-    <div class="stats-main">
-        <div id="balance">0.00000000</div>
-        <div id="income-rate">+0.00000000 TON/sec</div>
+    <div class="main-balance">
+        <div class="label">CAPITAL DISPONIBLE</div>
+        <div class="amount">
+            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" width="30">
+            <span id="balance">0.00000000</span>
+        </div>
+        <div class="rate" id="income-rate">+0.00000000 TON/sec</div>
     </div>
 
-    <div class="city-grid">
-        <div class="building central" onclick="abrirCentral()">
-            <h3>🏢 Edificio Central</h3>
-            <p>Datos y Referidos (10%)</p>
+    <div class="city-container">
+        <div class="card card-large" onclick="abrirCentral()">
+            <img src="https://cdn-icons-png.flaticon.com/512/2823/2823050.png">
+            <h3>EDIFICIO CENTRAL</h3>
+            <p>Balance de Negocios & Datos</p>
         </div>
 
-        <div class="building" onclick="invertirEnBanco()">
-            <h3>🏦 Banco</h3>
-            <p id="inv-banco">Staking Automático</p>
+        <div class="card" onclick="invertirEnBanco()">
+            <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png">
+            <h3>BANCO</h3>
+            <p>Staking Automático</p>
+            <div class="status">Invertido: <span id="inv-banco-text">0.00</span> TON</div>
         </div>
 
-        <div class="building parque" onclick="abrirParque()">
-            <h3>🎡 Parque Diversiones</h3>
-            <p>Mejoras de Ciudad</p>
+        <div class="card">
+            <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png">
+            <h3>TIENDA</h3>
+            <p>Mejoras de Producción</p>
+            <div class="status" style="color:#94a3b8">Nivel 0</div>
         </div>
 
-        <div class="building">
-            <h3>🛒 Tienda</h3>
-            <p>Compras</p>
+        <div class="card">
+            <img src="https://cdn-icons-png.flaticon.com/512/1055/1055823.png">
+            <h3>CASINO</h3>
+            <p>Apuesta tu Suerte</p>
         </div>
 
-        <div class="building">
-            <h3>🎰 Casino</h3>
-            <p>Jugar TON</p>
+        <div class="card">
+            <img src="https://cdn-icons-png.flaticon.com/512/3100/3100611.png">
+            <h3>PISCINAS</h3>
+            <p>Staking Comunitario</p>
+        </div>
+
+        <div class="card">
+            <img src="https://cdn-icons-png.flaticon.com/512/3032/3032220.png">
+            <h3>PARQUE</h3>
+            <p>Bono de Ciudadanos</p>
+        </div>
+
+        <div class="card">
+            <img src="https://cdn-icons-png.flaticon.com/512/4323/4323425.png">
+            <h3>DIVERSIONES</h3>
+            <p>Parque de Atracciones</p>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active">
+            <img src="https://cdn-icons-png.flaticon.com/512/1042/1042502.png"> MEJORAS
+        </div>
+        <div class="nav-item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1216/1216712.png"> AMIGOS
+        </div>
+        <div class="nav-item" onclick="retirarGanancias()">
+            <img src="https://cdn-icons-png.flaticon.com/512/2611/2611110.png"> RETIRAR
         </div>
     </div>
 
     <div class="overlay" id="overlay" onclick="cerrarTodo()"></div>
-    
     <div class="modal" id="modal-central">
-        <h3>🏢 Reporte de Negocios</h3>
-        <p>Banco: <span id="data-banco">0.00</span> TON</p>
-        <p>Tu 20% Directo: <span id="data-total">0.00</span> TON</p>
-        <p>Comisión Invitados (10%): <span id="data-amigos">0.00</span> TON</p>
-        <button onclick="cerrarTodo()" style="width:100%; padding:10px; margin-top:10px;">Cerrar</button>
-    </div>
-
-    <div class="modal" id="modal-parque">
-        <h3>🎡 Parque de Diversiones</h3>
-        <p>Aumenta la productividad de tus ciudadanos.</p>
-        <button style="width:100%; padding:10px; background:#a855f7; color:white; border:none; border-radius:5px;">Comprar Montaña Rusa (+5%)</button>
-        <button onclick="cerrarTodo()" style="width:100%; padding:10px; margin-top:10px;">Cerrar</button>
+        <h2 style="color:var(--primary); text-align:center;">CIUDAD TON</h2>
+        <hr style="border:0; border-top:1px solid #1e293b;">
+        <p>🏦 Banco: <span id="data-banco">0.00</span> TON</p>
+        <p>🎡 Diversiones: <span id="data-parque">0.00</span> TON</p>
+        <p>👥 Referidos (10%): <span id="data-amigos">0.00</span> TON</p>
+        <hr style="border:0; border-top:1px solid #1e293b;">
+        <p style="font-weight:bold;">Tu 20% Acumulado: <span id="data-total">0.00</span> TON</p>
+        <button onclick="cerrarTodo()" style="width:100%; padding:12px; background:var(--primary); border:none; border-radius:8px; font-weight:bold; margin-top:10px;">VOLVER</button>
     </div>
 
     <script src="index.js"></script>
@@ -92,15 +137,11 @@
             document.getElementById('overlay').style.display = 'block';
             document.getElementById('modal-central').style.display = 'block';
         }
-        function abrirParque() {
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById('modal-parque').style.display = 'block';
-        }
         function cerrarTodo() {
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('modal-central').style.display = 'none';
-            document.getElementById('modal-parque').style.display = 'none';
         }
     </script>
 </body>
-</html>
+    </html>
+            
