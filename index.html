@@ -3,41 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ton City</title>
+    <title>Ton City - Staking Automático</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    
     <style>
-        body { background-color: #0d1117; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; padding-bottom: 90px; }
-        .header { text-align: center; padding: 15px 0; }
-        .user-id { color: #58a6ff; font-size: 14px; margin-bottom: 5px; font-weight: bold; }
-        .capital-label { color: #58a6ff; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .balance-main { font-size: 38px; font-weight: bold; margin: 10px 0; display: flex; justify-content: center; align-items: center; gap: 10px; }
-        .income-rate { color: #4ade80; font-size: 15px; }
-        
-        /* TonConnect Button Style */
-        #ton-connect-button { display: flex; justify-content: center; margin-bottom: 15px; }
+        /* DISEÑO PROFESIONAL BASADO EN TUS CAPTURAS */
+        body {
+            background-color: #0d1117;
+            color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            padding-bottom: 100px; /* Espacio para el menú inferior */
+            user-select: none;
+        }
 
-        /* Edificio Central Estilo Captura 3 */
-        .main-card { background: #161b22; border: 1px solid #f1c40f; border-radius: 20px; padding: 25px; margin: 20px 10px; text-align: center; cursor: pointer; }
-        .main-card .icon-building { font-size: 45px; color: #cbd5e0; margin-bottom: 10px; }
-        .main-card h2 { color: #f1c40f; margin: 5px 0; font-size: 22px; text-transform: uppercase; }
-        
-        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px; }
-        .card { background: #1c2128; border-radius: 15px; padding: 20px; text-align: center; border: 1px solid #30363d; cursor: pointer; }
-        .card .emoji { font-size: 30px; margin-bottom: 10px; display: block; }
-        
-        .btn-park { background: #238636; color: white; border: none; padding: 8px 15px; border-radius: 8px; margin-top: 12px; font-weight: bold; cursor: pointer; width: 100%; }
+        /* Encabezado de Capital */
+        .header { text-align: center; padding: 20px 0; }
+        .user-id { color: #58a6ff; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+        .capital-label { color: #58a6ff; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .balance-main { font-size: 40px; font-weight: bold; margin: 10px 0; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .income-rate { color: #4ade80; font-size: 16px; font-weight: 500; }
 
-        /* Modal */
-        #modal-datos { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c2128; border: 2px solid #f1c40f; padding: 25px; border-radius: 20px; z-index: 1000; width: 85%; }
+        /* Edificio Central (Captura 3) */
+        .main-card {
+            background: #161b22;
+            border: 1px solid #f1c40f; /* Borde dorado */
+            border-radius: 20px;
+            padding: 25px;
+            margin: 20px 10px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(241, 196, 15, 0.1);
+        }
+        .main-card .icon-building { font-size: 50px; color: #cbd5e0; margin-bottom: 10px; }
+        .main-card h2 { color: #f1c40f; margin: 5px 0; font-size: 24px; text-transform: uppercase; }
+        .main-card p { color: #8b949e; font-size: 14px; margin: 0; }
+
+        /* Cuadrícula de Negocios (Captura 4) */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 10px;
+        }
+        .card {
+            background: #1c2128;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #30363d;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .card:active { background: #21262d; }
+        .card .emoji { font-size: 32px; margin-bottom: 10px; display: block; }
+        .card h3 { font-size: 14px; margin: 5px 0; text-transform: uppercase; color: #ffffff; }
+        .card p { font-size: 11px; color: #8b949e; margin: 0; }
+        .card .stats-small { color: #4ade80; font-size: 10px; font-weight: bold; margin-top: 5px; display: block; }
+
+        /* Botón Recolectar Parque */
+        .btn-park {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* Modal de Datos (Edificio Central) */
+        #modal-datos {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1c2128;
+            border: 2px solid #f1c40f;
+            padding: 25px;
+            border-radius: 20px;
+            z-index: 1000;
+            width: 85%;
+            box-shadow: 0 0 40px rgba(0,0,0,0.9);
+        }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 999; }
-        .data-line { display: flex; justify-content: space-between; font-size: 14px; margin: 10px 0; }
-        
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #161b22; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #30363d; }
-        .nav-item { text-align: center; font-size: 11px; color: #8b949e; text-decoration: none; }
+        .data-line { display: flex; justify-content: space-between; font-size: 15px; margin: 12px 0; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
+        .close-btn { background: #f1c40f; color: #000; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; margin-top: 15px; cursor: pointer; text-transform: uppercase; }
+
+        /* Navegación Inferior */
+        .nav-bar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: #161b22;
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            border-top: 1px solid #30363d;
+            z-index: 10;
+        }
+        .nav-item { text-align: center; font-size: 11px; color: #8b949e; text-decoration: none; font-weight: bold; }
         .nav-item.active { color: #58a6ff; }
-        .close-btn { background: #f1c40f; color: #000; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .nav-item span { font-size: 22px; display: block; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -45,20 +116,19 @@
     <div class="modal-overlay" id="overlay" onclick="cerrarModal()"></div>
 
     <div id="modal-datos">
-        <div style="color: #f1c40f; text-align: center; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #30363d; padding-bottom: 10px;">🏢 DATOS DE TU CIUDAD</div>
-        <div class="data-line"><span>🏦 Banco:</span> <span id="data-banco">0.00000000</span></div>
+        <div style="color: #f1c40f; text-align: center; font-weight: bold; margin-bottom: 20px; font-size: 18px;">🏢 DATOS DE TU CIUDAD</div>
+        <div class="data-line"><span>🏦 Banco (Staking):</span> <span id="data-banco">0.00000000</span></div>
         <div class="data-line"><span>🛒 Tienda:</span> <span id="data-tienda">0.00000000</span></div>
         <div class="data-line"><span>🎰 Casino:</span> <span id="data-casino">0.00000000</span></div>
         <div class="data-line"><span>🏊 Piscinas:</span> <span id="data-piscina">0.00000000</span></div>
-        <div style="border-top: 1px solid #30363d; margin: 10px 0;"></div>
-        <div class="data-line" style="color: #4ade80;"><span>💰 Ganancia Negocios:</span> <span id="data-total">0.00000000</span></div>
+        <div style="margin: 20px 0; border-top: 2px dashed #30363d;"></div>
+        <div class="data-line" style="color: #4ade80; font-weight: bold;"><span>💰 Ganancia Negocios:</span> <span id="data-total">0.00000000</span></div>
         <div class="data-line" style="color: #58a6ff;"><span>👥 Amigos (10%):</span> <span id="data-amigos">0.00000000</span></div>
-        <button class="close-btn" onclick="cerrarModal()">CERRAR</button>
+        <button class="close-btn" onclick="cerrarModal()">ENTENDIDO</button>
     </div>
 
     <div class="header">
-        <div id="ton-connect-button"></div>
-        <div id="user-display" class="user-id">@usuario</div>
+        <div id="user-display" class="user-id">@Cargando...</div>
         <div class="capital-label">Capital Disponible</div>
         <div class="balance-main">💎 <span id="balance">0.00000000</span></div>
         <div id="income-rate" class="income-rate">+0.00000000 TON/sec</div>
@@ -71,35 +141,68 @@
     </div>
 
     <div class="grid-container">
-        <div class="card" onclick="menuBanco()">
+        <div class="card" onclick="invertirEnBanco()">
             <span class="emoji">🏦</span>
             <h3>BANCO</h3>
-            <p>Interés por Depósito</p>
-            <small id="inv-banco" style="color:#4ade80; font-size:9px;">Invertido: 0.00</small>
+            <p>Staking Automático</p>
+            <span id="inv-banco" class="stats-small">Invertido: 0.00 TON</span>
         </div>
-        <div class="card"><span class="emoji">🛒</span><h3>TIENDA</h3><p>Próximamente</p></div>
-        <div class="card"><span class="emoji">🎰</span><h3>CASINO</h3><p>Próximamente</p></div>
-        <div class="card"><span class="emoji">🏊</span><h3>PISCINAS</h3><p>Próximamente</p></div>
+
+        <div class="card">
+            <span class="emoji">🛒</span>
+            <h3>TIENDA</h3>
+            <p>Mejoras de Producción</p>
+            <span class="stats-small">Nivel 0</span>
+        </div>
+
+        <div class="card">
+            <span class="emoji">🎰</span>
+            <h3>CASINO</h3>
+            <p>Apuesta tu Suerte</p>
+            <span class="stats-small" style="color:#e74c3c;">Cerrado</span>
+        </div>
+
+        <div class="card">
+            <span class="emoji">🏊</span>
+            <h3>PISCINAS</h3>
+            <p>Staking Comunitario</p>
+            <span class="stats-small">0 Participantes</span>
+        </div>
+
         <div class="card">
             <span class="emoji" style="color: #238636;">🌳</span>
             <h3 style="color: #238636;">PARQUE</h3>
-            <p>TON Gratis</p>
+            <p>TON Gratis cada 2h</p>
             <button class="btn-park" onclick="recolectarParque()">RECOLECTAR</button>
         </div>
-        <div class="card"><span class="emoji" style="color: #a371f7;">🎡</span><h3 style="color: #a371f7;">DIVERSIÓN</h3><p>Próximamente</p></div>
+
+        <div class="card">
+            <span class="emoji" style="color: #a371f7;">🎡</span>
+            <h3 style="color: #a371f7;">DIVERSIÓN</h3>
+            <p>Tareas y Juegos</p>
+            <span class="stats-small">Nuevas tareas</span>
+        </div>
     </div>
 
     <nav class="nav-bar">
-        <a href="#" class="nav-item active">🚀<br>MEJORAS</a>
-        <a href="#" class="nav-item">👥<br>AMIGOS</a>
-        <a href="#" class="nav-item">💳<br>RETIRAR</a>
+        <a href="#" class="nav-item active"><span>🚀</span>MEJORAS</a>
+        <a href="#" class="nav-item"><span>👥</span>AMIGOS</a>
+        <a href="#" class="nav-item"><span>💳</span>RETIRAR</a>
     </nav>
 
     <script src="index.js"></script>
     <script>
-        function abrirModal() { document.getElementById('modal-datos').style.display = 'block'; document.getElementById('overlay').style.display = 'block'; actualizarModal(); }
-        function cerrarModal() { document.getElementById('modal-datos').style.display = 'none'; document.getElementById('overlay').style.display = 'none'; }
+        // Funciones de UI
+        function abrirModal() {
+            document.getElementById('modal-datos').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+            if(typeof actualizarModal === 'function') actualizarModal();
+        }
+        function cerrarModal() {
+            document.getElementById('modal-datos').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
     </script>
 </body>
-    </html>
-    
+                                                             </html>
+                                                             
