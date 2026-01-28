@@ -6,7 +6,6 @@
     <title>Ton City</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* CSS INTEGRADO PARA QUE SE VEA COMO LA FOTO 3 Y 4 */
         body {
             background-color: #0d1117;
             color: white;
@@ -18,28 +17,25 @@
 
         /* Encabezado Capital */
         .header { text-align: center; padding: 15px 0; }
-        .user-id { color: #58a6ff; font-size: 14px; margin-bottom: 5px; }
-        .capital-label { color: #58a6ff; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .capital-label { color: #58a6ff; font-size: 12px; font-weight: bold; text-transform: uppercase; }
         .balance-main { font-size: 38px; font-weight: bold; margin: 10px 0; display: flex; justify-content: center; align-items: center; gap: 10px; }
         .income-rate { color: #4ade80; font-size: 15px; }
 
         /* Edificio Central (Copiado de la Foto 3) */
         .main-card {
             background: #161b22;
-            border: 1px solid #f1c40f; /* Borde dorado como la imagen */
+            border: 1px solid #f1c40f; 
             border-radius: 20px;
             padding: 25px;
             margin: 20px 10px;
             text-align: center;
             cursor: pointer;
-            transition: transform 0.2s;
         }
-        .main-card:active { transform: scale(0.97); }
         .main-card .icon-building { font-size: 45px; color: #cbd5e0; margin-bottom: 10px; }
         .main-card h2 { color: #f1c40f; margin: 5px 0; font-size: 22px; text-transform: uppercase; }
         .main-card p { color: #8b949e; font-size: 13px; margin: 0; }
 
-        /* Cuadrícula de Negocios (2 Columnas) */
+        /* Cuadrícula de Negocios (2 Columnas - Foto 4) */
         .grid-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -53,11 +49,11 @@
             text-align: center;
             border: 1px solid #30363d;
         }
-        .card img, .card .emoji { font-size: 30px; margin-bottom: 10px; display: block; }
+        .card .emoji { font-size: 30px; margin-bottom: 10px; display: block; }
         .card h3 { font-size: 14px; margin: 5px 0; text-transform: uppercase; color: #ffffff; }
         .card p { font-size: 11px; color: #8b949e; margin: 0; }
 
-        /* Botón Recolectar Parque */
+        /* Botón Parque */
         .btn-park {
             background: #238636;
             color: white;
@@ -82,9 +78,8 @@
         }
         .nav-item { text-align: center; font-size: 11px; color: #8b949e; text-decoration: none; }
         .nav-item.active { color: #58a6ff; }
-        .nav-item i { font-size: 20px; display: block; margin-bottom: 4px; }
 
-        /* Ventana de Datos (Modal) */
+        /* Modal de Datos */
         #modal-datos {
             display: none;
             position: fixed;
@@ -95,13 +90,11 @@
             padding: 25px;
             border-radius: 20px;
             z-index: 1000;
-            width: 80%;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            width: 85%;
         }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 999; }
-        .modal-header { color: #f1c40f; font-weight: bold; border-bottom: 1px solid #30363d; padding-bottom: 10px; margin-bottom: 15px; text-align: center; }
-        .data-line { display: flex; justify-content: space-between; font-size: 14px; margin: 8px 0; }
-        .close-btn { background: #f1c40f; color: #000; border: none; padding: 10px; width: 100%; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 999; }
+        .data-line { display: flex; justify-content: space-between; font-size: 14px; margin: 10px 0; }
+        .close-btn { background: #f1c40f; color: #000; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -109,7 +102,7 @@
     <div class="modal-overlay" id="overlay" onclick="cerrarModal()"></div>
 
     <div id="modal-datos">
-        <div class="modal-header">🏢 RESUMEN DE LA CIUDAD</div>
+        <div style="color: #f1c40f; text-align: center; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #30363d; padding-bottom: 10px;">🏢 DATOS DE TU CIUDAD</div>
         <div class="data-line"><span>🏦 Banco:</span> <span id="data-banco">0.00000000</span></div>
         <div class="data-line"><span>🛒 Tienda:</span> <span id="data-tienda">0.00000000</span></div>
         <div class="data-line"><span>🎰 Casino:</span> <span id="data-casino">0.00000000</span></div>
@@ -117,14 +110,13 @@
         <div style="border-top: 1px solid #30363d; margin: 10px 0;"></div>
         <div class="data-line" style="color: #4ade80;"><span>💰 Ganancia Negocios:</span> <span id="data-total">0.00000000</span></div>
         <div class="data-line" style="color: #58a6ff;"><span>👥 Amigos (10%):</span> <span id="data-amigos">0.00000000</span></div>
-        <button class="close-btn" onclick="cerrarModal()">CERRAR</button>
+        <button class="close-btn" onclick="cerrarModal()">OK</button>
     </div>
 
     <div class="header">
-        <div class="user-id">@usuario_cuba</div>
         <div class="capital-label">Capital Disponible</div>
         <div class="balance-main">💎 <span id="balance">0.00000000</span></div>
-        <div class="income-rate">+0.00000000 TON/sec</div>
+        <div class="income-rate">+0.00000005 TON/sec</div>
     </div>
 
     <div class="main-card" onclick="abrirModal()">
@@ -134,37 +126,17 @@
     </div>
 
     <div class="grid-container">
-        <div class="card">
-            <span class="emoji">🏦</span>
-            <h3>BANCO</h3>
-            <p>Interés por Depósito</p>
-        </div>
-        <div class="card">
-            <span class="emoji">🛒</span>
-            <h3>TIENDA</h3>
-            <p>Mejoras de Producción</p>
-        </div>
-        <div class="card">
-            <span class="emoji">🎰</span>
-            <h3>CASINO</h3>
-            <p>Apuesta tu Suerte</p>
-        </div>
-        <div class="card">
-            <span class="emoji">🏊</span>
-            <h3>PISCINAS</h3>
-            <p>Staking Comunitario</p>
-        </div>
+        <div class="card"><span class="emoji">🏦</span><h3>BANCO</h3><p>Interés por Depósito</p></div>
+        <div class="card"><span class="emoji">🛒</span><h3>TIENDA</h3><p>Mejoras de Producción</p></div>
+        <div class="card"><span class="emoji">🎰</span><h3>CASINO</h3><p>Apuesta tu Suerte</p></div>
+        <div class="card"><span class="emoji">🏊</span><h3>PISCINAS</h3><p>Staking Comunitario</p></div>
         <div class="card">
             <span class="emoji" style="color: #238636;">🌳</span>
             <h3 style="color: #238636;">PARQUE</h3>
             <p>TON Gratis cada 2h</p>
-            <button class="btn-park">RECOLECTAR</button>
+            <button class="btn-park" onclick="recolectarParque()">RECOLECTAR</button>
         </div>
-        <div class="card">
-            <span class="emoji" style="color: #a371f7;">🎡</span>
-            <h3 style="color: #a371f7;">DIVERSIÓN</h3>
-            <p>Tareas y Juegos</p>
-        </div>
+        <div class="card"><span class="emoji" style="color: #a371f7;">🎡</span><h3 style="color: #a371f7;">DIVERSIÓN</h3><p>Tareas y Juegos</p></div>
     </div>
 
     <nav class="nav-bar">
@@ -175,10 +147,10 @@
 
     <script src="index.js"></script>
     <script>
-        // Funciones para manejar el Edificio Central
         function abrirModal() {
             document.getElementById('modal-datos').style.display = 'block';
             document.getElementById('overlay').style.display = 'block';
+            if(typeof actualizarModal === 'function') actualizarModal();
         }
         function cerrarModal() {
             document.getElementById('modal-datos').style.display = 'none';
@@ -186,5 +158,5 @@
         }
     </script>
 </body>
-                </html>
-                
+    </html>
+    
