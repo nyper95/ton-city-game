@@ -1,78 +1,95 @@
-// --- CONFIGURACIÓN INICIAL ---
-const tg = window.Telegram.WebApp;
-tg.expand();
+// Configuración de Supabase
+const SUPABASE_URL = "https://xkkifqxxglcuyruwkbih.supabase.co";
+const SUPABASE_KEY = "sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE";
+// Importamos el cliente de Supabase (asegúrate de incluir el script en el HTML)
+const { createClient } = supabase;
+const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Estado del usuario (Esto luego lo conectarás a una base de datos)
-let userData = {
-    balance: 0.00000000,
-    prodPerSec: 0.00000000, // Empieza en 0
-    lastUpdate: Date.now(),
-    lastParkClaim: 0 // Timestamp del último reclamo en el parque
+// Variables globales del usuario
+let userId = null; 
+let userStats = {
+    balance: 0.0,
+    acumulado: 0.0,
+    comision_amigos: 0.0,
+    prod_seg: 0.00000037 // Nivel 1 base
 };
 
-// --- ELEMENTOS DEL DOM ---
-const balanceEl = document.getElementById('balance-val');
-const rateEl = document.getElementById('mining-rate');
-const userDisplay = document.getElementById('user-display');
+// 1. Inicializar datos al cargar la App
+async function initUser() {
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    userId = tg.initDataUnsafe.user?.id || "test_user"; // ID de Telegram
 
-// Mostrar nombre de Telegram
-if (tg.initDataUnsafe?.user) {
-    const user = tg.initDataUnsafe.user;
-    userDisplay.innerText = user.username ? `@${user.username}` : user.first_name.toUpperCase();
-}
+    // Intentar obtener datos de la tabla 'users'
+    let { data: user, error } = await _supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-// --- LÓGICA DE PRODUCCIÓN ---
-
-function updateMining() {
-    const now = Date.now();
-    const deltaTime = (now - userData.lastUpdate) / 1000; // Segundos transcurridos
-    
-    if (userData.prodPerSec > 0) {
-        userData.balance += userData.prodPerSec * deltaTime;
-        renderBalance();
+    if (error && error.code === 'PGRST116') {
+        // Si el usuario no existe, lo creamos (Nuevo Ciudadano)
+        const { data } = await _supabase.from('users').insert([
+            { id: userId, balance: 0, acumulado: 0, comision_amigos: 0 }
+        ]);
+        console.log("Nuevo ciudadano registrado en Ton City");
+    } else {
+        userStats = user;
     }
+    actualizarInterfaz();
+}
+
+// 2. Lógica de producción (Cada segundo)
+setInterval(async () => {
+    if (!userId) return;
+
+    // Calculamos el 80% para el usuario
+    userStats.acumulado += userStats.prod_seg * 0.8;
     
-    userData.lastUpdate = now;
-    requestAnimationFrame(updateMining); // Bucle suave
+    // Actualizamos visualmente
+    actualizarInterfaz();
+    
+    // Guardamos en Supabase cada 30 segundos para no saturar la API
+    // (En producción puedes ajustar este tiempo)
+    if (Math.floor(Date.now() / 1000) % 30 === 0) {
+        saveToSupabase();
+    }
+}, 1000);
+
+// 3. Función para guardar progreso
+async function saveToSupabase() {
+    await _supabase
+        .from('users')
+        .update({ 
+            balance: userStats.balance, 
+            acumulado: userStats.acumulado,
+            comision_amigos: userStats.comision_amigos 
+        })
+        .eq('id', userId);
 }
 
-function renderBalance() {
-    // Mostramos 8 decimales para que se vea el movimiento tipo "faucet"
-    balanceEl.innerText = userData.balance.toFixed(8);
-    rateEl.innerText = `+${userData.prodPerSec.toFixed(8)} TON/sec`;
+// 4. Recolección en el Edificio Central
+async function recolectarGanancias() {
+    userStats.balance += (userStats.acumulado + userStats.comision_amigos);
+    userStats.acumulado = 0;
+    userStats.comision_amigos = 0;
+    
+    await saveToSupabase();
+    actualizarInterfaz();
+    alert("¡TON recolectado y guardado en la nube!");
 }
 
-// --- ACCIONES DE LOS NEGOCIOS ---
+function actualizarInterfaz() {
+    document.getElementById('main-balance').innerText = userStats.balance.toFixed(8);
+    document.getElementById('accumulated-profit').innerText = userStats.acumulado.toFixed(8);
+    document.getElementById('ref-profit').innerText = userStats.comision_amigos.toFixed(8);
 
-// Función para el Parque (Gratis cada 2 horas)
-function recolectarParque() {
-    const now = Date.now();
-    const cooldown = 2 * 60 * 60 * 1000; // 2 horas en milisegundos
+    const btnWithdraw = document.getElementById('btn-withdraw');
+    if (userStats.balance >= 1.0) {
+        btnWithdraw.disabled = false;
+        btnWithdraw.classList.add('active');
+    }
+}
 
-    if (now - userData.lastParkClaim >= cooldown) {
-        const premio = 0.0005; // Cantidad de TON gratis
-        userData.balance += premio;
-        userData.lastParkClaim = now;
+initUser();
         
-        tg.showAlert(`¡Has recolectado ${premio} TON en el Parque!`);
-        renderBalance();
-    } else {
-        const restante = Math.ceil((cooldown - (now - userData.lastParkClaim)) / 60000);
-        tg.showAlert(`El parque está vacío. Vuelve en ${restante} minutos.`);
-    }
-}
-
-// Función para simular compra de mejoras en la Tienda
-function comprarMejora(costo, aumentoProd) {
-    if (userData.balance >= costo) {
-        userData.balance -= costo;
-        userData.prodPerSec += aumentoProd;
-        tg.HapticFeedback.notificationOccurred('success');
-        renderBalance();
-    } else {
-        tg.showAlert("No tienes suficiente TON para esta mejora.");
-    }
-}
-
-// Iniciar el loop
-requestAnimationFrame(updateMining);
