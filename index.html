@@ -2,207 +2,105 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ton City - Staking Automático</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ton City 💎</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    
     <style>
-        /* DISEÑO PROFESIONAL BASADO EN TUS CAPTURAS */
-        body {
-            background-color: #0d1117;
-            color: white;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 10px;
-            padding-bottom: 100px; /* Espacio para el menú inferior */
-            user-select: none;
-        }
+        :root { --primary: #0088cc; --bg: #0f172a; --card: #1e293b; --text: #ffffff; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Cabecera con Usuario */
+        .header { width: 90%; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        #user-info { background: var(--card); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--primary); font-weight: bold; }
 
-        /* Encabezado de Capital */
-        .header { text-align: center; padding: 20px 0; }
-        .user-id { color: #58a6ff; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
-        .capital-label { color: #58a6ff; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-        .balance-main { font-size: 40px; font-weight: bold; margin: 10px 0; display: flex; justify-content: center; align-items: center; gap: 10px; }
-        .income-rate { color: #4ade80; font-size: 16px; font-weight: 500; }
+        .stats-main { text-align: center; margin: 20px 0; }
+        #balance { font-size: 2.5rem; color: #00d4ff; }
 
-        /* Edificio Central (Captura 3) */
-        .main-card {
-            background: #161b22;
-            border: 1px solid #f1c40f; /* Borde dorado */
-            border-radius: 20px;
-            padding: 25px;
-            margin: 20px 10px;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(241, 196, 15, 0.1);
-        }
-        .main-card .icon-building { font-size: 50px; color: #cbd5e0; margin-bottom: 10px; }
-        .main-card h2 { color: #f1c40f; margin: 5px 0; font-size: 24px; text-transform: uppercase; }
-        .main-card p { color: #8b949e; font-size: 14px; margin: 0; }
+        /* Mapa de la Ciudad */
+        .city-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 92%; }
+        .building { background: var(--card); padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; border-bottom: 3px solid var(--primary); }
+        
+        /* Edificios Especiales */
+        .central { grid-column: span 2; border-bottom-color: #f59e0b; background: linear-gradient(to right, #1e293b, #334155); }
+        .parque { border-bottom-color: #a855f7; } /* Color morado para el parque */
 
-        /* Cuadrícula de Negocios (Captura 4) */
-        .grid-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            padding: 10px;
-        }
-        .card {
-            background: #1c2128;
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            border: 1px solid #30363d;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .card:active { background: #21262d; }
-        .card .emoji { font-size: 32px; margin-bottom: 10px; display: block; }
-        .card h3 { font-size: 14px; margin: 5px 0; text-transform: uppercase; color: #ffffff; }
-        .card p { font-size: 11px; color: #8b949e; margin: 0; }
-        .card .stats-small { color: #4ade80; font-size: 10px; font-weight: bold; margin-top: 5px; display: block; }
-
-        /* Botón Recolectar Parque */
-        .btn-park {
-            background: #238636;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        /* Modal de Datos (Edificio Central) */
-        #modal-datos {
-            display: none;
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1c2128;
-            border: 2px solid #f1c40f;
-            padding: 25px;
-            border-radius: 20px;
-            z-index: 1000;
-            width: 85%;
-            box-shadow: 0 0 40px rgba(0,0,0,0.9);
-        }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 999; }
-        .data-line { display: flex; justify-content: space-between; font-size: 15px; margin: 12px 0; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
-        .close-btn { background: #f1c40f; color: #000; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; margin-top: 15px; cursor: pointer; text-transform: uppercase; }
-
-        /* Navegación Inferior */
-        .nav-bar {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: #161b22;
-            display: flex;
-            justify-content: space-around;
-            padding: 15px 0;
-            border-top: 1px solid #30363d;
-            z-index: 10;
-        }
-        .nav-item { text-align: center; font-size: 11px; color: #8b949e; text-decoration: none; font-weight: bold; }
-        .nav-item.active { color: #58a6ff; }
-        .nav-item span { font-size: 22px; display: block; margin-bottom: 5px; }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card); width: 80%; padding: 20px; border-radius: 15px; z-index: 100; border: 1px solid var(--primary); }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 99; }
     </style>
 </head>
 <body>
 
-    <div class="modal-overlay" id="overlay" onclick="cerrarModal()"></div>
-
-    <div id="modal-datos">
-        <div style="color: #f1c40f; text-align: center; font-weight: bold; margin-bottom: 20px; font-size: 18px;">🏢 DATOS DE TU CIUDAD</div>
-        <div class="data-line"><span>🏦 Banco (Staking):</span> <span id="data-banco">0.00000000</span></div>
-        <div class="data-line"><span>🛒 Tienda:</span> <span id="data-tienda">0.00000000</span></div>
-        <div class="data-line"><span>🎰 Casino:</span> <span id="data-casino">0.00000000</span></div>
-        <div class="data-line"><span>🏊 Piscinas:</span> <span id="data-piscina">0.00000000</span></div>
-        <div style="margin: 20px 0; border-top: 2px dashed #30363d;"></div>
-        <div class="data-line" style="color: #4ade80; font-weight: bold;"><span>💰 Ganancia Negocios:</span> <span id="data-total">0.00000000</span></div>
-        <div class="data-line" style="color: #58a6ff;"><span>👥 Amigos (10%):</span> <span id="data-amigos">0.00000000</span></div>
-        <button class="close-btn" onclick="cerrarModal()">ENTENDIDO</button>
-    </div>
-
     <div class="header">
-        <div id="user-display" class="user-id">@Cargando...</div>
-        <div class="capital-label">Capital Disponible</div>
-        <div class="balance-main">💎 <span id="balance">0.00000000</span></div>
-        <div id="income-rate" class="income-rate">+0.00000000 TON/sec</div>
+        <div id="user-info">👤 <span id="user-display">@Usuario</span></div>
+        <div id="ton-connect-button"></div>
     </div>
 
-    <div class="main-card" onclick="abrirModal()">
-        <div class="icon-building">🏛️</div>
-        <h2>EDIFICIO CENTRAL</h2>
-        <p>Balance de Negocios & Datos</p>
+    <div class="stats-main">
+        <div id="balance">0.00000000</div>
+        <div id="income-rate">+0.00000000 TON/sec</div>
     </div>
 
-    <div class="grid-container">
-        <div class="card" onclick="invertirEnBanco()">
-            <span class="emoji">🏦</span>
-            <h3>BANCO</h3>
-            <p>Staking Automático</p>
-            <span id="inv-banco" class="stats-small">Invertido: 0.00 TON</span>
+    <div class="city-grid">
+        <div class="building central" onclick="abrirCentral()">
+            <h3>🏢 Edificio Central</h3>
+            <p>Datos y Referidos (10%)</p>
         </div>
 
-        <div class="card">
-            <span class="emoji">🛒</span>
-            <h3>TIENDA</h3>
-            <p>Mejoras de Producción</p>
-            <span class="stats-small">Nivel 0</span>
+        <div class="building" onclick="invertirEnBanco()">
+            <h3>🏦 Banco</h3>
+            <p id="inv-banco">Staking Automático</p>
         </div>
 
-        <div class="card">
-            <span class="emoji">🎰</span>
-            <h3>CASINO</h3>
-            <p>Apuesta tu Suerte</p>
-            <span class="stats-small" style="color:#e74c3c;">Cerrado</span>
+        <div class="building parque" onclick="abrirParque()">
+            <h3>🎡 Parque Diversiones</h3>
+            <p>Mejoras de Ciudad</p>
         </div>
 
-        <div class="card">
-            <span class="emoji">🏊</span>
-            <h3>PISCINAS</h3>
-            <p>Staking Comunitario</p>
-            <span class="stats-small">0 Participantes</span>
+        <div class="building">
+            <h3>🛒 Tienda</h3>
+            <p>Compras</p>
         </div>
 
-        <div class="card">
-            <span class="emoji" style="color: #238636;">🌳</span>
-            <h3 style="color: #238636;">PARQUE</h3>
-            <p>TON Gratis cada 2h</p>
-            <button class="btn-park" onclick="recolectarParque()">RECOLECTAR</button>
-        </div>
-
-        <div class="card">
-            <span class="emoji" style="color: #a371f7;">🎡</span>
-            <h3 style="color: #a371f7;">DIVERSIÓN</h3>
-            <p>Tareas y Juegos</p>
-            <span class="stats-small">Nuevas tareas</span>
+        <div class="building">
+            <h3>🎰 Casino</h3>
+            <p>Jugar TON</p>
         </div>
     </div>
 
-    <nav class="nav-bar">
-        <a href="#" class="nav-item active"><span>🚀</span>MEJORAS</a>
-        <a href="#" class="nav-item"><span>👥</span>AMIGOS</a>
-        <a href="#" class="nav-item"><span>💳</span>RETIRAR</a>
-    </nav>
+    <div class="overlay" id="overlay" onclick="cerrarTodo()"></div>
+    
+    <div class="modal" id="modal-central">
+        <h3>🏢 Reporte de Negocios</h3>
+        <p>Banco: <span id="data-banco">0.00</span> TON</p>
+        <p>Tu 20% Directo: <span id="data-total">0.00</span> TON</p>
+        <p>Comisión Invitados (10%): <span id="data-amigos">0.00</span> TON</p>
+        <button onclick="cerrarTodo()" style="width:100%; padding:10px; margin-top:10px;">Cerrar</button>
+    </div>
+
+    <div class="modal" id="modal-parque">
+        <h3>🎡 Parque de Diversiones</h3>
+        <p>Aumenta la productividad de tus ciudadanos.</p>
+        <button style="width:100%; padding:10px; background:#a855f7; color:white; border:none; border-radius:5px;">Comprar Montaña Rusa (+5%)</button>
+        <button onclick="cerrarTodo()" style="width:100%; padding:10px; margin-top:10px;">Cerrar</button>
+    </div>
 
     <script src="index.js"></script>
     <script>
-        // Funciones de UI
-        function abrirModal() {
-            document.getElementById('modal-datos').style.display = 'block';
+        function abrirCentral() {
+            if(window.actualizarModalCentral) window.actualizarModalCentral();
             document.getElementById('overlay').style.display = 'block';
-            if(typeof actualizarModal === 'function') actualizarModal();
+            document.getElementById('modal-central').style.display = 'block';
         }
-        function cerrarModal() {
-            document.getElementById('modal-datos').style.display = 'none';
+        function abrirParque() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('modal-parque').style.display = 'block';
+        }
+        function cerrarTodo() {
             document.getElementById('overlay').style.display = 'none';
+            document.getElementById('modal-central').style.display = 'none';
+            document.getElementById('modal-parque').style.display = 'none';
         }
     </script>
 </body>
-                                                             </html>
-                                                             
+</html>
