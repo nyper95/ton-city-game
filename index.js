@@ -1,104 +1,94 @@
-// 1. CONFIGURACIÓN DE IDENTIDAD Y SEGURIDAD
-const MI_API_KEY = "AG2XICNRZEOJNEQAAAAO737JGJAKU56K43DE4OSQLMHPWHMHONPW2U4LG24XY4DFYUJMLCQ"; //
-const MI_BILLETERA_DUEÑO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw"; //
-const CONTRATO_BOVEDA = "DIRECCION_DE_TU_CONTRATO_AQUI"; // El destino del 80%
-
 const tg = window.Telegram.WebApp;
+const MI_BILLETERA = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw";
+const BILLETERA_RESERVA_80 = "DIRECCION_DE_TU_RESERVA_AQUI"; // Aquí va el 80%
+
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-    manifestUrl: 'https://nyper95.github.io/ton-city-game/tonconnect-manifest.json', //
+    manifestUrl: 'https://nyper95.github.io/ton-city-game/tonconnect-manifest.json',
     buttonRootId: 'ton-connect-button'
 });
 
-// 2. ESTADO DEL SISTEMA (Se sincronizará con Supabase)
-let stats = {
-    balance: 0.00000000,
-    tasa: 0.00000000,      // Producción por segundo
-    invBanco: 0.00,        // Total en Staking
-    comisionReferidos: 0.00000000, // Tu 10% del Edificio Central
-    negocios: { banco: 0.0, tienda: 0.0, casino: 0.0, piscina: 0.0 } //
+// ESTADO GLOBAL DEL JUEGO
+let gameState = {
+    userDiamonds: 0,
+    totalDiamonds: 1000, // Diamantes iniciales en circulación
+    reservaTon: 1.0,      // Reserva inicial para dar valor
+    miGananciaAcumulada: 0
 };
 
-// 3. LÓGICA DE INVERSIÓN (REPARTO AUTOMÁTICO 20/80)
-async function invertirEnBanco() {
+// CÁLCULO DEL PRECIO (80% Reserva / Total Diamantes)
+function getDiamondPrice() {
+    return gameState.reservaTon / gameState.totalDiamonds;
+}
+
+async function comprarDiamantes() {
     if (!tonConnectUI.connected) {
-        alert("Primero conecta tu Tonkeeper con el botón superior.");
+        alert("¡Conecta tu Tonkeeper primero!");
         return;
     }
 
-    const montoStr = prompt("¿Cuánto TON deseas poner en Staking?");
-    if (montoStr && !isNaN(montoStr) && parseFloat(montoStr) > 0) {
-        const cantidad = parseFloat(montoStr);
-        const montoNano = Math.floor(cantidad * 1000000000);
+    const montoTON = prompt("¿Cuánto TON deseas cambiar por Diamantes?");
+    if (montoTON && !isNaN(montoTON) && montoTON > 0) {
         
-        // Cálculo de división automática
-        const miParte = Math.floor(montoNano * 0.20); // Tu 20%
-        const parteBoveda = montoNano - miParte;      // 80% para el fondo
+        const nanoMonto = Math.floor(parseFloat(montoTON) * 1000000000);
+        const mi20 = Math.floor(nanoMonto * 0.20);
+        const reserva80 = nanoMonto - mi20;
 
         const transaction = {
             validUntil: Math.floor(Date.now() / 1000) + 300,
             messages: [
-                { address: MI_BILLETERA_DUEÑO, amount: miParte.toString() }, // Envío a tu wallet
-                { address: CONTRATO_BOVEDA, amount: parteBoveda.toString() }  // Envío al fondo
+                { address: MI_BILLETERA, amount: mi20.toString() },
+                { address: BILLETERA_RESERVA_80, amount: reserva80.toString() }
             ]
         };
 
         try {
-            const result = await tonConnectUI.sendTransaction(transaction);
-            // Si la transacción se firma, activamos el contador visual
-            confirmarInversion(cantidad);
+            await tonConnectUI.sendTransaction(transaction);
+            
+            // Lógica de conversión tras pago exitoso
+            const precioActual = getDiamondPrice();
+            const diamantesObtenidos = Math.floor(parseFloat(montoTON) / precioActual);
+            
+            gameState.userDiamonds += diamantesObtenidos;
+            gameState.totalDiamonds += diamantesObtenidos;
+            gameState.reservaTon += parseFloat(montoTON) * 0.80;
+            gameState.miGananciaAcumulada += parseFloat(montoTON) * 0.20;
+            
+            actualizarUI();
+            alert(`¡Éxito! Has recibido ${diamantesObtenidos} 💎`);
         } catch (e) {
-            alert("Transacción cancelada o fallida.");
+            alert("Transacción cancelada o error de red.");
         }
     }
 }
 
-// 4. MOTOR DE PRODUCCIÓN (Cálculo de ganancias reales)
-function confirmarInversion(monto) {
-    stats.invBanco += monto;
+function actualizarUI() {
+    const precio = getDiamondPrice();
+    document.getElementById('user-diamonds').innerText = gameState.userDiamonds.toLocaleString();
+    document.getElementById('diamond-price').innerText = precio.toFixed(6);
     
-    // Tasa: 12% anual sobre el 80% que quedó en el sistema
-    const gananciaUsuarioSeg = (monto * 0.12 * 0.80) / 31536000;
-    stats.tasa += gananciaUsuarioSeg;
-    
-    // Tu 10% adicional por referidos que verás en el Edificio Central
-    stats.comisionReferidos += (monto * 0.12 * 0.10) / 31536000;
-
-    tg.HapticFeedback.notificationOccurred('success');
-    actualizarPantalla();
+    // Datos del modal central
+    document.getElementById('total-circulacion').innerText = gameState.totalDiamonds.toLocaleString();
+    document.getElementById('reserva-ton').innerText = gameState.reservaTon.toFixed(2);
+    document.getElementById('precio-calc').innerText = precio.toFixed(6);
+    document.getElementById('mi-ganancia').innerText = gameState.miGananciaAcumulada.toFixed(4);
 }
 
-function iniciarMotor() {
-    setInterval(() => {
-        if (stats.tasa > 0) {
-            stats.balance += stats.tasa;
-            stats.negocios.banco += stats.tasa;
-            actualizarPantalla();
-        }
-    }, 1000);
+function abrirCentral() {
+    actualizarUI();
+    document.getElementById('overlay').style.display = 'block';
+    document.getElementById('modal-central').style.display = 'block';
 }
 
-// 5. INTERFAZ Y EDIFICIO CENTRAL
-function actualizarPantalla() {
-    document.getElementById('balance').innerText = stats.balance.toFixed(8);
-    document.getElementById('income-rate').innerText = `+${stats.tasa.toFixed(8)} TON/sec`;
-    
-    if(document.getElementById('inv-banco')) {
-        document.getElementById('inv-banco').innerText = `Staking: ${stats.invBanco.toFixed(2)} TON`;
-    }
+function cerrarTodo() {
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('modal-central').style.display = 'none';
 }
 
-window.actualizarModalCentral = function() {
-    // Datos para el Edificio Central
-    document.getElementById('data-banco').innerText = stats.negocios.banco.toFixed(8);
-    document.getElementById('data-total').innerText = stats.negocios.banco.toFixed(8);
-    document.getElementById('data-amigos').innerText = stats.comisionReferidos.toFixed(8); // Tu 10%
-};
-
-// INICIO
 window.onload = () => {
-    iniciarMotor();
+    tg.expand();
     const user = tg.initDataUnsafe.user;
-    if(document.getElementById('user-display')) {
-        document.getElementById('user-display').innerText = user ? `@${user.username}` : "@Usuario_Cuba";
+    if(user) {
+        document.getElementById('user-display').innerText = `@${user.username || user.first_name}`;
     }
+    actualizarUI();
 };
