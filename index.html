@@ -14,11 +14,12 @@
         .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         .user-badge { background: rgba(56, 189, 248, 0.15); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--accent); color: var(--accent); font-weight: bold; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); display: flex; align-items: center; gap: 8px; }
 
-        /* Balance Principal */
+        /* Balance de Diamantes */
         .main-balance { text-align: center; margin: 20px 0; }
         .label { font-size: 0.75rem; color: var(--accent); font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; }
         .amount { font-size: 2.8rem; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 12px; margin: 8px 0; }
-        .rate { color: #4ade80; font-size: 0.9rem; font-weight: 500; }
+        .amount img { width: 35px; filter: drop-shadow(0 0 8px var(--accent)); }
+        .ton-reserve { color: #94a3b8; font-size: 0.85rem; font-weight: 500; }
 
         /* Cuadrícula de Edificios */
         .city-container { padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -32,101 +33,101 @@
 
         /* Edificio Central Neón Amarillo */
         .card-central { grid-column: span 2; border: 1.5px solid var(--primary); box-shadow: 0 0 20px rgba(250, 204, 21, 0.15); }
-        .card-central h3 { color: var(--primary); font-size: 1.3rem; text-shadow: 0 0 10px rgba(250, 204, 21, 0.3); }
+        .card-central h3 { color: var(--primary); text-shadow: 0 0 10px rgba(250, 204, 21, 0.3); }
 
         /* Bordes Neón */
         .border-blue { border-bottom: 4px solid var(--accent); box-shadow: 0 5px 15px rgba(56, 189, 248, 0.1); }
         .border-purple { border-bottom: 4px solid var(--purple); box-shadow: 0 5px 15px rgba(168, 85, 247, 0.1); }
 
-        /* Menú Inferior Navegación */
+        /* Menú Inferior */
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: #0f172a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #1e293b; z-index: 100; }
-        .nav-item { text-align: center; color: #94a3b8; font-size: 0.7rem; flex: 1; font-weight: bold; }
+        .nav-item { text-align: center; color: #94a3b8; font-size: 0.7rem; flex: 1; font-weight: bold; cursor: pointer; }
         .nav-item img { width: 24px; display: block; margin: 0 auto 5px; }
         .nav-item.active { color: var(--accent); }
 
         /* Modales */
         .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #161d2f; width: 85%; padding: 25px; border-radius: 20px; z-index: 200; border: 1px solid var(--primary); }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 150; }
+        .stat-row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="user-badge">
-            <span>💎</span> <span id="user-display">@nypermusic</span>
-        </div>
+        <div class="user-badge"><span>💎</span> <span id="user-display">@nypermusic</span></div>
         <div id="ton-connect-button"></div>
     </div>
 
     <div class="main-balance">
-        <div class="label">Capital Disponible</div>
+        <div class="label">Balance de Diamantes</div>
         <div class="amount">
-            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" width="38">
-            <span id="balance">0.00000000</span>
+            <img src="https://cdn-icons-png.flaticon.com/512/324/324151.png">
+            <span id="user-diamonds">0</span>
         </div>
-        <div class="rate" id="income-rate">+0.00000000 TON/sec</div>
+        <div class="ton-reserve">Valor actual: <span id="diamond-price">0.0000</span> TON</div>
     </div>
 
     <div class="city-container">
         <div class="card card-central" onclick="abrirCentral()">
             <img src="https://cdn-icons-png.flaticon.com/512/2823/2823050.png">
             <h3>Edificio Central</h3>
-            <p>Balance de Negocios & Referidos (10%)</p>
+            <p>Datos del Ecosistema y Ganancias</p>
         </div>
 
-        <div class="card border-blue" onclick="invertirEnBanco()">
-            <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png">
-            <h3>Banco</h3>
-            <p>Staking Automático</p>
-            <div class="status">Invertido: <span id="inv-banco-text">0.00</span> TON</div>
+        <div class="card border-blue" onclick="comprarDiamantes()">
+            <img src="https://cdn-icons-png.flaticon.com/512/2721/2721121.png">
+            <h3>Banco (Cajero)</h3>
+            <p>Intercambia TON por Diamantes</p>
+            <div class="status">Recibe: +💎 Diamantes</div>
         </div>
 
         <div class="card border-blue">
             <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png">
             <h3>Tienda</h3>
-            <p>Mejoras de Producción</p>
+            <p>Mejoras con Diamantes</p>
             <div class="status" style="color:#94a3b8">Nivel 0</div>
         </div>
 
         <div class="card border-blue">
             <img src="https://cdn-icons-png.flaticon.com/512/1055/1055823.png">
             <h3>Casino</h3>
-            <p>Apuesta tu Suerte</p>
+            <p>Apuesta tus Diamantes</p>
         </div>
 
         <div class="card border-blue">
             <img src="https://cdn-icons-png.flaticon.com/512/3100/3100611.png">
             <h3>Piscinas</h3>
-            <p>Staking Comunitario</p>
+            <p>Inversión Colectiva</p>
         </div>
 
         <div class="card border-purple">
             <img src="https://cdn-icons-png.flaticon.com/512/3032/3032220.png">
             <h3>Parque</h3>
-            <p>Bono de Ciudadanos</p>
+            <p>Socialización</p>
         </div>
 
         <div class="card border-purple">
             <img src="https://cdn-icons-png.flaticon.com/512/4323/4323425.png">
             <h3>Diversiones</h3>
-            <p>Parque de Atracciones</p>
+            <p>Atracciones</p>
         </div>
     </div>
 
     <div class="nav-bar">
         <div class="nav-item active"><img src="https://cdn-icons-png.flaticon.com/512/1042/1042502.png"> MEJORAS</div>
         <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/1216/1216712.png"> AMIGOS</div>
-        <div class="nav-item" onclick="retirarGanancias()"><img src="https://cdn-icons-png.flaticon.com/512/2611/2611110.png"> RETIRAR</div>
+        <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/2611/2611110.png"> RETIRAR</div>
     </div>
 
     <div class="overlay" id="overlay" onclick="cerrarTodo()"></div>
     <div class="modal" id="modal-central">
         <h2 style="color:var(--primary); text-align:center; margin-top:0;">CIUDAD TON</h2>
-        <p>🏦 Balance Banco: <span id="data-banco">0.00</span> TON</p>
-        <p>👥 Referidos (10%): <span id="data-amigos">0.00</span> TON</p>
+        <div class="stat-row"><span>💎 Diamantes Totales:</span> <span id="total-circulacion">0</span></div>
+        <div class="stat-row"><span>🏦 Reserva (80%):</span> <span id="reserva-ton">0.00</span> TON</div>
+        <div class="stat-row" style="color:var(--accent); font-weight:bold;"><span>💰 Valor Diamante:</span> <span id="precio-calc">0.0000</span> TON</div>
         <hr style="border:0; border-top:1px solid #1e293b; margin:15px 0;">
-        <p style="font-weight:bold; font-size:1.1rem;">Tu 20% Directo: <span id="data-total">0.00</span> TON</p>
-        <button onclick="cerrarTodo()" style="width:100%; padding:12px; background:var(--primary); border:none; border-radius:10px; font-weight:bold; margin-top:15px;">VOLVER</button>
+        <div class="stat-row" style="color:var(--primary);"><span>👑 Mi Beneficio (20%):</span> <span id="mi-ganancia">0.00</span> TON</div>
+        <button onclick="cerrarTodo()" style="width:100%; padding:12px; background:var(--primary); border:none; border-radius:10px; font-weight:bold; margin-top:15px; cursor:pointer;">VOLVER AL MAPA</button>
     </div>
 
     <script src="index.js"></script>
