@@ -1,34 +1,67 @@
-const tg = window.Telegram.WebApp;
+// CONFIGURACIÓN MAESTRA
 const MI_BILLETERA = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw";
-const BILLETERA_RESERVA_80 = "DIRECCION_DE_TU_RESERVA_AQUI"; // Aquí va el 80%
+const BILLETERA_RESERVA_80 = "DIRECCION_DE_TU_RESERVA_AQUI"; 
+const SUPABASE_URL = 'https://xkkifqxxglcuyruwkbih.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE'; // Tu llave pública
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const tg = window.Telegram.WebApp;
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://nyper95.github.io/ton-city-game/tonconnect-manifest.json',
     buttonRootId: 'ton-connect-button'
 });
 
-// ESTADO GLOBAL DEL JUEGO
+// ESTADO LOCAL
 let gameState = {
+    userId: null,
     userDiamonds: 0,
-    totalDiamonds: 1000, // Diamantes iniciales en circulación
-    reservaTon: 1.0,      // Reserva inicial para dar valor
+    totalDiamondsCirculando: 5000, // Valor global simulado
+    reservaTonGlobal: 10.0,         // Valor global simulado
     miGananciaAcumulada: 0
 };
 
-// CÁLCULO DEL PRECIO (80% Reserva / Total Diamantes)
+// 1. CARGAR DATOS DESDE SUPABASE
+async function loadUserData(user) {
+    gameState.userId = user.id.toString();
+    const { data, error } = await _supabase
+        .from('usuarios')
+        .select('*')
+        .eq('telegram_id', gameState.userId)
+        .single();
+
+    if (data) {
+        gameState.userDiamonds = data.diamonds;
+        actualizarUI();
+    } else {
+        // Si el usuario es nuevo, crearlo
+        await _supabase.from('usuarios').insert([
+            { telegram_id: gameState.userId, username: user.username, diamonds: 0 }
+        ]);
+    }
+}
+
+// 2. GUARDAR DATOS EN SUPABASE
+async function saveUserData() {
+    if (!gameState.userId) return;
+    await _supabase
+        .from('usuarios')
+        .update({ diamonds: gameState.userDiamonds })
+        .eq('telegram_id', gameState.userId);
+}
+
+// 3. LÓGICA DE COMPRA Y CÁLCULO
 function getDiamondPrice() {
-    return gameState.reservaTon / gameState.totalDiamonds;
+    return gameState.reservaTonGlobal / gameState.totalDiamondsCirculando;
 }
 
 async function comprarDiamantes() {
     if (!tonConnectUI.connected) {
-        alert("¡Conecta tu Tonkeeper primero!");
+        alert("¡Conecta tu Tonkeeper!");
         return;
     }
 
     const montoTON = prompt("¿Cuánto TON deseas cambiar por Diamantes?");
     if (montoTON && !isNaN(montoTON) && montoTON > 0) {
-        
         const nanoMonto = Math.floor(parseFloat(montoTON) * 1000000000);
         const mi20 = Math.floor(nanoMonto * 0.20);
         const reserva80 = nanoMonto - mi20;
@@ -44,19 +77,17 @@ async function comprarDiamantes() {
         try {
             await tonConnectUI.sendTransaction(transaction);
             
-            // Lógica de conversión tras pago exitoso
             const precioActual = getDiamondPrice();
-            const diamantesObtenidos = Math.floor(parseFloat(montoTON) / precioActual);
+            const obtenidos = Math.floor(parseFloat(montoTON) / precioActual);
             
-            gameState.userDiamonds += diamantesObtenidos;
-            gameState.totalDiamonds += diamantesObtenidos;
-            gameState.reservaTon += parseFloat(montoTON) * 0.80;
+            gameState.userDiamonds += obtenidos;
             gameState.miGananciaAcumulada += parseFloat(montoTON) * 0.20;
             
+            await saveUserData(); // Guardar en Supabase inmediatamente
             actualizarUI();
-            alert(`¡Éxito! Has recibido ${diamantesObtenidos} 💎`);
+            alert(`💎 ¡Recibiste ${obtenidos} Diamantes!`);
         } catch (e) {
-            alert("Transacción cancelada o error de red.");
+            alert("Error o transacción cancelada.");
         }
     }
 }
@@ -66,29 +97,24 @@ function actualizarUI() {
     document.getElementById('user-diamonds').innerText = gameState.userDiamonds.toLocaleString();
     document.getElementById('diamond-price').innerText = precio.toFixed(6);
     
-    // Datos del modal central
-    document.getElementById('total-circulacion').innerText = gameState.totalDiamonds.toLocaleString();
-    document.getElementById('reserva-ton').innerText = gameState.reservaTon.toFixed(2);
-    document.getElementById('precio-calc').innerText = precio.toFixed(6);
-    document.getElementById('mi-ganancia').innerText = gameState.miGananciaAcumulada.toFixed(4);
-}
-
-function abrirCentral() {
-    actualizarUI();
-    document.getElementById('overlay').style.display = 'block';
-    document.getElementById('modal-central').style.display = 'block';
-}
-
-function cerrarTodo() {
-    document.getElementById('overlay').style.display = 'none';
-    document.getElementById('modal-central').style.display = 'none';
+    // Modal Central
+    if(document.getElementById('total-circulacion')){
+        document.getElementById('total-circulacion').innerText = gameState.totalDiamondsCirculando.toLocaleString();
+        document.getElementById('reserva-ton').innerText = gameState.reservaTonGlobal.toFixed(2);
+        document.getElementById('precio-calc').innerText = precio.toFixed(6);
+        document.getElementById('mi-ganancia').innerText = gameState.miGananciaAcumulada.toFixed(4);
+    }
 }
 
 window.onload = () => {
     tg.expand();
     const user = tg.initDataUnsafe.user;
     if(user) {
-        document.getElementById('user-display').innerText = `@${user.username || user.first_name}`;
+        document.getElementById('user-display').innerText = `@${user.username || "Usuario"}`;
+        loadUserData(user); // Cargar datos al entrar
     }
-    actualizarUI();
 };
+
+// Funciones de Modal (Iguales a las anteriores)
+function abrirCentral() { actualizarUI(); document.getElementById('overlay').style.display = 'block'; document.getElementById('modal-central').style.display = 'block'; }
+function cerrarTodo() { document.getElementById('overlay').style.display = 'none'; document.getElementById('modal-central').style.display = 'none'; }
