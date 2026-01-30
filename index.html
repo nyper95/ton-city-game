@@ -7,118 +7,91 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
-        :root { --primary: #facc15; --bg: #0b0f1a; --card: #161d2f; --accent: #38bdf8; --purple: #a855f7; --green: #4ade80; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding-bottom: 90px; }
+        :root { --primary: #facc15; --bg: #0b0f1a; --card: #161d2f; --accent: #38bdf8; --green: #4ade80; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
         
         .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         .user-badge { background: rgba(56, 189, 248, 0.1); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--accent); color: var(--accent); font-weight: bold; display: flex; align-items: center; gap: 8px; }
 
-        .main-balance { text-align: center; margin: 20px 0; }
-        .label { font-size: 0.75rem; color: var(--accent); font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; }
-        .amount { font-size: 2.8rem; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 12px; margin: 8px 0; }
+        .main-balance { text-align: center; margin: 15px 0; }
+        .amount { font-size: 2.5rem; font-weight: bold; margin: 5px 0; }
         
-        .city-container { padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .card { background: var(--card); border-radius: 20px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: 0.3s; }
-        .card img { width: 45px; margin-bottom: 12px; }
-        .card h3 { margin: 5px 0; font-size: 0.85rem; text-transform: uppercase; }
-        .card .status { color: var(--green); font-size: 0.7rem; font-weight: bold; margin-top: 10px; }
+        .city-container { padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .card { background: var(--card); border-radius: 18px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+        .card img { width: 40px; margin-bottom: 10px; }
+        .card h3 { margin: 5px 0; font-size: 0.8rem; text-transform: uppercase; }
+        
+        /* Edificio Central VIP */
+        .card-central { grid-column: span 2; border: 1.5px solid var(--primary); box-shadow: 0 0 15px rgba(250, 204, 21, 0.2); }
+        .card-central img { width: 50px; }
+        .card-central h3 { color: var(--primary); font-size: 1.1rem; }
 
-        .card-central { grid-column: span 2; border: 1.5px solid var(--primary); box-shadow: 0 0 20px rgba(250, 204, 21, 0.1); }
-        .card-central h3 { color: var(--primary); }
+        .border-blue { border-bottom: 3px solid var(--accent); }
 
-        .border-blue { border-bottom: 4px solid var(--accent); }
-        .border-purple { border-bottom: 4px solid var(--purple); }
-
+        /* Modales Estilo Capturas */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #161d2f; width: 85%; padding: 20px; border-radius: 20px; z-index: 1001; border: 1.5px solid var(--primary); }
+        .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+        
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: #0f172a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #1e293b; }
-        .nav-item { text-align: center; color: #94a3b8; font-size: 0.7rem; flex: 1; font-weight: bold; cursor: pointer; }
+        .nav-item { text-align: center; color: #94a3b8; font-size: 0.7rem; font-weight: bold; }
         .nav-item img { width: 22px; display: block; margin: 0 auto 5px; }
-
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #161d2f; width: 85%; padding: 25px; border-radius: 20px; z-index: 200; border: 1px solid var(--primary); }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 150; }
-        .prod-box { background: rgba(74, 222, 128, 0.1); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; border: 1px solid var(--green); }
-        .stat-line { display: flex; justify-content: space-between; margin: 10px 0; font-size: 0.85rem; border-bottom: 1px solid #1e293b; padding-bottom: 5px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="user-badge">💎 <span id="user-display">@nypermusic</span></div>
+        <div class="user-badge">💎 <span id="user-display">Cargando...</span></div>
         <div id="ton-connect-button"></div>
     </div>
 
     <div class="main-balance">
-        <div class="label">Balance de Diamantes</div>
+        <div style="font-size: 0.7rem; color: var(--accent); letter-spacing: 1px;">TOTAL DIAMANTES</div>
         <div class="amount">💎 <span id="user-diamonds">0</span></div>
-        <div style="font-size: 0.8rem; color: var(--green);">Producción: +<span id="global-rate">0</span> 💎/hr</div>
+        <div style="color: var(--green); font-size: 0.8rem;">+<span id="prod-total-mapa">0</span> 💎/hr</div>
     </div>
 
     <div class="city-container">
         <div class="card card-central" onclick="abrirCentral()">
             <img src="https://cdn-icons-png.flaticon.com/512/3859/3859152.png">
             <h3>Centro de Negocios</h3>
-            <p style="font-size: 0.7rem; color: #94a3b8; margin: 0;">Tablero de Producción Global</p>
+            <p style="font-size: 0.65rem; color: #94a3b8; margin: 0;">Toca para ver estadísticas</p>
         </div>
 
         <div class="card border-blue" onclick="comprarDiamantes()">
             <img src="https://cdn-icons-png.flaticon.com/512/2721/2721121.png">
             <h3>Banco</h3>
-            <div class="status">Cambiar TON</div>
+            <div style="color:var(--green); font-size:0.7rem;">Invertir TON</div>
         </div>
 
         <div class="card border-blue">
             <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png">
             <h3>Tienda</h3>
-            <div class="status">Nivel: <span id="lvl-tienda">0</span></div>
+            <div style="font-size:0.7rem;">Lvl: <span id="lvl-tienda">0</span></div>
         </div>
 
-        <div class="card border-blue">
-            <img src="https://cdn-icons-png.flaticon.com/512/1055/1055823.png">
-            <h3>Casino</h3>
-            <div class="status">Nivel: <span id="lvl-casino">0</span></div>
         </div>
 
-        <div class="card border-blue">
-            <img src="https://cdn-icons-png.flaticon.com/512/3100/3100611.png">
-            <h3>Piscinas</h3>
-            <div class="status">Nivel: <span id="lvl-piscina">0</span></div>
+    <div class="overlay" id="overlay" onclick="cerrarTodo()"></div>
+    <div class="modal" id="modal-central">
+        <h3 style="color:var(--primary); text-align:center; margin-top:0;">ESTADÍSTICAS</h3>
+        <div style="background: rgba(74, 222, 128, 0.1); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; border: 1px solid var(--green);">
+            <p style="margin:0; font-size:0.7rem; color:var(--green);">PRODUCCIÓN TOTAL</p>
+            <p style="margin:5px 0; font-size:1.5rem; font-weight:bold;">💎 <span id="stat-prod-total">0.00</span> /hr</p>
         </div>
-
-        <div class="card border-purple">
-            <img src="https://cdn-icons-png.flaticon.com/512/3032/3032220.png">
-            <h3>Parque</h3>
-            <div class="status">Nivel: <span id="lvl-parque">0</span></div>
-        </div>
-
-        <div class="card border-purple">
-            <img src="https://cdn-icons-png.flaticon.com/512/4323/4323425.png">
-            <h3>Diversiones</h3>
-            <div class="status">Nivel: <span id="lvl-diversiones">0</span></div>
-        </div>
+        <div class="stat-row"><span>🛒 Tienda:</span> <span id="stat-tienda">0</span> 💎/hr</div>
+        <div class="stat-row"><span>🎰 Casino:</span> <span id="stat-casino">0</span> 💎/hr</div>
+        <div class="stat-row"><span>👥 Amigos (10%):</span> <span id="stat-amigos">0.00</span> 💎</div>
+        
+        <button onclick="cerrarTodo()" style="width:100%; padding:12px; background:var(--primary); border:none; border-radius:10px; font-weight:bold; margin-top:15px; cursor:pointer;">CERRAR</button>
     </div>
 
     <div class="nav-bar">
         <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/1042/1042502.png"> MEJORAS</div>
         <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/1216/1216712.png"> AMIGOS</div>
         <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/2611/2611110.png"> RETIRAR</div>
-    </div>
-
-    <div class="overlay" id="overlay" onclick="cerrarTodo()"></div>
-    <div class="modal" id="modal-central">
-        <h3 style="color:var(--primary); text-align:center; margin-top:0;">📊 RENDIMIENTO CIUDAD</h3>
-        <div class="prod-box">
-            <p style="margin:0; font-size:0.75rem; color:var(--green);">PRODUCCIÓN TOTAL</p>
-            <p style="margin:5px 0; font-size:1.6rem; font-weight:bold;">💎 <span id="modal-prod-total">0.00</span> /hr</p>
-        </div>
-        <div class="stat-line"><span>🏦 Banco (Staking):</span> <span id="stat-banco">0</span> 💎/hr</div>
-        <div class="stat-line"><span>🛒 Tienda:</span> <span id="stat-tienda">0</span> 💎/hr</div>
-        <div class="stat-line"><span>🎰 Casino:</span> <span id="stat-casino">0</span> 💎/hr</div>
-        <div class="stat-line"><span>🏊 Piscinas:</span> <span id="stat-piscina">0</span> 💎/hr</div>
-        <div class="stat-line"><span>🎡 Diversiones:</span> <span id="stat-diversiones">0</span> 💎/hr</div>
-        <div class="stat-line" style="color:var(--accent); font-weight:bold; border:none; margin-top:10px;">
-            <span>👥 Bonus Amigos (10%):</span> <span id="stat-amigos">0.00</span> 💎
-        </div>
-        <button onclick="cerrarTodo()" style="width:100%; padding:12px; background:var(--primary); border:none; border-radius:10px; font-weight:bold; margin-top:15px; cursor:pointer;">CERRAR</button>
     </div>
 
     <script src="index.js"></script>
