@@ -9,76 +9,59 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     buttonRootId: 'ton-connect-button'
 });
 
-// ESTADO INICIAL (Se cargará de Supabase)
 let userData = {
-    id: null,
-    diamonds: 0,
-    lvl_tienda: 0,
-    lvl_casino: 0,
-    lvl_piscina: 0,
-    lvl_parque: 0,
-    lvl_diversiones: 0,
-    ganancia_dueño: 0
+    id: null, diamonds: 0, 
+    lvl_tienda: 0, lvl_casino: 0, lvl_piscina: 0, lvl_parque: 0, lvl_diversiones: 0,
+    prod_amigos: 0 
 };
 
-// Cargar Datos
+// Producción por nivel (Configurable)
+const PROD_VAL = { tienda: 10, casino: 25, piscina: 60, parque: 15, diversiones: 120, banco: 5 };
+
 async function loadData(user) {
     userData.id = user.id.toString();
-    let { data, error } = await _supabase
-        .from('usuarios')
-        .select('*')
-        .eq('telegram_id', userData.id)
-        .single();
-
+    let { data } = await _supabase.from('usuarios').select('*').eq('telegram_id', userData.id).single();
     if (data) {
-        userData = {
-            id: data.telegram_id,
-            diamonds: data.diamonds || 0,
-            lvl_tienda: data.lvl_tienda || 0,
-            lvl_casino: data.lvl_casino || 0,
-            lvl_piscina: data.lvl_piscina || 0,
-            lvl_parque: data.lvl_parque || 0,
-            lvl_diversiones: data.lvl_diversiones || 0,
-            ganancia_dueño: data.ganancia_dueño || 0
-        };
+        userData = { ...userData, ...data, diamonds: data.diamonds || 0 };
     } else {
-        // Nuevo Usuario
         await _supabase.from('usuarios').insert([{ telegram_id: userData.id, username: user.username }]);
     }
     actualizarUI();
 }
 
-// Guardar Datos
-async function saveData() {
-    await _supabase.from('usuarios').update({
-        diamonds: userData.diamonds,
-        lvl_tienda: userData.lvl_tienda,
-        lvl_casino: userData.lvl_casino,
-        lvl_piscina: userData.lvl_piscina,
-        lvl_parque: userData.lvl_parque,
-        lvl_diversiones: userData.lvl_diversiones,
-        ganancia_dueño: userData.ganancia_dueño
-    }).eq('telegram_id', userData.id);
-}
-
 function actualizarUI() {
-    document.getElementById('user-diamonds').innerText = userData.diamonds.toLocaleString();
+    // Calculamos producción por hora
+    const p = {
+        tienda: userData.lvl_tienda * PROD_VAL.tienda,
+        casino: userData.lvl_casino * PROD_VAL.casino,
+        piscina: userData.lvl_piscina * PROD_VAL.piscina,
+        diversiones: userData.lvl_diversiones * PROD_VAL.diversiones,
+        banco: PROD_VAL.banco // Supongamos base por tener cuenta
+    };
+    const totalHr = p.tienda + p.casino + p.piscina + p.diversiones + p.banco;
+
+    document.getElementById('user-diamonds').innerText = Math.floor(userData.diamonds).toLocaleString();
+    document.getElementById('global-rate').innerText = totalHr;
+    
+    // Niveles en Mapa
     document.getElementById('lvl-tienda').innerText = userData.lvl_tienda;
     document.getElementById('lvl-casino').innerText = userData.lvl_casino;
     document.getElementById('lvl-piscina').innerText = userData.lvl_piscina;
-    document.getElementById('lvl-parque').innerText = userData.lvl_parque;
     document.getElementById('lvl-diversiones').innerText = userData.lvl_diversiones;
-    
-    // Precio simulado basado en el 80% (Para el ejemplo)
-    document.getElementById('diamond-price').innerText = "0.0001"; 
+
+    // Guardar temporalmente para el modal
+    window.currentProd = { ...p, total: totalHr };
 }
 
 function abrirCentral() {
-    document.getElementById('stat-lvl-tienda').innerText = userData.lvl_tienda;
-    document.getElementById('stat-lvl-casino').innerText = userData.lvl_casino;
-    document.getElementById('stat-lvl-piscina').innerText = userData.lvl_piscina;
-    document.getElementById('stat-lvl-diversiones').innerText = userData.lvl_diversiones;
-    document.getElementById('mi-ganancia').innerText = userData.ganancia_dueño.toFixed(4);
+    const cp = window.currentProd;
+    document.getElementById('modal-prod-total').innerText = cp.total;
+    document.getElementById('stat-banco').innerText = cp.banco;
+    document.getElementById('stat-tienda').innerText = cp.tienda;
+    document.getElementById('stat-casino').innerText = cp.casino;
+    document.getElementById('stat-piscina').innerText = cp.piscina;
+    document.getElementById('stat-diversiones').innerText = cp.diversiones;
+    document.getElementById('stat-amigos').innerText = (userData.prod_amigos || 0).toFixed(2);
     
     document.getElementById('overlay').style.display = 'block';
     document.getElementById('modal-central').style.display = 'block';
@@ -97,3 +80,4 @@ window.onload = () => {
         loadData(user);
     }
 };
+                            
