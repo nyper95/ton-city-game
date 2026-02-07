@@ -112,8 +112,8 @@ body {
     margin:auto;
     inset:0;
     height:max-content;
-    max-height: 80vh; /* Altura máxima para que haga scroll si es necesario */
-    overflow-y: auto; /* Permite desplazamiento vertical dentro del modal */
+    max-height: 80vh;
+    overflow-y: auto;
 }
 .stat{
     display:flex;
@@ -158,40 +158,61 @@ button:disabled{
     font-size:0.7rem;
     color:#94a3b8;
     font-weight:bold;
+    cursor:pointer;
+    padding:5px;
+    border-radius:8px;
+    transition:0.2s;
+}
+.nav-item:hover{
+    background:#1e293b;
 }
 .nav-item img{
     width:22px;
     display:block;
     margin:0 auto 5px;
 }
-
-/* Estilo específico para el contenedor del botón TON Connect dentro del modal */
 #ton-connect-container {
     margin: 15px 0;
     text-align: center;
 }
-
-/* Estilo para el botón del modal (cuando se usa un botón normal) */
-.ton-connect-btn {
-    background: linear-gradient(135deg, #007bff, #6610f2);
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 12px;
-    font-weight: bold;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-.ton-connect-btn:hover {
-    background: linear-gradient(135deg, #0056b3, #520dc2);
-}
-
-/* Clase para ocultar elementos */
 .hidden {
     display: none !important;
+}
+.referral-code {
+    background: #0f172a;
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    margin: 15px 0;
+    border: 1px solid #38bdf8;
+}
+.referral-code code {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #facc15;
+    letter-spacing: 1px;
+}
+.copy-btn {
+    background: #10b981 !important;
+    margin-top: 10px;
+}
+.input-group {
+    margin: 15px 0;
+}
+.input-group input {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: white;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+.info-text {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    margin: 5px 0 15px 0;
 }
 </style>
 </head>
@@ -201,7 +222,6 @@ button:disabled{
     <div>@<span id="user-display">Cargando...</span></div>
     <div class="balance"><span id="diamonds">0</span> 💎</div>
     <div class="rate">+ <span id="rate">0</span> / hr</div>
-    <!-- El botón de TON Connect ya NO está aquí -->
 </div>
 
 <div class="central" onclick="openCentral()">
@@ -221,22 +241,22 @@ button:disabled{
         <h3>Tienda</h3>
         <small>Mejoras</small>
     </div>
-    <div class="card orange">
+    <div class="card orange" onclick="openCentral()">
         <i class="fa-solid fa-dice"></i>
         <h3>Casino</h3>
         <small>Lvl: <span id="lvl_casino">0</span></small>
     </div>
-    <div class="card blue">
+    <div class="card blue" onclick="openCentral()">
         <i class="fa-solid fa-water-ladder"></i>
         <h3>Piscina</h3>
         <small>Lvl: <span id="lvl_piscina">0</span></small>
     </div>
-    <div class="card green">
+    <div class="card green" onclick="openCentral()">
         <i class="fa-solid fa-tree"></i>
         <h3>Parque</h3>
         <small>Lvl: <span id="lvl_parque">0</span></small>
     </div>
-    <div class="card pink">
+    <div class="card pink" onclick="openCentral()">
         <i class="fa-solid fa-gamepad"></i>
         <h3>Diversión</h3>
         <small>Lvl: <span id="lvl_diversion">0</span></small>
@@ -257,42 +277,77 @@ button:disabled{
     <button class="close" onclick="closeAll()">Cerrar</button>
 </div>
 
-<!-- MODAL DEL BANCO (con el botón de TON Connect) -->
+<!-- MODAL DEL BANCO -->
 <div class="modal" id="modalBank">
     <h3>🏦 Banco TON</h3>
-    <!-- Contenedor para el botón de TON Connect -->
     <div id="ton-connect-container">
         <div id="ton-connect-button"></div>
-        <!-- Elemento para mostrar información de la billetera cuando esté conectada -->
         <div id="wallet-info" class="hidden">
             <p>Conectado: <span id="wallet-address"></span></p>
             <button onclick="tonConnectUI.disconnect()">Desconectar</button>
         </div>
     </div>
-    <!-- Sección de compras (inicialmente oculta hasta que el usuario conecte) -->
     <div id="purchase-section" class="hidden">
         <p style="text-align: center; margin-bottom: 15px; color: var(--green);">Selecciona la cantidad a comprar:</p>
         <div id="bankList"></div>
-        <button onclick="retirar()">💎 Retirar a TON</button>
     </div>
     <button class="close" onclick="closeAll()">Cerrar</button>
 </div>
 
+<!-- MODAL DE LA TIENDA -->
 <div class="modal" id="modalStore">
     <h3>🛒 Tienda de Mejoras</h3>
     <div id="storeList"></div>
     <button class="close" onclick="closeAll()">Cerrar</button>
 </div>
 
+<!-- MODAL DE AMIGOS (NUEVO) -->
+<div class="modal" id="modalFriends">
+    <h3>👥 Sistema de Amigos</h3>
+    <div class="referral-code">
+        <p>Tu código de referencia:</p>
+        <code id="referral-code">CARGANDO...</code>
+        <button class="copy-btn" onclick="copyReferralCode()">📋 Copiar Código</button>
+    </div>
+    <div class="stat"><span>Amigos referidos</span><span id="ref-count">0</span></div>
+    <div class="stat"><span>Ganancias por referidos</span><span id="ref-earnings">0 💎</span></div>
+    <div class="stat" style="background:#0f172a"><span>Total ganado (10%)</span><span id="ref-total">0 💎</span></div>
+    <p class="info-text">Ganas el 10% de los diamantes que produzcan tus amigos referidos.</p>
+    <button class="close" onclick="closeAll()">Cerrar</button>
+</div>
+
+<!-- MODAL DE RETIRO (NUEVO) -->
+<div class="modal" id="modalWithdraw">
+    <h3>💰 Retirar TON</h3>
+    <div class="stat">
+        <span>Precio actual</span>
+        <span id="current-price">0 TON/💎</span>
+    </div>
+    <div class="stat">
+        <span>Tus diamantes</span>
+        <span id="available-diamonds">0 💎</span>
+    </div>
+    <div class="input-group">
+        <input type="number" id="withdraw-amount" placeholder="Cantidad de 💎 a retirar" min="1">
+        <p class="info-text">Recibirás: <span id="ton-receive">0</span> TON</p>
+    </div>
+    <button onclick="processWithdraw()" id="withdraw-btn">Retirar TON</button>
+    <button class="close" onclick="closeAll()">Cancelar</button>
+</div>
+
+<!-- BARRA INFERIOR SIMPLIFICADA -->
 <div class="nav-bar">
-    <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/1042/1042502.png"> MEJORAS</div>
-    <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/1216/1216712.png"> AMIGOS</div>
-    <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/2611/2611110.png"> RETIRAR</div>
+    <div class="nav-item" onclick="openFriends()">
+        <img src="https://cdn-icons-png.flaticon.com/512/1216/1216712.png"> AMIGOS
+    </div>
+    <div class="nav-item" onclick="openWithdraw()">
+        <img src="https://cdn-icons-png.flaticon.com/512/2611/2611110.png"> RETIRAR
+    </div>
 </div>
 
 <script>
 // =======================
-// VARIABLES GLOBALES
+// VARIABLES GLOBALES Y CONFIGURACIÓN
 // =======================
 const tg = window.Telegram.WebApp;
 const MI_BILLETERA = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw";
@@ -301,13 +356,10 @@ const SUPABASE_KEY = 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Configuración de TON Connect
-// NOTA: Cambia la URL del manifiesto si es necesario
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://nyper95.github.io/ton-city-game/tonconnect-manifest.json',
     buttonRootId: 'ton-connect-button',
-    uiPreferences: {
-        theme: 'DARK'
-    }
+    uiPreferences: { theme: 'DARK' }
 });
 
 // Estado del usuario
@@ -318,29 +370,39 @@ let userData = {
     lvl_casino: 0,
     lvl_piscina: 0,
     lvl_parque: 0,
-    lvl_diversion: 0
+    lvl_diversion: 0,
+    referral_code: null,
+    referred_by: null,
+    referral_earnings: 0
 };
 
 // Config economía
-const USER_SHARE = 0.8;
-const OWNER_SHARE = 0.2;
+const USER_SHARE = 0.8; // 80% para el pool de usuarios
+const OWNER_SHARE = 0.2; // 20% para ti
 
 // Producción por edificio por nivel (diamantes/hr)
-const PROD_VAL = { tienda:10, casino:25, piscina:60, parque:15, diversion:120, banco:5 };
+const PROD_VAL = { 
+    tienda: 10, 
+    casino: 25, 
+    piscina: 60, 
+    parque: 15, 
+    diversion: 120, 
+    banco: 5 
+};
+
+// Referencias globales
+let globalPool = { pool_ton: 100, total_diamonds: 100000 }; // Valores por defecto
 
 // =======================
 // INICIALIZACIÓN DE TON CONNECT
 // =======================
-// Escucha cambios en el estado de la conexión (conectado/desconectado)
 tonConnectUI.onStatusChange((wallet) => {
     updateWalletUI(wallet);
-    // Si se conecta una billetera y el modal del banco está abierto, actualizamos los precios
     if (wallet && document.getElementById('modalBank').style.display === 'block') {
         openBank();
     }
 });
 
-// Función para actualizar la UI según el estado de la billetera
 function updateWalletUI(wallet) {
     const connectContainer = document.getElementById('ton-connect-container');
     const purchaseSection = document.getElementById('purchase-section');
@@ -348,18 +410,12 @@ function updateWalletUI(wallet) {
     const walletAddress = document.getElementById('wallet-address');
     
     if (wallet) {
-        // Billetera conectada: ocultamos el botón de conexión y mostramos la info
         document.getElementById('ton-connect-button').classList.add('hidden');
         walletInfo.classList.remove('hidden');
-        
-        // Acortamos la dirección para mostrar
         const shortAddress = wallet.address.substring(0, 6) + '...' + wallet.address.substring(wallet.address.length - 4);
         walletAddress.textContent = shortAddress;
-        
-        // Mostramos la sección de compras
         purchaseSection.classList.remove('hidden');
     } else {
-        // Billetera desconectada: mostramos el botón de conexión
         document.getElementById('ton-connect-button').classList.remove('hidden');
         walletInfo.classList.add('hidden');
         purchaseSection.classList.add('hidden');
@@ -367,33 +423,36 @@ function updateWalletUI(wallet) {
 }
 
 // =======================
-// POOL GLOBAL
+// FUNCIONES PRINCIPALES
 // =======================
-async function getGlobalPool(){
-    let { data } = await _supabase.from("global").select("*").single();
-    return data;
+async function getGlobalPool() {
+    try {
+        let { data } = await _supabase.from("global").select("*").single();
+        if (data) {
+            globalPool = data;
+            return data;
+        }
+    } catch (error) {
+        console.error("Error cargando pool global:", error);
+    }
+    return globalPool;
 }
-async function updateGlobalPool(newTon, newDiamonds){
+
+async function updateGlobalPool(newTon, newDiamonds) {
     await _supabase.from("global").update({
         pool_ton: newTon,
         total_diamonds: newDiamonds
-    }).eq("id",1);
+    }).eq("id", 1);
 }
 
-// =======================
-// PRECIO DINÁMICO
-// =======================
-function calcPrice(pool){
-    if(pool.total_diamonds <= 0) return 0.001;
+function calcPrice(pool) {
+    if (!pool || pool.total_diamonds <= 0) return 0.001;
     return (pool.pool_ton * USER_SHARE) / pool.total_diamonds;
 }
 
-// =======================
-// TON CONNECT SEND
-// =======================
-async function sendTon(amount, to){
+async function sendTon(amount, to) {
     const tx = {
-        validUntil: Math.floor(Date.now()/1000)+600,
+        validUntil: Math.floor(Date.now() / 1000) + 600,
         messages: [{
             address: to,
             amount: (amount * 1e9).toString()
@@ -402,11 +461,7 @@ async function sendTon(amount, to){
     return await tonConnectUI.sendTransaction(tx);
 }
 
-// =======================
-// COMPRAR DIAMANTES
-// =======================
-async function comprarTON(ton){
-    // Verificar que la billetera esté conectada
+async function comprarTON(ton) {
     const wallet = tonConnectUI.wallet;
     if (!wallet) {
         alert("Por favor, conecta tu billetera TON primero.");
@@ -416,7 +471,6 @@ async function comprarTON(ton){
     const pool = await getGlobalPool();
     const price = calcPrice(pool);
     const userTon = ton * USER_SHARE;
-    const ownerTon = ton * OWNER_SHARE;
     const diamonds = Math.floor(userTon / price);
 
     await sendTon(ton, MI_BILLETERA);
@@ -429,14 +483,10 @@ async function comprarTON(ton){
     await updateGlobalPool(pool.pool_ton + userTon, pool.total_diamonds + diamonds);
 
     actualizarUI();
-    openBank(); // Reabre el banco para actualizar los precios
+    openBank();
 }
 
-// =======================
-// RETIRO
-// =======================
-async function retirarTON(diamonds){
-    // Verificar que la billetera esté conectada
+async function retirarTON(diamonds) {
     const wallet = tonConnectUI.wallet;
     if (!wallet) {
         alert("Por favor, conecta tu billetera TON primero.");
@@ -447,14 +497,19 @@ async function retirarTON(diamonds){
     const price = calcPrice(pool);
     const tonAmount = diamonds * price;
 
-    if(tonAmount > pool.pool_ton){
-        alert("Liquidez insuficiente");
+    if (tonAmount > pool.pool_ton) {
+        alert("Liquidez insuficiente en el pool.");
+        return;
+    }
+
+    if (diamonds > userData.diamonds) {
+        alert("No tienes suficientes diamantes.");
         return;
     }
 
     userData.diamonds -= diamonds;
 
-    await sendTon(tonAmount, tonConnectUI.account.address);
+    await sendTon(tonAmount, wallet.address);
 
     await _supabase.from("usuarios").update({ diamonds: userData.diamonds })
         .eq("telegram_id", userData.id);
@@ -462,192 +517,153 @@ async function retirarTON(diamonds){
     await updateGlobalPool(pool.pool_ton - tonAmount, pool.total_diamonds - diamonds);
 
     actualizarUI();
+    alert(`¡Retiro exitoso! Has recibido ${tonAmount.toFixed(4)} TON.`);
 }
 
 // =======================
-// CARGA USUARIO
+// SISTEMA DE REFERIDOS
 // =======================
-async function loadUser(user){
+async function loadUser(user) {
     userData.id = user.id.toString();
+    
+    // Generar código de referencia único
+    const referralCode = 'REF' + user.id.toString().slice(-6);
+    userData.referral_code = referralCode;
 
     let { data } = await _supabase.from('usuarios')
         .select('*').eq('telegram_id', userData.id).single();
 
-    if(!data){
+    if (!data) {
+        // Verificar si hay un código de referencia en la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+        
         await _supabase.from('usuarios').insert([{
             telegram_id: userData.id,
             username: user.username,
-            diamonds: 0
+            diamonds: 100, // Bonificación inicial
+            referral_code: referralCode,
+            referred_by: refCode || null
         }]);
-        userData.diamonds = 0;
+        
+        userData.diamonds = 100;
+        
+        // Si fue referido, dar bonificación al referidor
+        if (refCode) {
+            await addReferralBonus(refCode, 50); // 50 diamantes al referidor
+        }
     } else {
-        userData.diamonds = data.diamonds;
+        userData.diamonds = data.diamonds || 0;
         userData.lvl_tienda = data.lvl_tienda || 0;
         userData.lvl_casino = data.lvl_casino || 0;
         userData.lvl_piscina = data.lvl_piscina || 0;
         userData.lvl_parque = data.lvl_parque || 0;
         userData.lvl_diversion = data.lvl_diversion || 0;
+        userData.referral_code = data.referral_code || referralCode;
+        userData.referred_by = data.referred_by || null;
+        userData.referral_earnings = data.referral_earnings || 0;
     }
 
+    document.getElementById("user-display").innerText = user.username || "Usuario";
     actualizarUI();
+    updateReferralStats();
+}
+
+async function addReferralBonus(referralCode, bonus) {
+    try {
+        // Encontrar al referidor
+        let { data: referrer } = await _supabase.from('usuarios')
+            .select('telegram_id, diamonds, referral_earnings')
+            .eq('referral_code', referralCode)
+            .single();
+            
+        if (referrer) {
+            // Agregar bonificación (10% de lo que gana el referido)
+            const earnings = Math.floor(bonus * 0.1);
+            await _supabase.from('usuarios')
+                .update({
+                    diamonds: referrer.diamonds + earnings,
+                    referral_earnings: (referrer.referral_earnings || 0) + earnings
+                })
+                .eq('telegram_id', referrer.telegram_id);
+        }
+    } catch (error) {
+        console.error("Error añadiendo bonificación:", error);
+    }
+}
+
+async function updateReferralStats() {
+    if (!userData.id) return;
+    
+    try {
+        // Contar referidos directos
+        let { count } = await _supabase.from('usuarios')
+            .select('*', { count: 'exact', head: true })
+            .eq('referred_by', userData.referral_code);
+        
+        // Obtener ganancias totales por referidos
+        let { data } = await _supabase.from('usuarios')
+            .select('referral_earnings')
+            .eq('telegram_id', userData.id)
+            .single();
+            
+        const earnings = data?.referral_earnings || 0;
+        
+        // Actualizar UI
+        document.getElementById("ref-count").textContent = count || 0;
+        document.getElementById("ref-earnings").textContent = `${earnings} 💎`;
+        document.getElementById("ref-total").textContent = `${earnings} 💎`;
+        document.getElementById("referral-code").textContent = userData.referral_code;
+        
+    } catch (error) {
+        console.error("Error actualizando stats de referidos:", error);
+    }
 }
 
 // =======================
-// UI
+// INTERFAZ DE USUARIO
 // =======================
-function actualizarUI(){
-    document.getElementById("diamonds").innerText =
-        Math.floor(userData.diamonds).toLocaleString();
+function actualizarUI() {
+    document.getElementById("diamonds").innerText = Math.floor(userData.diamonds).toLocaleString();
 
-    // Actualiza producción por hora
-    const totalPerHr = userData.lvl_tienda*PROD_VAL.tienda+
-                       userData.lvl_casino*PROD_VAL.casino+
-                       userData.lvl_piscina*PROD_VAL.piscina+
-                       userData.lvl_parque*PROD_VAL.parque+
-                       userData.lvl_diversion*PROD_VAL.diversion+
+    const totalPerHr = userData.lvl_tienda * PROD_VAL.tienda +
+                       userData.lvl_casino * PROD_VAL.casino +
+                       userData.lvl_piscina * PROD_VAL.piscina +
+                       userData.lvl_parque * PROD_VAL.parque +
+                       userData.lvl_diversion * PROD_VAL.diversion +
                        PROD_VAL.banco;
 
     document.getElementById("rate").innerText = totalPerHr;
     
-    // Actualiza niveles en la cuadrícula principal
     document.getElementById("lvl_casino").innerText = userData.lvl_casino;
     document.getElementById("lvl_piscina").innerText = userData.lvl_piscina;
     document.getElementById("lvl_parque").innerText = userData.lvl_parque;
     document.getElementById("lvl_diversion").innerText = userData.lvl_diversion;
 }
 
-// =======================
-// PRODUCCIÓN AUTOMÁTICA
-// =======================
-function startProduction(){
-    setInterval(() => {
+function startProduction() {
+    setInterval(async () => {
         const prod = {
-            tienda: userData.lvl_tienda*PROD_VAL.tienda/3600,
-            casino: userData.lvl_casino*PROD_VAL.casino/3600,
-            piscina: userData.lvl_piscina*PROD_VAL.piscina/3600,
-            parque: userData.lvl_parque*PROD_VAL.parque/3600,
-            diversion: userData.lvl_diversion*PROD_VAL.diversion/3600,
-            banco: PROD_VAL.banco/3600
+            tienda: userData.lvl_tienda * PROD_VAL.tienda / 3600,
+            casino: userData.lvl_casino * PROD_VAL.casino / 3600,
+            piscina: userData.lvl_piscina * PROD_VAL.piscina / 3600,
+            parque: userData.lvl_parque * PROD_VAL.parque / 3600,
+            diversion: userData.lvl_diversion * PROD_VAL.diversion / 3600,
+            banco: PROD_VAL.banco / 3600
         };
 
-        const total = prod.tienda+prod.casino+prod.piscina+prod.parque+prod.diversion+prod.banco;
+        const total = prod.tienda + prod.casino + prod.piscina + prod.parque + prod.diversion + prod.banco;
         userData.diamonds += total;
+
+        // Guardar diamantes cada 30 segundos
+        if (Math.floor(Date.now() / 1000) % 30 === 0) {
+            await _supabase.from('usuarios')
+                .update({ diamonds: userData.diamonds })
+                .eq('telegram_id', userData.id);
+        }
 
         actualizarUI();
 
-        // Actualiza modal central si está abierto
-        if(document.getElementById("centralModal").style.display==="block"){
-            document.getElementById("s_tienda").innerText = Math.floor(prod.tienda*3600);
-            document.getElementById("s_casino").innerText = Math.floor(prod.casino*3600);
-            document.getElementById("s_piscina").innerText = Math.floor(prod.piscina*3600);
-            document.getElementById("s_parque").innerText = Math.floor(prod.parque*3600);
-            document.getElementById("s_diversion").innerText = Math.floor(prod.diversion*3600);
-            document.getElementById("s_total").innerText = Math.floor(total*3600);
-        }
-
-    },1000); // cada segundo
-}
-
-// =======================
-// BANCO EN TIEMPO REAL
-// =======================
-async function openBank(){
-    showModal("modalBank");
-    
-    // Actualiza la UI de la billetera
-    updateWalletUI(tonConnectUI.wallet);
-    
-    // Solo genera opciones de compra si el usuario tiene una billetera conectada
-    if (tonConnectUI.wallet) {
-        const pool = await getGlobalPool();
-        const price = calcPrice(pool);
-
-        let html = "";
-        // Rangos de compra: desde 0.10 TON hasta 10 TON
-        const tonOptions = [0.1, 0.5, 1, 2, 5, 10];
-        
-        tonOptions.forEach(v => {
-            const diamonds = Math.floor((v * USER_SHARE) / price);
-            html += `
-            <div class="stat">
-                <span>${v.toFixed(2)} TON</span>
-                <span>≈ ${diamonds} 💎</span>
-                <button onclick="comprarTON(${v})">Comprar</button>
-            </div>`;
-        });
-        
-        // Mostrar el precio actual (opcional, útil para el usuario)
-        html = `<div class="stat" style="background:#0f172a; margin-bottom: 15px;">
-                  <span><b>Precio actual</b></span>
-                  <span><b>${price.toFixed(6)} TON/💎</b></span>
-                </div>` + html;
-        
-        document.getElementById("bankList").innerHTML = html;
-    }
-}
-
-// =======================
-// TIENDA EN TIEMPO REAL
-// =======================
-function openStore(){
-    const items = [
-        {name:"Tienda",lvl:userData.lvl_tienda,price:10},
-        {name:"Casino",lvl:userData.lvl_casino,price:20},
-        {name:"Piscina",lvl:userData.lvl_piscina,price:30},
-        {name:"Parque",lvl:userData.lvl_parque,price:15},
-        {name:"Diversión",lvl:userData.lvl_diversion,price:50}
-    ];
-    let html = "";
-    items.forEach((item,index)=>{
-        html += `<div class="stat">
-            <span>${item.name} Lvl ${item.lvl}</span>
-            <span>${item.price} 💎</span>
-            <button onclick="buyUpgrade('${item.name}',${item.price})">Comprar</button>
-        </div>`;
-    });
-    document.getElementById("storeList").innerHTML = html;
-    showModal("modalStore");
-}
-
-async function buyUpgrade(name,price){
-    if(userData.diamonds < price){
-        alert("No tienes suficientes 💎");
-        return;
-    }
-    userData.diamonds -= price;
-    switch(name){
-        case "Tienda": userData.lvl_tienda++; break;
-        case "Casino": userData.lvl_casino++; break;
-        case "Piscina": userData.lvl_piscina++; break;
-        case "Parque": userData.lvl_parque++; break;
-        case "Diversión": userData.lvl_diversion++; break;
-    }
-    await _supabase.from('usuarios').update({
-        diamonds:userData.diamonds,
-        lvl_tienda:userData.lvl_tienda,
-        lvl_casino:userData.lvl_casino,
-        lvl_piscina:userData.lvl_piscina,
-        lvl_parque:userData.lvl_parque,
-        lvl_diversion:userData.lvl_diversion
-    }).eq("telegram_id", userData.id);
-    actualizarUI();
-    openStore();
-}
-
-// =======================
-// CENTRAL
-// =======================
-function openCentral(){
-    const prod = {
-        tienda: userData.lvl_tienda*PROD_VAL.tienda,
-        casino: userData.lvl_casino*PROD_VAL.casino,
-        piscina: userData.lvl_piscina*PROD_VAL.piscina,
-        parque: userData.lvl_parque*PROD_VAL.parque,
-        diversion: userData.lvl_diversion*PROD_VAL.diversion,
-        banco: PROD_VAL.banco
-    };
-    const total = prod.tienda+prod.casino+prod.piscina+prod.parque+prod.diversion+prod.banco;
-
-    document.getElementById("s_tienda").innerText=prod.tienda;
-    document.getElementById("s_casino").innerText=prod.casino;
-    doc
+        if (document.getElementById("centralModal").style.display === "block") {
+            document.getElementById("s_tienda").innerText = Math.floor(prod.tienda * 3600);
+            document.getElementById("s_casino").innerText = Math.floor(prod
