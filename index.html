@@ -1,99 +1,243 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ton City 💎</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <style>
-        :root { --primary: #facc15; --bg: #0b0f1a; --card: #161d2f; --accent: #38bdf8; --green: #4ade80; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
-        
-        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .user-badge { background: rgba(56, 189, 248, 0.1); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--accent); color: var(--accent); font-weight: bold; display: flex; align-items: center; gap: 8px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ton City 💎</title>
 
-        .main-balance { text-align: center; margin: 15px 0; }
-        .amount { font-size: 2.5rem; font-weight: bold; margin: 5px 0; }
-        
-        .city-container { padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .card { background: var(--card); border-radius: 18px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
-        .card img { width: 40px; margin-bottom: 10px; }
-        .card h3 { margin: 5px 0; font-size: 0.8rem; text-transform: uppercase; }
-        
-        /* Edificio Central VIP */
-        .card-central { grid-column: span 2; border: 1.5px solid var(--primary); box-shadow: 0 0 15px rgba(250, 204, 21, 0.2); }
-        .card-central img { width: 50px; }
-        .card-central h3 { color: var(--primary); font-size: 1.1rem; }
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        .border-blue { border-bottom: 3px solid var(--accent); }
+<style>
+:root {
+  --primary:#facc15;
+  --bg:#0b0f1a;
+  --card:#161d2f;
+  --accent:#38bdf8;
+  --green:#4ade80;
+}
 
-        /* Modales Estilo Capturas */
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; }
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #161d2f; width: 85%; padding: 20px; border-radius: 20px; z-index: 1001; border: 1.5px solid var(--primary); }
-        .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
-        
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #0f172a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #1e293b; }
-        .nav-item { text-align: center; color: #94a3b8; font-size: 0.7rem; font-weight: bold; }
-        .nav-item img { width: 22px; display: block; margin: 0 auto 5px; }
-    </style>
+body {
+  font-family:'Segoe UI',sans-serif;
+  background:var(--bg);
+  color:white;
+  margin:0;
+  padding-bottom:90px;
+}
+
+.header {
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.user-badge {
+  background:rgba(56,189,248,0.1);
+  padding:8px 15px;
+  border-radius:20px;
+  border:1px solid var(--accent);
+  color:var(--accent);
+  font-weight:bold;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.main-balance {
+  text-align:center;
+  margin:15px 0;
+}
+
+.amount {
+  font-size:2.5rem;
+  font-weight:bold;
+}
+
+.city-map {
+  padding:12px;
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+}
+
+.building {
+  background:linear-gradient(145deg,#161d2f,#0b0f1a);
+  border-radius:18px;
+  padding:12px;
+  border:1px solid rgba(255,255,255,0.05);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  transition:all .2s;
+}
+
+.building:active { transform:scale(.97); }
+
+.building img { width:42px; }
+
+.b-info h3 {
+  margin:0;
+  font-size:.8rem;
+  text-transform:uppercase;
+}
+
+.b-info p {
+  margin:2px 0;
+  font-size:.65rem;
+  color:var(--accent);
+}
+
+.b-info small {
+  font-size:.65rem;
+  color:var(--green);
+}
+
+.central {
+  grid-column:span 2;
+  border:1.5px solid var(--primary);
+  box-shadow:0 0 15px rgba(250,204,21,.2);
+}
+
+.overlay {
+  display:none;
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,.85);
+  z-index:1000;
+}
+
+.modal {
+  display:none;
+  position:fixed;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  background:#161d2f;
+  width:85%;
+  padding:20px;
+  border-radius:20px;
+  z-index:1001;
+  border:1.5px solid var(--primary);
+}
+
+.stat-row {
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  font-size:.9rem;
+}
+
+.nav-bar {
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:#0f172a;
+  display:flex;
+  justify-content:space-around;
+  padding:12px 0;
+  border-top:1px solid #1e293b;
+}
+
+.nav-item {
+  text-align:center;
+  color:#94a3b8;
+  font-size:.7rem;
+  font-weight:bold;
+}
+
+.nav-item img {
+  width:22px;
+  display:block;
+  margin:0 auto 5px;
+}
+</style>
 </head>
+
 <body>
 
-    <div class="header">
-        <div class="user-badge">💎 <span id="user-display">Cargando...</span></div>
-        <div id="ton-connect-button"></div>
+<div class="header">
+  <div class="user-badge">💎 <span id="user-display">Cargando...</span></div>
+  <div id="ton-connect-button"></div>
+</div>
+
+<div class="main-balance">
+  <div style="font-size:.7rem;color:var(--accent);">TOTAL DIAMANTES</div>
+  <div class="amount">💎 <span id="user-diamonds">0</span></div>
+  <div style="color:var(--green);font-size:.8rem;">+<span id="prod-total-mapa">0</span> 💎/hr</div>
+</div>
+
+<div class="city-map">
+
+  <div class="building central" onclick="abrirCentral()">
+    <img src="https://cdn-icons-png.flaticon.com/512/3859/3859152.png">
+    <div class="b-info">
+      <h3>Centro</h3>
+      <p>Estadísticas</p>
     </div>
+  </div>
 
-    <div class="main-balance">
-        <div style="font-size: 0.7rem; color: var(--accent); letter-spacing: 1px;">TOTAL DIAMANTES</div>
-        <div class="amount">💎 <span id="user-diamonds">0</span></div>
-        <div style="color: var(--green); font-size: 0.8rem;">+<span id="prod-total-mapa">0</span> 💎/hr</div>
+  <div class="building" onclick="comprarDiamantes()">
+    <img src="https://cdn-icons-png.flaticon.com/512/2721/2721121.png">
+    <div class="b-info">
+      <h3>Banco</h3>
+      <p>Invertir TON</p>
     </div>
+  </div>
 
-    <div class="city-container">
-        <div class="card card-central" onclick="abrirCentral()">
-            <img src="https://cdn-icons-png.flaticon.com/512/3859/3859152.png">
-            <h3>Centro de Negocios</h3>
-            <p style="font-size: 0.65rem; color: #94a3b8; margin: 0;">Toca para ver estadísticas</p>
-        </div>
-
-        <div class="card border-blue" onclick="comprarDiamantes()">
-            <img src="https://cdn-icons-png.flaticon.com/512/2721/2721121.png">
-            <h3>Banco</h3>
-            <div style="color:var(--green); font-size:0.7rem;">Invertir TON</div>
-        </div>
-
-        <div class="card border-blue">
-            <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png">
-            <h3>Tienda</h3>
-            <div style="font-size:0.7rem;">Lvl: <span id="lvl-tienda">0</span></div>
-        </div>
-
-        </div>
-
-    <div class="overlay" id="overlay" onclick="cerrarTodo()"></div>
-    <div class="modal" id="modal-central">
-        <h3 style="color:var(--primary); text-align:center; margin-top:0;">ESTADÍSTICAS</h3>
-        <div style="background: rgba(74, 222, 128, 0.1); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; border: 1px solid var(--green);">
-            <p style="margin:0; font-size:0.7rem; color:var(--green);">PRODUCCIÓN TOTAL</p>
-            <p style="margin:5px 0; font-size:1.5rem; font-weight:bold;">💎 <span id="stat-prod-total">0.00</span> /hr</p>
-        </div>
-        <div class="stat-row"><span>🛒 Tienda:</span> <span id="stat-tienda">0</span> 💎/hr</div>
-        <div class="stat-row"><span>🎰 Casino:</span> <span id="stat-casino">0</span> 💎/hr</div>
-        <div class="stat-row"><span>👥 Amigos (10%):</span> <span id="stat-amigos">0.00</span> 💎</div>
-        
-        <button onclick="cerrarTodo()" style="width:100%; padding:12px; background:var(--primary); border:none; border-radius:10px; font-weight:bold; margin-top:15px; cursor:pointer;">CERRAR</button>
+  <div class="building">
+    <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png">
+    <div class="b-info">
+      <h3>Tienda</h3>
+      <p>Lvl <span id="lvl-tienda">1</span></p>
+      <small>+<span id="prod-tienda">5</span> 💎/h</small>
     </div>
+  </div>
 
-    <div class="nav-bar">
-        <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/1042/1042502.png"> MEJORAS</div>
-        <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/1216/1216712.png"> AMIGOS</div>
-        <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/2611/2611110.png"> RETIRAR</div>
+  <div class="building">
+    <img src="https://cdn-icons-png.flaticon.com/512/1995/1995473.png">
+    <div class="b-info">
+      <h3>Casino</h3>
+      <p>Lvl <span id="lvl-casino">1</span></p>
+      <small>+<span id="prod-casino">12</span> 💎/h</small>
     </div>
+  </div>
 
-    <script src="index.js"></script>
+  <div class="building">
+    <img src="https://cdn-icons-png.flaticon.com/512/1903/1903162.png">
+    <div class="b-info">
+      <h3>Parque</h3>
+      <p>Gratis</p>
+      <small>+2 TON / 24h</small>
+    </div>
+  </div>
+
+</div>
+
+<div class="overlay" id="overlay" onclick="cerrarTodo()"></div>
+
+<div class="modal" id="modal-central">
+  <h3 style="color:var(--primary);text-align:center;margin-top:0;">ESTADÍSTICAS</h3>
+  <div style="background:rgba(74,222,128,.1);padding:15px;border-radius:12px;text-align:center;margin-bottom:15px;border:1px solid var(--green);">
+    <p style="margin:0;font-size:.7rem;color:var(--green);">PRODUCCIÓN TOTAL</p>
+    <p style="margin:5px 0;font-size:1.5rem;font-weight:bold;">💎 <span id="stat-prod-total">0</span> /hr</p>
+  </div>
+
+  <div class="stat-row"><span>🛒 Tienda:</span> <span id="stat-tienda">0</span> 💎/hr</div>
+  <div class="stat-row"><span>🎰 Casino:</span> <span id="stat-casino">0</span> 💎/hr</div>
+
+  <button onclick="cerrarTodo()" style="width:100%;padding:12px;background:var(--primary);border:none;border-radius:10px;font-weight:bold;margin-top:15px;">CERRAR</button>
+</div>
+
+<div class="nav-bar">
+  <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/1042/1042502.png">MEJORAS</div>
+  <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/1216/1216712.png">AMIGOS</div>
+  <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/2611/2611110.png">RETIRAR</div>
+</div>
+
+<script src="index.js"></script>
+
 </body>
 </html>
