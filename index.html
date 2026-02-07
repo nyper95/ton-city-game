@@ -8,116 +8,84 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-body {
-    margin:0;
-    background: radial-gradient(circle at top, #0f172a, #020617);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    color:white;
+body{
+margin:0;
+background:radial-gradient(circle at top,#0f172a,#020617);
+font-family:Segoe UI,system-ui,sans-serif;
+color:white;
+}
+.header{text-align:center;padding:15px}
+.balance{font-size:42px;font-weight:800}
+.rate{color:#22c55e;font-weight:600}
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:12px;
+padding:12px;
 }
 
-.header {
-    padding:15px;
-    text-align:center;
+.card{
+background:linear-gradient(145deg,#0b1225,#020617);
+border-radius:18px;
+padding:14px;
+border:1px solid rgba(255,255,255,.06);
+box-shadow:0 0 15px rgba(0,0,0,.7);
+cursor:pointer;
+transition:.15s;
+}
+.card:hover{transform:scale(1.04)}
+
+.card i{font-size:34px;margin-bottom:6px}
+.card h3{margin:3px 0}
+
+.green{color:#22c55e}
+.blue{color:#38bdf8}
+.orange{color:#fb923c}
+.pink{color:#f472b6}
+.yellow{color:#facc15}
+
+.overlay,.modal{
+position:fixed;top:0;left:0;width:100%;height:100%;display:none;
 }
 
-.balance {
-    font-size:40px;
-    font-weight:800;
+.overlay{background:rgba(0,0,0,.65);z-index:10}
+
+.modal{
+z-index:11;
+background:#020617;
+border-radius:22px;
+padding:20px;
+max-width:380px;
+margin:auto;
+inset:0;
+height:max-content;
 }
 
-.rate {
-    color:#22c55e;
+button{
+width:100%;
+padding:12px;
+border-radius:14px;
+border:none;
+background:#2563eb;
+color:white;
+font-weight:700;
+font-size:16px;
+cursor:pointer;
 }
 
-.grid {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:12px;
-    padding:12px;
-}
+button:disabled{background:#334155}
 
-.card {
-    background: linear-gradient(145deg, #0b1225, #020617);
-    border-radius:16px;
-    padding:14px;
-    border:1px solid rgba(255,255,255,.06);
-    box-shadow:0 0 15px rgba(0,0,0,.7);
-    cursor:pointer;
-    transition:.15s;
-}
+.close{background:#dc2626;margin-top:10px}
 
-.card:hover { transform:scale(1.03); }
-
-.card i {
-    font-size:32px;
-    margin-bottom:5px;
-}
-
-.card h3 {
-    margin:4px 0;
-}
-
-.green { color:#22c55e }
-.blue { color:#38bdf8 }
-.orange { color:#fb923c }
-.pink { color:#f472b6 }
-.yellow { color:#facc15 }
-
-.modal, .overlay {
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    display:none;
-}
-
-.overlay {
-    background:rgba(0,0,0,.6);
-    z-index:5;
-}
-
-.modal {
-    z-index:6;
-    background:#020617;
-    border-radius:20px;
-    padding:20px;
-    max-width:360px;
-    margin:auto;
-    inset:0;
-    height:max-content;
-}
-
-button {
-    width:100%;
-    padding:12px;
-    border-radius:12px;
-    border:none;
-    background:#2563eb;
-    color:white;
-    font-weight:700;
-    font-size:16px;
-    cursor:pointer;
-}
-
-button:disabled {
-    background:#334155;
-    cursor:not-allowed;
-}
-
-.close {
-    background:#dc2626;
-    margin-top:10px;
-}
-
-.store-item {
-    display:flex;
-    justify-content:space-between;
-    margin:8px 0;
-    padding:10px;
-    border-radius:12px;
-    background:#020617;
-    border:1px solid rgba(255,255,255,.05);
+.stat{
+display:flex;
+justify-content:space-between;
+padding:8px 12px;
+background:#020617;
+border-radius:10px;
+margin:6px 0;
+border:1px solid rgba(255,255,255,.05);
 }
 </style>
 </head>
@@ -125,171 +93,183 @@ button:disabled {
 <body>
 
 <div class="header">
-    <h2>Ton City 💎</h2>
-    <div class="balance"><span id="diamonds">0</span> 💎</div>
-    <div class="rate">+ <span id="rate">0</span> / hr</div>
+<h2>Ton City 💎</h2>
+<div class="balance"><span id="diamonds">0</span> 💎</div>
+<div class="rate">+ <span id="rate">0</span> / hr</div>
 </div>
 
 <div class="grid">
 
-    <div class="card yellow" onclick="openBank()">
-        <i class="fa-solid fa-building-columns"></i>
-        <h3>Banco</h3>
-        <small>Invertir TON</small>
-    </div>
+<div class="card yellow" onclick="openCentral()">
+<i class="fa-solid fa-city"></i>
+<h3>Edificio Central</h3>
+<small>Estadísticas</small>
+</div>
 
-    <div class="card green" onclick="openStore()">
-        <i class="fa-solid fa-cart-shopping"></i>
-        <h3>Tienda</h3>
-        <small>Mejoras</small>
-    </div>
+<div class="card yellow" onclick="openBank()">
+<i class="fa-solid fa-building-columns"></i>
+<h3>Banco</h3>
+<small>Invertir TON</small>
+</div>
 
-    <div class="card orange">
-        <i class="fa-solid fa-dice"></i>
-        <h3>Casino</h3>
-        <small>Lvl <span id="lvl_casino">0</span></small>
-    </div>
+<div class="card green" onclick="openStore()">
+<i class="fa-solid fa-cart-shopping"></i>
+<h3>Tienda</h3>
+<small>Mejoras</small>
+</div>
 
-    <div class="card blue">
-        <i class="fa-solid fa-water-ladder"></i>
-        <h3>Piscinas</h3>
-        <small>Lvl <span id="lvl_piscina">0</span></small>
-    </div>
+<div class="card orange">
+<i class="fa-solid fa-dice"></i>
+<h3>Casino</h3>
+<small>Lvl <span id="lvl_casino">0</span></small>
+</div>
 
-    <div class="card green">
-        <i class="fa-solid fa-tree"></i>
-        <h3>Parque</h3>
-        <small>Lvl <span id="lvl_parque">0</span></small>
-    </div>
+<div class="card blue">
+<i class="fa-solid fa-water-ladder"></i>
+<h3>Piscinas</h3>
+<small>Lvl <span id="lvl_piscina">0</span></small>
+</div>
 
-    <div class="card pink">
-        <i class="fa-solid fa-gamepad"></i>
-        <h3>Diversión</h3>
-        <small>Lvl <span id="lvl_diversion">0</span></small>
-    </div>
+<div class="card green">
+<i class="fa-solid fa-tree"></i>
+<h3>Parque</h3>
+<small>Lvl <span id="lvl_parque">0</span></small>
+</div>
+
+<div class="card pink">
+<i class="fa-solid fa-gamepad"></i>
+<h3>Diversión</h3>
+<small>Lvl <span id="lvl_diversion">0</span></small>
+</div>
 
 </div>
 
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
+<div class="modal" id="centralModal">
+<h3>🏛 Edificio Central</h3>
+<div class="stat"><span>Banco</span><span id="s_banco">0</span></div>
+<div class="stat"><span>Tienda</span><span id="s_tienda">0</span></div>
+<div class="stat"><span>Casino</span><span id="s_casino">0</span></div>
+<div class="stat"><span>Piscinas</span><span id="s_piscina">0</span></div>
+<div class="stat"><span>Parque</span><span id="s_parque">0</span></div>
+<div class="stat"><span>Diversión</span><span id="s_diversion">0</span></div>
+<div class="stat" style="background:#022c22"><b>Total / hr</b><b id="s_total">0</b></div>
+<button class="close" onclick="closeAll()">Cerrar</button>
+</div>
+
 <div class="modal" id="modalBank">
-    <h3>Banco TON</h3>
-    <div id="bankList"></div>
-    <button class="close" onclick="closeAll()">Cerrar</button>
+<h3>🏦 Banco TON</h3>
+<div id="bankList"></div>
+<button class="close" onclick="closeAll()">Cerrar</button>
 </div>
 
 <div class="modal" id="modalStore">
-    <h3>Mejoras</h3>
-    <div id="storeList"></div>
-    <button class="close" onclick="closeAll()">Cerrar</button>
+<h3>🛒 Tienda de Mejoras</h3>
+<div id="storeList"></div>
+<button class="close" onclick="closeAll()">Cerrar</button>
 </div>
 
 <script>
 
-let diamonds = 0;
-let tonBalance = 0;
+let diamonds=0;
 
-let buildings = {
-    tienda:0,
-    casino:0,
-    piscina:0,
-    parque:0,
-    diversion:0
-};
+let buildings={tienda:0,casino:0,piscina:0,parque:0,diversion:0};
 
-const PROD = {
-    tienda:10,
-    casino:25,
-    piscina:60,
-    parque:15,
-    diversion:120
-};
+const PROD={tienda:10,casino:25,piscina:60,parque:15,diversion:120};
 
-const STORE = {
-    tienda:[100,250,500,1000],
-    casino:[200,500,1200,2500],
-    piscina:[300,700,1500,3000],
-    parque:[150,400,900,2000],
-    diversion:[400,1000,2500,5000]
+const STORE={
+tienda:[100,250,500,1000,2500],
+casino:[200,500,1200,2500,6000],
+piscina:[300,700,1500,3000,8000],
+parque:[150,400,900,2000,5000],
+diversion:[400,1000,2500,5000,12000]
 };
 
 function calcRate(){
-    let total=0;
-    for(let b in buildings){
-        total+=buildings[b]*PROD[b];
-    }
-    document.getElementById("rate").innerText=total;
+let total=0;
+for(let b in buildings) total+=buildings[b]*PROD[b];
+document.getElementById("rate").innerText=total;
 }
 
 function addDiamonds(){
-    let total=0;
-    for(let b in buildings){
-        total+=buildings[b]*PROD[b]/3600;
-    }
-    diamonds+=total;
-    document.getElementById("diamonds").innerText=Math.floor(diamonds);
+let gain=0;
+for(let b in buildings) gain+=buildings[b]*PROD[b]/3600;
+diamonds+=gain;
+document.getElementById("diamonds").innerText=Math.floor(diamonds);
 }
 
 setInterval(addDiamonds,1000);
 
-function openBank(){
-    let html='';
-    [0.1,0.5,1,2,5,10].forEach(ton=>{
-        let dia=Math.floor(ton*1000);
-        html+=`
-        <div class="store-item">
-            <div>${ton} TON</div>
-            <div>${dia} 💎</div>
-            <button onclick="buyTon(${ton},${dia})">Comprar</button>
-        </div>`;
-    });
-    document.getElementById("bankList").innerHTML=html;
-    show("modalBank");
+function openCentral(){
+document.getElementById("s_banco").innerText="—";
+document.getElementById("s_tienda").innerText=buildings.tienda*PROD.tienda;
+document.getElementById("s_casino").innerText=buildings.casino*PROD.casino;
+document.getElementById("s_piscina").innerText=buildings.piscina*PROD.piscina;
+document.getElementById("s_parque").innerText=buildings.parque*PROD.parque;
+document.getElementById("s_diversion").innerText=buildings.diversion*PROD.diversion;
+document.getElementById("s_total").innerText=document.getElementById("rate").innerText;
+show("centralModal");
 }
 
-function buyTon(ton,dia){
-    diamonds+=dia;
-    document.getElementById("diamonds").innerText=Math.floor(diamonds);
-    closeAll();
+function openBank(){
+let html='';
+[0.1,0.5,1,2,5,10].forEach(ton=>{
+let dia=Math.floor(ton*1000);
+html+=`
+<div class="stat">
+<span>${ton} TON</span>
+<span>${dia} 💎</span>
+<button onclick="buyTon(${dia})">Comprar</button>
+</div>`;
+});
+document.getElementById("bankList").innerHTML=html;
+show("modalBank");
+}
+
+function buyTon(dia){
+diamonds+=dia;
+document.getElementById("diamonds").innerText=Math.floor(diamonds);
+closeAll();
 }
 
 function openStore(){
-    let html='';
-    for(let b in STORE){
-        let lvl=buildings[b];
-        let price=STORE[b][lvl];
-        if(price){
-            html+=`
-            <div class="store-item">
-                <div>${b.toUpperCase()} Lvl ${lvl+1}</div>
-                <div>${price} 💎</div>
-                <button ${diamonds<price?'disabled':''} onclick="upgrade('${b}',${price})">Mejorar</button>
-            </div>`;
-        }
-    }
-    document.getElementById("storeList").innerHTML=html;
-    show("modalStore");
+let html='';
+for(let b in STORE){
+let lvl=buildings[b];
+let price=STORE[b][lvl];
+if(price){
+html+=`
+<div class="stat">
+<span>${b.toUpperCase()} → Lvl ${lvl+1}</span>
+<span>${price} 💎</span>
+<button ${diamonds<price?'disabled':''} onclick="upgrade('${b}',${price})">Mejorar</button>
+</div>`;
+}
+}
+document.getElementById("storeList").innerHTML=html;
+show("modalStore");
 }
 
 function upgrade(b,price){
-    if(diamonds>=price){
-        diamonds-=price;
-        buildings[b]++;
-        document.getElementById("diamonds").innerText=Math.floor(diamonds);
-        document.getElementById(`lvl_${b}`).innerText=buildings[b];
-        calcRate();
-        openStore();
-    }
+if(diamonds>=price){
+diamonds-=price;
+buildings[b]++;
+document.getElementById("diamonds").innerText=Math.floor(diamonds);
+document.getElementById(`lvl_${b}`).innerText=buildings[b];
+calcRate();
+openStore();
+}
 }
 
 function show(id){
-    document.getElementById("overlay").style.display="block";
-    document.getElementById(id).style.display="block";
+document.getElementById("overlay").style.display="block";
+document.getElementById(id).style.display="block";
 }
 
 function closeAll(){
-    document.getElementById("overlay").style.display="none";
-    document.querySelectorAll('.modal').forEach(m=>m.style.display="none");
+document.getElementById("overlay").style.display="none";
+document.querySelectorAll('.modal').forEach(m=>m.style.display="none");
 }
 
 calcRate();
