@@ -25,18 +25,16 @@ let userData = {
 const USER_SHARE = 0.8;
 const OWNER_SHARE = 0.2;
 
-// Producción por edificio por nivel
+// Producción por edificio por nivel (diamantes/hr)
 const PROD_VAL = { tienda:10, casino:25, piscina:60, parque:15, diversion:120, banco:5 };
 
 // =======================
 // POOL GLOBAL
 // =======================
-
 async function getGlobalPool(){
     let { data } = await _supabase.from("global").select("*").single();
     return data;
 }
-
 async function updateGlobalPool(newTon, newDiamonds){
     await _supabase.from("global").update({
         pool_ton: newTon,
@@ -47,7 +45,6 @@ async function updateGlobalPool(newTon, newDiamonds){
 // =======================
 // PRECIO DINÁMICO
 // =======================
-
 function calcPrice(pool){
     if(pool.total_diamonds <= 0) return 0.001;
     return (pool.pool_ton * USER_SHARE) / pool.total_diamonds;
@@ -56,7 +53,6 @@ function calcPrice(pool){
 // =======================
 // TON CONNECT SEND
 // =======================
-
 async function sendTon(amount, to){
     const tx = {
         validUntil: Math.floor(Date.now()/1000)+600,
@@ -71,34 +67,29 @@ async function sendTon(amount, to){
 // =======================
 // COMPRAR DIAMANTES
 // =======================
-
 async function comprarTON(ton){
     const pool = await getGlobalPool();
     const price = calcPrice(pool);
     const userTon = ton * USER_SHARE;
     const ownerTon = ton * OWNER_SHARE;
-
     const diamonds = Math.floor(userTon / price);
 
-    // Envía TON a tu billetera (20%) + pool (80%)
     await sendTon(ton, MI_BILLETERA);
 
     userData.diamonds += diamonds;
 
-    // Actualiza Supabase
     await _supabase.from("usuarios").update({ diamonds: userData.diamonds })
         .eq("telegram_id", userData.id);
 
     await updateGlobalPool(pool.pool_ton + userTon, pool.total_diamonds + diamonds);
 
     actualizarUI();
-    openBank(); // Refresca lista con diamantes calculados
+    openBank();
 }
 
 // =======================
 // RETIRO
 // =======================
-
 async function retirarTON(diamonds){
     const pool = await getGlobalPool();
     const price = calcPrice(pool);
@@ -124,7 +115,6 @@ async function retirarTON(diamonds){
 // =======================
 // CARGA USUARIO
 // =======================
-
 async function loadUser(user){
     userData.id = user.id.toString();
 
@@ -140,6 +130,11 @@ async function loadUser(user){
         userData.diamonds = 0;
     } else {
         userData.diamonds = data.diamonds;
+        userData.lvl_tienda = data.lvl_tienda || 0;
+        userData.lvl_casino = data.lvl_casino || 0;
+        userData.lvl_piscina = data.lvl_piscina || 0;
+        userData.lvl_parque = data.lvl_parque || 0;
+        userData.lvl_diversion = data.lvl_diversion || 0;
     }
 
     actualizarUI();
@@ -148,16 +143,56 @@ async function loadUser(user){
 // =======================
 // UI
 // =======================
-
 function actualizarUI(){
     document.getElementById("diamonds").innerText =
         Math.floor(userData.diamonds).toLocaleString();
+
+    // Actualiza producción por hora
+    const totalPerHr = userData.lvl_tienda*PROD_VAL.tienda+
+                       userData.lvl_casino*PROD_VAL.casino+
+                       userData.lvl_piscina*PROD_VAL.piscina+
+                       userData.lvl_parque*PROD_VAL.parque+
+                       userData.lvl_diversion*PROD_VAL.diversion+
+                       PROD_VAL.banco;
+
+    document.getElementById("rate").innerText = totalPerHr;
+}
+
+// =======================
+// PRODUCCIÓN AUTOMÁTICA
+// =======================
+function startProduction(){
+    setInterval(() => {
+        const prod = {
+            tienda: userData.lvl_tienda*PROD_VAL.tienda/3600,
+            casino: userData.lvl_casino*PROD_VAL.casino/3600,
+            piscina: userData.lvl_piscina*PROD_VAL.piscina/3600,
+            parque: userData.lvl_parque*PROD_VAL.parque/3600,
+            diversion: userData.lvl_diversion*PROD_VAL.diversion/3600,
+            banco: PROD_VAL.banco/3600
+        };
+
+        const total = prod.tienda+prod.casino+prod.piscina+prod.parque+prod.diversion+prod.banco;
+        userData.diamonds += total;
+
+        actualizarUI();
+
+        // Actualiza modal central si está abierto
+        if(document.getElementById("centralModal").style.display==="block"){
+            document.getElementById("s_tienda").innerText = Math.floor(prod.tienda*3600);
+            document.getElementById("s_casino").innerText = Math.floor(prod.casino*3600);
+            document.getElementById("s_piscina").innerText = Math.floor(prod.piscina*3600);
+            document.getElementById("s_parque").innerText = Math.floor(prod.parque*3600);
+            document.getElementById("s_diversion").innerText = Math.floor(prod.diversion*3600);
+            document.getElementById("s_total").innerText = Math.floor(total*3600);
+        }
+
+    },1000); // cada segundo
 }
 
 // =======================
 // BANCO EN TIEMPO REAL
 // =======================
-
 async function openBank(){
     const pool = await getGlobalPool();
     const price = calcPrice(pool);
@@ -179,7 +214,6 @@ async function openBank(){
 // =======================
 // TIENDA EN TIEMPO REAL
 // =======================
-
 function openStore(){
     const items = [
         {name:"Tienda",lvl:userData.lvl_tienda,price:10},
@@ -213,7 +247,8 @@ async function buyUpgrade(name,price){
         case "Parque": userData.lvl_parque++; break;
         case "Diversión": userData.lvl_diversion++; break;
     }
-    await _supabase.from('usuarios').update({ diamonds:userData.diamonds,
+    await _supabase.from('usuarios').update({
+        diamonds:userData.diamonds,
         lvl_tienda:userData.lvl_tienda,
         lvl_casino:userData.lvl_casino,
         lvl_piscina:userData.lvl_piscina,
@@ -227,7 +262,6 @@ async function buyUpgrade(name,price){
 // =======================
 // CENTRAL
 // =======================
-
 function openCentral(){
     const prod = {
         tienda: userData.lvl_tienda*PROD_VAL.tienda,
@@ -252,7 +286,6 @@ function openCentral(){
 // =======================
 // MODALES
 // =======================
-
 function showModal(id){
     document.getElementById("overlay").style.display="block";
     document.getElementById(id).style.display="block";
@@ -267,7 +300,6 @@ function closeAll(){
 // =======================
 // RETIRO
 // =======================
-
 function retirar(){
     let diamonds = prompt("Cuántos 💎 quieres retirar?");
     diamonds=parseInt(diamonds);
@@ -278,12 +310,11 @@ function retirar(){
 // =======================
 // INIT
 // =======================
-
 window.onload=()=>{
     tg.expand();
     const user=tg.initDataUnsafe.user;
     if(user){
         document.getElementById("user-display").innerText=`${user.username||"User"}`;
-        loadUser(user);
+        loadUser(user).then(()=>startProduction());
     }
 };
