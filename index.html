@@ -2,156 +2,122 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ton City 💎</title>
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-:root {
-  --primary:#facc15;
-  --bg:#0b0f1a;
-  --card:#161d2f;
-  --accent:#38bdf8;
-  --green:#4ade80;
-}
-
 body {
-  font-family:'Segoe UI',sans-serif;
-  background:var(--bg);
-  color:white;
-  margin:0;
-  padding-bottom:90px;
+    margin:0;
+    background: radial-gradient(circle at top, #0f172a, #020617);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color:white;
 }
 
 .header {
-  padding:15px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+    padding:15px;
+    text-align:center;
 }
 
-.user-badge {
-  background:rgba(56,189,248,0.1);
-  padding:8px 15px;
-  border-radius:20px;
-  border:1px solid var(--accent);
-  color:var(--accent);
-  font-weight:bold;
-  display:flex;
-  align-items:center;
-  gap:8px;
+.balance {
+    font-size:40px;
+    font-weight:800;
 }
 
-.main-balance {
-  text-align:center;
-  margin:15px 0;
+.rate {
+    color:#22c55e;
 }
 
-.amount {
-  font-size:2.5rem;
-  font-weight:bold;
+.grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    padding:12px;
 }
 
-.city-map {
-  padding:12px;
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:12px;
+.card {
+    background: linear-gradient(145deg, #0b1225, #020617);
+    border-radius:16px;
+    padding:14px;
+    border:1px solid rgba(255,255,255,.06);
+    box-shadow:0 0 15px rgba(0,0,0,.7);
+    cursor:pointer;
+    transition:.15s;
 }
 
-.building {
-  background:linear-gradient(145deg,#161d2f,#0b0f1a);
-  border-radius:18px;
-  padding:12px;
-  border:1px solid rgba(255,255,255,0.05);
-  display:flex;
-  align-items:center;
-  gap:10px;
-  transition:all .2s;
+.card:hover { transform:scale(1.03); }
+
+.card i {
+    font-size:32px;
+    margin-bottom:5px;
 }
 
-.building:active { transform:scale(.97); }
-
-.building img { width:42px; }
-
-.b-info h3 {
-  margin:0;
-  font-size:.8rem;
-  text-transform:uppercase;
+.card h3 {
+    margin:4px 0;
 }
 
-.b-info p {
-  margin:2px 0;
-  font-size:.65rem;
-  color:var(--accent);
-}
+.green { color:#22c55e }
+.blue { color:#38bdf8 }
+.orange { color:#fb923c }
+.pink { color:#f472b6 }
+.yellow { color:#facc15 }
 
-.b-info small {
-  font-size:.65rem;
-  color:var(--green);
-}
-
-.central {
-  grid-column:span 2;
-  border:1.5px solid var(--primary);
-  box-shadow:0 0 15px rgba(250,204,21,.2);
+.modal, .overlay {
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    display:none;
 }
 
 .overlay {
-  display:none;
-  position:fixed;
-  top:0;left:0;
-  width:100%;height:100%;
-  background:rgba(0,0,0,.85);
-  z-index:1000;
+    background:rgba(0,0,0,.6);
+    z-index:5;
 }
 
 .modal {
-  display:none;
-  position:fixed;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  background:#161d2f;
-  width:85%;
-  padding:20px;
-  border-radius:20px;
-  z-index:1001;
-  border:1.5px solid var(--primary);
+    z-index:6;
+    background:#020617;
+    border-radius:20px;
+    padding:20px;
+    max-width:360px;
+    margin:auto;
+    inset:0;
+    height:max-content;
 }
 
-.stat-row {
-  display:flex;
-  justify-content:space-between;
-  padding:10px 0;
-  border-bottom:1px solid rgba(255,255,255,.05);
-  font-size:.9rem;
+button {
+    width:100%;
+    padding:12px;
+    border-radius:12px;
+    border:none;
+    background:#2563eb;
+    color:white;
+    font-weight:700;
+    font-size:16px;
+    cursor:pointer;
 }
 
-.nav-bar {
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:#0f172a;
-  display:flex;
-  justify-content:space-around;
-  padding:12px 0;
-  border-top:1px solid #1e293b;
+button:disabled {
+    background:#334155;
+    cursor:not-allowed;
 }
 
-.nav-item {
-  text-align:center;
-  color:#94a3b8;
-  font-size:.7rem;
-  font-weight:bold;
+.close {
+    background:#dc2626;
+    margin-top:10px;
 }
 
-.nav-item img {
-  width:22px;
-  display:block;
-  margin:0 auto 5px;
+.store-item {
+    display:flex;
+    justify-content:space-between;
+    margin:8px 0;
+    padding:10px;
+    border-radius:12px;
+    background:#020617;
+    border:1px solid rgba(255,255,255,.05);
 }
 </style>
 </head>
@@ -159,85 +125,176 @@ body {
 <body>
 
 <div class="header">
-  <div class="user-badge">💎 <span id="user-display">Cargando...</span></div>
-  <div id="ton-connect-button"></div>
+    <h2>Ton City 💎</h2>
+    <div class="balance"><span id="diamonds">0</span> 💎</div>
+    <div class="rate">+ <span id="rate">0</span> / hr</div>
 </div>
 
-<div class="main-balance">
-  <div style="font-size:.7rem;color:var(--accent);">TOTAL DIAMANTES</div>
-  <div class="amount">💎 <span id="user-diamonds">0</span></div>
-  <div style="color:var(--green);font-size:.8rem;">+<span id="prod-total-mapa">0</span> 💎/hr</div>
-</div>
+<div class="grid">
 
-<div class="city-map">
-
-  <div class="building central" onclick="abrirCentral()">
-    <img src="https://cdn-icons-png.flaticon.com/512/3859/3859152.png">
-    <div class="b-info">
-      <h3>Centro</h3>
-      <p>Estadísticas</p>
+    <div class="card yellow" onclick="openBank()">
+        <i class="fa-solid fa-building-columns"></i>
+        <h3>Banco</h3>
+        <small>Invertir TON</small>
     </div>
-  </div>
 
-  <div class="building" onclick="comprarDiamantes()">
-    <img src="https://cdn-icons-png.flaticon.com/512/2721/2721121.png">
-    <div class="b-info">
-      <h3>Banco</h3>
-      <p>Invertir TON</p>
+    <div class="card green" onclick="openStore()">
+        <i class="fa-solid fa-cart-shopping"></i>
+        <h3>Tienda</h3>
+        <small>Mejoras</small>
     </div>
-  </div>
 
-  <div class="building">
-    <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png">
-    <div class="b-info">
-      <h3>Tienda</h3>
-      <p>Lvl <span id="lvl-tienda">1</span></p>
-      <small>+<span id="prod-tienda">5</span> 💎/h</small>
+    <div class="card orange">
+        <i class="fa-solid fa-dice"></i>
+        <h3>Casino</h3>
+        <small>Lvl <span id="lvl_casino">0</span></small>
     </div>
-  </div>
 
-  <div class="building">
-    <img src="https://cdn-icons-png.flaticon.com/512/1995/1995473.png">
-    <div class="b-info">
-      <h3>Casino</h3>
-      <p>Lvl <span id="lvl-casino">1</span></p>
-      <small>+<span id="prod-casino">12</span> 💎/h</small>
+    <div class="card blue">
+        <i class="fa-solid fa-water-ladder"></i>
+        <h3>Piscinas</h3>
+        <small>Lvl <span id="lvl_piscina">0</span></small>
     </div>
-  </div>
 
-  <div class="building">
-    <img src="https://cdn-icons-png.flaticon.com/512/1903/1903162.png">
-    <div class="b-info">
-      <h3>Parque</h3>
-      <p>Gratis</p>
-      <small>+2 TON / 24h</small>
+    <div class="card green">
+        <i class="fa-solid fa-tree"></i>
+        <h3>Parque</h3>
+        <small>Lvl <span id="lvl_parque">0</span></small>
     </div>
-  </div>
+
+    <div class="card pink">
+        <i class="fa-solid fa-gamepad"></i>
+        <h3>Diversión</h3>
+        <small>Lvl <span id="lvl_diversion">0</span></small>
+    </div>
 
 </div>
 
-<div class="overlay" id="overlay" onclick="cerrarTodo()"></div>
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
 
-<div class="modal" id="modal-central">
-  <h3 style="color:var(--primary);text-align:center;margin-top:0;">ESTADÍSTICAS</h3>
-  <div style="background:rgba(74,222,128,.1);padding:15px;border-radius:12px;text-align:center;margin-bottom:15px;border:1px solid var(--green);">
-    <p style="margin:0;font-size:.7rem;color:var(--green);">PRODUCCIÓN TOTAL</p>
-    <p style="margin:5px 0;font-size:1.5rem;font-weight:bold;">💎 <span id="stat-prod-total">0</span> /hr</p>
-  </div>
-
-  <div class="stat-row"><span>🛒 Tienda:</span> <span id="stat-tienda">0</span> 💎/hr</div>
-  <div class="stat-row"><span>🎰 Casino:</span> <span id="stat-casino">0</span> 💎/hr</div>
-
-  <button onclick="cerrarTodo()" style="width:100%;padding:12px;background:var(--primary);border:none;border-radius:10px;font-weight:bold;margin-top:15px;">CERRAR</button>
+<div class="modal" id="modalBank">
+    <h3>Banco TON</h3>
+    <div id="bankList"></div>
+    <button class="close" onclick="closeAll()">Cerrar</button>
 </div>
 
-<div class="nav-bar">
-  <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/1042/1042502.png">MEJORAS</div>
-  <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/1216/1216712.png">AMIGOS</div>
-  <div class="nav-item"><img src="https://cdn-icons-png.flaticon.com/512/2611/2611110.png">RETIRAR</div>
+<div class="modal" id="modalStore">
+    <h3>Mejoras</h3>
+    <div id="storeList"></div>
+    <button class="close" onclick="closeAll()">Cerrar</button>
 </div>
 
-<script src="index.js"></script>
+<script>
+
+let diamonds = 0;
+let tonBalance = 0;
+
+let buildings = {
+    tienda:0,
+    casino:0,
+    piscina:0,
+    parque:0,
+    diversion:0
+};
+
+const PROD = {
+    tienda:10,
+    casino:25,
+    piscina:60,
+    parque:15,
+    diversion:120
+};
+
+const STORE = {
+    tienda:[100,250,500,1000],
+    casino:[200,500,1200,2500],
+    piscina:[300,700,1500,3000],
+    parque:[150,400,900,2000],
+    diversion:[400,1000,2500,5000]
+};
+
+function calcRate(){
+    let total=0;
+    for(let b in buildings){
+        total+=buildings[b]*PROD[b];
+    }
+    document.getElementById("rate").innerText=total;
+}
+
+function addDiamonds(){
+    let total=0;
+    for(let b in buildings){
+        total+=buildings[b]*PROD[b]/3600;
+    }
+    diamonds+=total;
+    document.getElementById("diamonds").innerText=Math.floor(diamonds);
+}
+
+setInterval(addDiamonds,1000);
+
+function openBank(){
+    let html='';
+    [0.1,0.5,1,2,5,10].forEach(ton=>{
+        let dia=Math.floor(ton*1000);
+        html+=`
+        <div class="store-item">
+            <div>${ton} TON</div>
+            <div>${dia} 💎</div>
+            <button onclick="buyTon(${ton},${dia})">Comprar</button>
+        </div>`;
+    });
+    document.getElementById("bankList").innerHTML=html;
+    show("modalBank");
+}
+
+function buyTon(ton,dia){
+    diamonds+=dia;
+    document.getElementById("diamonds").innerText=Math.floor(diamonds);
+    closeAll();
+}
+
+function openStore(){
+    let html='';
+    for(let b in STORE){
+        let lvl=buildings[b];
+        let price=STORE[b][lvl];
+        if(price){
+            html+=`
+            <div class="store-item">
+                <div>${b.toUpperCase()} Lvl ${lvl+1}</div>
+                <div>${price} 💎</div>
+                <button ${diamonds<price?'disabled':''} onclick="upgrade('${b}',${price})">Mejorar</button>
+            </div>`;
+        }
+    }
+    document.getElementById("storeList").innerHTML=html;
+    show("modalStore");
+}
+
+function upgrade(b,price){
+    if(diamonds>=price){
+        diamonds-=price;
+        buildings[b]++;
+        document.getElementById("diamonds").innerText=Math.floor(diamonds);
+        document.getElementById(`lvl_${b}`).innerText=buildings[b];
+        calcRate();
+        openStore();
+    }
+}
+
+function show(id){
+    document.getElementById("overlay").style.display="block";
+    document.getElementById(id).style.display="block";
+}
+
+function closeAll(){
+    document.getElementById("overlay").style.display="none";
+    document.querySelectorAll('.modal').forEach(m=>m.style.display="none");
+}
+
+calcRate();
+
+</script>
 
 </body>
 </html>
