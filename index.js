@@ -1,83 +1,123 @@
 const tg = window.Telegram.WebApp;
-const MI_BILLETERA = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw";
+
 const SUPABASE_URL = 'https://xkkifqxxglcuyruwkbih.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE';
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-    manifestUrl: 'https://nyper95.github.io/ton-city-game/tonconnect-manifest.json',
-    buttonRootId: 'ton-connect-button'
+  manifestUrl: 'https://nyper95.github.io/ton-city-game/tonconnect-manifest.json',
+  buttonRootId: 'ton-connect-button'
 });
 
-let userData = {
-    id: null, diamonds: 0, 
-    lvl_tienda: 0, lvl_casino: 0, lvl_piscina: 0, lvl_parque: 0, lvl_diversiones: 0,
-    prod_amigos: 0 
+let user = {};
+let data = {
+  diamonds: 0,
+  last_claim: Date.now(),
+  lvl_tienda: 1,
+  lvl_casino: 1
 };
 
-// Producción por nivel (Configurable)
-const PROD_VAL = { tienda: 10, casino: 25, piscina: 60, parque: 15, diversiones: 120, banco: 5 };
+const BUILDINGS = {
+  tienda: { base: 5, mult: 1.15 },
+  casino: { base: 12, mult: 1.18 }
+};
 
-async function loadData(user) {
-    userData.id = user.id.toString();
-    let { data } = await _supabase.from('usuarios').select('*').eq('telegram_id', userData.id).single();
-    if (data) {
-        userData = { ...userData, ...data, diamonds: data.diamonds || 0 };
-    } else {
-        await _supabase.from('usuarios').insert([{ telegram_id: userData.id, username: user.username }]);
-    }
-    actualizarUI();
+function calcProd(type, lvl) {
+  return Math.floor(BUILDINGS[type].base * Math.pow(BUILDINGS[type].mult, lvl - 1));
 }
 
-function actualizarUI() {
-    // Calculamos producción por hora
-    const p = {
-        tienda: userData.lvl_tienda * PROD_VAL.tienda,
-        casino: userData.lvl_casino * PROD_VAL.casino,
-        piscina: userData.lvl_piscina * PROD_VAL.piscina,
-        diversiones: userData.lvl_diversiones * PROD_VAL.diversiones,
-        banco: PROD_VAL.banco // Supongamos base por tener cuenta
-    };
-    const totalHr = p.tienda + p.casino + p.piscina + p.diversiones + p.banco;
+function totalProduction() {
+  return calcProd('tienda', data.lvl_tienda) + calcProd('casino', data.lvl_casino);
+}
 
-    document.getElementById('user-diamonds').innerText = Math.floor(userData.diamonds).toLocaleString();
-    document.getElementById('global-rate').innerText = totalHr;
-    
-    // Niveles en Mapa
-    document.getElementById('lvl-tienda').innerText = userData.lvl_tienda;
-    document.getElementById('lvl-casino').innerText = userData.lvl_casino;
-    document.getElementById('lvl-piscina').innerText = userData.lvl_piscina;
-    document.getElementById('lvl-diversiones').innerText = userData.lvl_diversiones;
+async function saveData() {
+  await supa.from('usuarios').update({
+    diamonds: data.diamonds,
+    lvl_tienda: data.lvl_tienda,
+    lvl_casino: data.lvl_casino,
+    last_claim: data.last_claim
+  }).eq('telegram_id', user.id.toString());
+}
 
-    // Guardar temporalmente para el modal
-    window.currentProd = { ...p, total: totalHr };
+async function loadData(u) {
+  user = u;
+
+  let { data: db } = await supa.from('usuarios').select('*').eq('telegram_id', user.id.toString()).single();
+
+  if (!db) {
+    await supa.from('usuarios').insert([{
+      telegram_id: user.id.toString(),
+      username: user.username,
+      diamonds: 0,
+      lvl_tienda: 1,
+      lvl_casino: 1,
+      last_claim: Date.now()
+    }]);
+    return loadData(u);
+  }
+
+  data = db;
+  claimOffline();
+  updateUI();
+}
+
+function claimOffline() {
+  const now = Date.now();
+  const elapsed = now - data.last_claim;
+  const hours = elapsed / (1000 * 60 * 60);
+  const reward = hours * totalProduction();
+
+  data.diamonds += reward;
+  data.last_claim = now;
+  saveData();
+}
+
+function updateUI() {
+  document.getElementById('user-diamonds').innerText = Math.floor(data.diamonds).toLocaleString();
+  document.getElementById('lvl-tienda').innerText = data.lvl_tienda;
+  document.getElementById('lvl-casino').innerText = data.lvl_casino;
+
+  const pt = calcProd('tienda', data.lvl_tienda);
+  const pc = calcProd('casino', data.lvl_casino);
+  const total = pt + pc;
+
+  document.getElementById('prod-tienda').innerText = pt;
+  document.getElementById('prod-casino').innerText = pc;
+  document.getElementById('prod-total-mapa').innerText = total;
+
+  document.getElementById('stat-prod-total').innerText = total;
+  document.getElementById('stat-tienda').innerText = pt;
+  document.getElementById('stat-casino').innerText = pc;
 }
 
 function abrirCentral() {
-    const cp = window.currentProd;
-    document.getElementById('modal-prod-total').innerText = cp.total;
-    document.getElementById('stat-banco').innerText = cp.banco;
-    document.getElementById('stat-tienda').innerText = cp.tienda;
-    document.getElementById('stat-casino').innerText = cp.casino;
-    document.getElementById('stat-piscina').innerText = cp.piscina;
-    document.getElementById('stat-diversiones').innerText = cp.diversiones;
-    document.getElementById('stat-amigos').innerText = (userData.prod_amigos || 0).toFixed(2);
-    
-    document.getElementById('overlay').style.display = 'block';
-    document.getElementById('modal-central').style.display = 'block';
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('modal-central').style.display = 'block';
 }
 
 function cerrarTodo() {
-    document.getElementById('overlay').style.display = 'none';
-    document.getElementById('modal-central').style.display = 'none';
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('modal-central').style.display = 'none';
 }
 
+async function comprarDiamantes() {
+  tg.showPopup({
+    title: "Banco TON",
+    message: "Próximamente podrás invertir TON y recibir diamantes.",
+    buttons: [{ type: "ok" }]
+  });
+}
+
+setInterval(() => {
+  data.diamonds += totalProduction() / 3600;
+  updateUI();
+}, 1000);
+
 window.onload = () => {
-    tg.expand();
-    const user = tg.initDataUnsafe.user;
-    if(user) {
-        document.getElementById('user-display').innerText = `@${user.username || "User"}`;
-        loadData(user);
-    }
+  tg.expand();
+  const u = tg.initDataUnsafe.user;
+  if (u) {
+    document.getElementById('user-display').innerText = `@${u.username || "User"}`;
+    loadData(u);
+  }
 };
-                            
