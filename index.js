@@ -332,27 +332,41 @@ function copyReferralCode() {
 // =======================
 
 // Obtener pool global
-async function getGlobalPool() {
+async function getGlobalPool(){
     try {
+        // Siempre leemos del registro MASTER
         let { data, error } = await _supabase
-            .from("global")
-            .select("*")
-            .eq("id", 1)
+            .from("game_data")
+            .select("pool_ton, total_diamonds")
+            .eq("telegram_id", "MASTER")
             .single();
         
-        if (data) {
-            globalPool = data;
-            console.log("📊 Pool global cargado:", globalPool);
-            return data;
-        } else if (error) {
-            console.warn("⚠️ No hay pool global, usando valores por defecto");
-        }
+        if (error) throw error;
+        return data;
     } catch (error) {
-        console.error("❌ Error cargando pool:", error);
+        console.error("❌ Error cargando pool global:", error);
+        // Valores por defecto si hay error
+        return { pool_ton: 100, total_diamonds: 100000 };
     }
-    
-    return globalPool;
 }
+
+async function updateGlobalPool(newTon, newDiamonds){
+    try {
+        await _supabase
+            .from("game_data")
+            .update({
+                pool_ton: newTon,
+                total_diamonds: newDiamonds,
+                last_seen: new Date().toISOString()
+            })
+            .eq("telegram_id", "MASTER");
+        
+        console.log("✅ Pool actualizado:", { newTon, newDiamonds });
+    } catch (error) {
+        console.error("❌ Error actualizando pool:", error);
+    }
+}
+
 
 // Actualizar pool global
 async function updateGlobalPool(newTon, newDiamonds) {
