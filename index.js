@@ -347,17 +347,23 @@ function calcPrice(pool = globalPool) {
 // TON CONNECT Y TRANSACCIONES
 // =======================
 
-// Actualizar UI de TON Connect
+// Actualizar UI de TON Connect - VERSIÓN MEJORADA
 function updateWalletUI(wallet) {
+    console.log("🔄 Actualizando UI de billetera:", wallet ? "Conectada" : "Desconectada");
+    
     const connectButton = document.getElementById('ton-connect-button');
     const walletInfo = document.getElementById('wallet-info');
     const walletAddress = document.getElementById('wallet-address');
     const purchaseSection = document.getElementById('purchase-section');
     
-    if (!connectButton || !walletInfo) return;
+    if (!connectButton || !walletInfo) {
+        console.error("❌ Elementos del DOM no encontrados");
+        return;
+    }
     
     if (wallet) {
         // Billetera conectada
+        console.log("👛 Billetera conectada:", wallet.address);
         connectButton.style.display = 'none';
         walletInfo.classList.remove('hidden');
         
@@ -366,19 +372,22 @@ function updateWalletUI(wallet) {
                            wallet.address.substring(wallet.address.length - 4);
         walletAddress.textContent = shortAddress;
         
-        // Mostrar sección de compra
+        // Asegurar que la sección de compra sea visible
         if (purchaseSection) {
             purchaseSection.classList.remove('hidden');
+            purchaseSection.style.display = 'block';
         }
         
     } else {
         // Billetera desconectada
+        console.log("👛 Billetera desconectada");
         connectButton.style.display = 'block';
         walletInfo.classList.add('hidden');
         
-        // Ocultar sección de compra
+        // La sección de compra puede permanecer visible pero con botones deshabilitados
         if (purchaseSection) {
-            purchaseSection.classList.add('hidden');
+            // No ocultamos, solo mostramos mensaje
+            purchaseSection.style.display = 'block';
         }
     }
 }
