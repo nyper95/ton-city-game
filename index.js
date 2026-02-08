@@ -139,75 +139,85 @@ async function loadUser(user) {
         userData.id = user.id.toString();
         userData.username = user.username || "Usuario";
         
-        // Actualizar UI inmediatamente
-        document.getElementById("user-display").textContent = userData.username;
+        // 1. Generar código de referencia si no existe
+        const referralCode = 'REF' + user.id.toString().slice(-6);
         
-        // Generar código de referencia
-        userData.referral_code = 'REF' + user.id.toString().slice(-6);
-        
-        // Buscar usuario en la base de datos
+        // 2. VERIFICAR SI EL USUARIO YA EXISTE
         let { data, error } = await _supabase
-            .from('usuarios')
+            .from('game_data')
             .select('*')
             .eq('telegram_id', userData.id)
             .single();
         
         if (error && error.code === 'PGRST116') {
-            // Usuario no existe - crear nuevo
-            console.log("➕ Creando nuevo usuario");
+            // ===== USUARIO NUEVO =====
+            console.log("➕ Creando NUEVO usuario");
             
-            // Verificar si hay referencia en la URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const refCode = urlParams.get('ref');
+            // Obtener parámetro de referencia (DE TELEGRAM)
+            const initData = new URLSearchParams(tg.initData || '');
+            const startParam = initData.get('start');
+            const refCode = startParam || new URLSearchParams(window.location.search).get('ref');
             
-            await _supabase.from('usuarios').insert([{
-                telegram_id: userData.id,
-                username: userData.username,
-                diamonds: 100,  // Bonificación inicial
-                referral_code: userData.referral_code,
-                referred_by: refCode || null,
-                lvl_tienda: 0,
-                lvl_casino: 0,
-                lvl_piscina: 0,
-                lvl_parque: 0,
-                lvl_diversion: 0,
-                referral_earnings: 0
-            }]);
+            // Insertar nuevo usuario
+            const { error: insertError } = await _supabase
+                .from('game_data')
+                .insert([{
+                    telegram_id: userData.id,
+                    username: userData.username,
+                    diamonds: 100,  // Bonificación inicial
+                    referral_code: referralCode,
+                    referred_by: refCode || null,
+                    pool_ton: 100,  // Cada usuario tiene estos campos
+                    total_diamonds: 100000,
+                    created_at: new Date().toISOString()
+                }]);
             
+            if (insertError) throw insertError;
+            
+            // Actualizar objeto local
             userData.diamonds = 100;
+            userData.referral_code = referralCode;
+            userData.referred_by = refCode;
             
-            // Dar bonificación al referidor si existe
+            // ===== SI FUE REFERIDO, ACTUALIZAR AL REFERIDOR =====
             if (refCode) {
-                await addReferralBonus(refCode, 50);
+                await processReferral(refCode, userData.id);
             }
             
         } else if (data) {
-            // Usuario existe - cargar datos
-            console.log("📂 Usuario encontrado en DB");
+            // ===== USUARIO EXISTENTE =====
+            console.log("📂 Usuario encontrado:", data.username);
             
+            // Cargar TODOS los datos del usuario
             userData.diamonds = data.diamonds || 0;
             userData.lvl_tienda = data.lvl_tienda || 0;
             userData.lvl_casino = data.lvl_casino || 0;
             userData.lvl_piscina = data.lvl_piscina || 0;
             userData.lvl_parque = data.lvl_parque || 0;
             userData.lvl_diversion = data.lvl_diversion || 0;
-            userData.referral_code = data.referral_code || userData.referral_code;
+            userData.referral_code = data.referral_code || referralCode;
             userData.referred_by = data.referred_by || null;
             userData.referral_earnings = data.referral_earnings || 0;
+            
+            // Actualizar last_seen
+            await _supabase
+                .from('game_data')
+                .update({ last_seen: new Date().toISOString() })
+                .eq('telegram_id', userData.id);
         }
         
         // Actualizar UI
+        document.getElementById("user-display").textContent = userData.username;
         actualizarUI();
         updateReferralStats();
         
         console.log("✅ Usuario cargado correctamente");
         
     } catch (error) {
-        console.error("❌ Error cargando usuario:", error);
-        showError("Error al cargar usuario");
+        console.error("❌ Error CRÍTICO en loadUser:", error);
+        showError("Error al cargar el perfil");
     }
 }
-
 // =======================
 // SISTEMA DE REFERIDOS
 // =======================
