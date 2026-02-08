@@ -680,25 +680,50 @@ async function openBank() {
     }
 }
 
-// Abrir tienda
+// Abrir tienda 
 function openStore() {
     try {
+        // Precios REALISTAS para mejoras
         const items = [
-            {name:"Tienda", lvl:userData.lvl_tienda, price:10},
-            {name:"Casino", lvl:userData.lvl_casino, price:20},
-            {name:"Piscina", lvl:userData.lvl_piscina, price:30},
-            {name:"Parque", lvl:userData.lvl_parque, price:15},
-            {name:"Diversión", lvl:userData.lvl_diversion, price:50}
+            {name: "Tienda", lvl: userData.lvl_tienda, price: 1000, prod: 10},
+            {name: "Casino", lvl: userData.lvl_casino, price: 2500, prod: 25},
+            {name: "Piscina", lvl: userData.lvl_piscina, price: 5000, prod: 60},
+            {name: "Parque", lvl: userData.lvl_parque, price: 1500, prod: 15},
+            {name: "Diversión", lvl: userData.lvl_diversion, price: 10000, prod: 120}
         ];
         
-        let html = "";
+        let html = `<div class="stat" style="background:#0f172a; margin-bottom: 15px;">
+                      <span><b>🏪 Tienda de Mejoras</b></span>
+                      <span><b>${Math.floor(userData.diamonds).toLocaleString()} 💎</b></span>
+                    </div>`;
+        
         items.forEach(item => {
-            html += `<div class="stat">
-                <span>${item.name} Lvl ${item.lvl}</span>
-                <span>${item.price} 💎</span>
-                <button onclick="buyUpgrade('${item.name}',${item.price})">Comprar</button>
+            const nextProduction = item.prod; // Producción adicional por nivel
+            const canAfford = userData.diamonds >= item.price;
+            
+            html += `<div class="stat" style="${canAfford ? 'border-left: 4px solid #10b981;' : 'border-left: 4px solid #dc2626;'}">
+                <div>
+                    <strong>${item.name} Nvl ${item.lvl}</strong><br>
+                    <small style="color: #94a3b8;">+${nextProduction} 💎/hora</small>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: bold; color: ${canAfford ? '#facc15' : '#94a3b8'}">
+                        ${item.price.toLocaleString()} 💎
+                    </div>
+                    <button onclick="buyUpgrade('${item.name}',${item.price})" 
+                            style="background: ${canAfford ? 'linear-gradient(135deg, #3b82f6, #1d4ed8)' : '#475569'}; 
+                                   width: auto; min-width: 100px; padding: 8px 12px; margin-top: 5px;"
+                            ${!canAfford ? 'disabled' : ''}>
+                        ${canAfford ? 'MEJORAR' : 'FONDOS INSUFICIENTES'}
+                    </button>
+                </div>
             </div>`;
         });
+        
+        // Información adicional
+        html += `<div class="info-text" style="margin-top: 15px; text-align: center;">
+                   Cada mejora aumenta tu producción por hora
+                 </div>`;
         
         document.getElementById("storeList").innerHTML = html;
         showModal("modalStore");
