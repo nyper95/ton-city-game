@@ -304,22 +304,24 @@
     </div>
 
     <!-- Modal: Banco -->
-    <div class="modal" id="modalBank">
-        <h3>🏦 Banco TON</h3>
-        <div id="ton-connect-container">
-            <div id="ton-connect-button"></div>
-            <div id="wallet-info" class="hidden">
-                <p>Conectado: <span id="wallet-address"></span></p>
-                <button onclick="tonConnectUI.disconnect()">Desconectar</button>
-            </div>
+   <div class="modal" id="modalBank">
+    <h3>🏦 Banco TON</h3>
+    <!-- El botón de conexión está aquí -->
+    <div id="ton-connect-container">
+        <div id="ton-connect-button"></div>
+        <div id="wallet-info" class="hidden">
+            <p>Conectado: <span id="wallet-address"></span></p>
+            <button onclick="tonConnectUI.disconnect()">Desconectar</button>
         </div>
-        <div id="purchase-section" class="hidden">
-            <p style="text-align: center; margin-bottom: 15px; color: var(--green);">Selecciona la cantidad a comprar:</p>
-            <div id="bankList"></div>
-        </div>
-        <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
-
+    <!-- Las opciones de compra se inyectan aquí -->
+    <div id="purchase-section">
+        <!-- Las opciones de 0.1 a 10 TON aparecerán aquí via JS -->
+        <div id="bankList"></div>
+    </div>
+    <button class="close" onclick="closeAll()">Cerrar</button>
+   </div> 
+    
     <!-- Modal: Tienda -->
     <div class="modal" id="modalStore">
         <h3>🛒 Tienda de Mejoras</h3>
