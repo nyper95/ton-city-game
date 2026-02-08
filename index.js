@@ -273,22 +273,58 @@ async function updateReferralStats() {
     }
 }
 
-// Copiar código de referencia
+// Copiar código de referencia - VERSIÓN CORREGIDA para Telegram
 function copyReferralCode() {
-    if (!userData.referral_code) {
-        showError("Código no disponible");
-        return;
+    try {
+        // Verificar que tenemos el código
+        if (!userData.referral_code) {
+            showError("El código de referencia aún no está disponible");
+            return;
+        }
+        
+        // 1. Usar el username SIN @
+        const BOT_USERNAME = 'ton_city_bot'; // Sin @
+        
+        // 2. Crear el deep link de Telegram
+        // Formato correcto: https://t.me/bot_username?start=referral_code
+        const telegramDeepLink = `https://t.me/${BOT_USERNAME}?start=${userData.referral_code}`;
+        
+        // 3. Crear mensaje amigable
+        const message = `🎮 ¡Únete a Ton City Game! 🎮\n\n` +
+                       `Usa este enlace para registrarte y obtenemos ambos 100 💎 de bonificación:\n` +
+                       `${telegramDeepLink}\n\n` +
+                       `📱 Solo funciona en la app de Telegram`;
+        
+        // 4. Intentar copiar al portapapeles
+        navigator.clipboard.writeText(message).then(() => {
+            showMessage(
+                "✅ Enlace copiado al portapapeles!\n\n" +
+                "Comparte este enlace con tus amigos.\n" +
+                "Deben hacer clic desde la app de Telegram."
+            );
+            
+            // Opcional: Mostrar el enlace también en pantalla
+            document.getElementById("referral-code").innerHTML = 
+                `<div style="text-align: center; padding: 10px; background: #0f172a; border-radius: 10px;">
+                    <code style="font-size: 0.9rem; word-break: break-all;">${telegramDeepLink}</code>
+                    <br>
+                    <small style="color: #94a3b8;">Haz clic derecho para copiar manualmente</small>
+                </div>`;
+                
+        }).catch(err => {
+            console.error("❌ Error copiando al portapapeles:", err);
+            
+            // Fallback: Mostrar el enlace para copia manual
+            const manualCopyText = `🔗 Copia manualmente este enlace:\n\n${telegramDeepLink}`;
+            showMessage(manualCopyText);
+        });
+        
+        console.log("📋 Código de referencia copiado:", telegramDeepLink);
+        
+    } catch (error) {
+        console.error("❌ Error en copyReferralCode:", error);
+        showError("Error al generar el enlace de referencia");
     }
-    
-    const code = userData.referral_code;
-    const url = window.location.origin + window.location.pathname + '?ref=' + code;
-    
-    navigator.clipboard.writeText(url).then(() => {
-        showMessage("✅ Enlace copiado: " + url);
-    }).catch(err => {
-        console.error("Error copiando:", err);
-        showError("Error al copiar");
-    });
 }
 
 // =======================
