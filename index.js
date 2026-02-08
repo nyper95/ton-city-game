@@ -572,8 +572,11 @@ async function comprarTON(tonAmount) {
             .update({ diamonds: userData.diamonds })
             .eq("telegram_id", userData.id);
         
-        // Actualizar pool global
-        await updateGlobalPool(pool.pool_ton + userTon, pool.total_diamonds + diamonds);
+        // Actualizar pool global (SUMAR TON al pool)
+        await updateGlobalPool(
+            pool.pool_ton + userTon,
+            pool.total_diamonds + diamonds
+        );
         
         actualizarUI();
         
@@ -589,7 +592,241 @@ async function comprarTON(tonAmount) {
 }
 
 // =======================
-// FUNCIONES RESTANTES (sin cambios importantes)
+// SISTEMA DE RETIROS - COMPLETO CON MÍNIMO 1 TON
+// =======================
+async function openWithdraw() {
+    try {
+        console.log("💰 Abriendo retiro...");
+        
+        const pool = await getGlobalPool();
+        const price = calcPrice(pool);
+        
+        // Mostrar información
+        document.getElementById("current-price").textContent = price.toFixed(6) + " TON/💎";
+        document.getElementById("available-diamonds").textContent = Math.floor(userData.diamonds) + " 💎";
+        
+        // Calcular mínimo de diamantes para 1 TON
+        const minDiamondsFor1TON = Math.ceil(1 / price);
+        
+        // Configurar input
+        const input = document.getElementById("withdraw-amount");
+        if (input) {
+            input.value = "";
+            input.min = 1;
+            input.max = Math.floor(userData.diamonds);
+            input.placeholder = `Mínimo: ${minDiamondsFor1TON} 💎`;
+        }
+        
+        // Actualizar información de mínimo
+        const infoElement = document.getElementById("withdraw-info");
+        if (infoElement) {
+            infoElement.innerHTML = `Mínimo de retiro: <span class="highlight">${minDiamondsFor1TON} 💎 (1 TON)</span><br>Recibirás: <span id="ton-receive" class="highlight">0</span> TON`;
+        }
+        
+        showModal("modalWithdraw");
+        
+        console.log(`📊 Retiro - Precio: ${price}, Mínimo: ${minDiamondsFor1TON}💎 para 1 TON`);
+        
+    } catch (error) {
+        console.error("❌ Error abriendo retiro:", error);
+        showError("Error al cargar retiro");
+    }
+}
+
+function updateWithdrawCalculation() {
+    try {
+        const input = document.getElementById("withdraw-amount");
+        const diamonds = parseInt(input.value);
+        
+        if (!diamonds || diamonds <= 0) {
+            document.getElementById("ton-receive").textContent = "0";
+            return;
+        }
+        
+        const pool = { pool_ton: 100, total_diamonds: 100000 };
+        const price = calcPrice(pool);
+        const tonAmount = diamonds * price;
+        
+        // Verificar mínimo de 1 TON
+        const minDiamondsFor1TON = Math.ceil(1 / price);
+        
+        if (diamonds < minDiamondsFor1TON) {
+            document.getElementById("ton-receive").innerHTML = 
+                `<span class="error-text">MÍNIMO ${minDiamondsFor1TON} 💎</span>`;
+            return;
+        }
+        
+        if (diamonds > userData.diamonds) {
+            document.getElementById("ton-receive").innerHTML = 
+                `<span class="error-text">EXCEDE TUS ${Math.floor(userData.diamonds)} 💎</span>`;
+            return;
+        }
+        
+        // Mostrar cantidad a recibir
+        document.getElementById("ton-receive").textContent = tonAmount.toFixed(4);
+        
+    } catch (error) {
+        console.error("❌ Error calculando retiro:", error);
+    }
+}
+
+async function processWithdraw() {
+    try {
+        const input = document.getElementById("withdraw-amount");
+        const diamonds = parseInt(input.value);
+        
+        if (!diamonds || diamonds <= 0) {
+            showError("Ingresa una cantidad válida de diamantes");
+            return;
+        }
+        
+        // Obtener precio actual
+        const pool = await getGlobalPool();
+        const price = calcPrice(pool);
+        const tonAmount = diamonds * price;
+        const minDiamondsFor1TON = Math.ceil(1 / price);
+        
+        // Validación 1: Mínimo de 1 TON
+        if (diamonds < minDiamondsFor1TON) {
+            showError(`Mínimo de retiro: ${minDiamondsFor1TON} 💎 (1 TON)\n\nActualmente ${diamonds} 💎 = ${tonAmount.toFixed(4)} TON`);
+            return;
+        }
+        
+        // Validación 2: Fondos suficientes
+        if (diamonds > userData.diamonds) {
+            showError(`No tienes suficientes diamantes\n\nTienes: ${Math.floor(userData.diamonds)} 💎\nIntentas retirar: ${diamonds} 💎`);
+            return;
+        }
+        
+        // Validación 3: Liquidez en el pool
+        if (tonAmount > pool.pool_ton) {
+            showError(`Liquidez insuficiente en el pool\n\nPool disponible: ${pool.pool_ton.toFixed(2)} TON\nNecesitas: ${tonAmount.toFixed(2)} TON\n\nIntenta más tarde o retira menos`);
+            return;
+        }
+        
+        // Validación 4: Billetera conectada
+        const wallet = tonConnectUI ? tonConnectUI.wallet : null;
+        if (!wallet) {
+            showError("Conecta tu billetera TON primero");
+            openBank(); // Redirigir al banco para conectar
+            return;
+        }
+        
+        // Confirmación final
+        const confirmMsg = 
+            `¿Retirar ${diamonds.toLocaleString()} 💎?\n\n` +
+            `• Recibirás: ${tonAmount.toFixed(4)} TON\n` +
+            `• Precio: ${price.toFixed(6)} TON/💎\n` +
+            `• A tu billetera: ${wallet.address.substring(0, 6)}...${wallet.address.substring(wallet.address.length - 4)}\n\n` +
+            `¿Confirmar retiro?`;
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+        
+        // Procesar retiro
+        await retirarTON(diamonds);
+        closeAll();
+        
+    } catch (error) {
+        console.error("❌ Error procesando retiro:", error);
+        showError("Error en el retiro: " + (error.message || "Intenta nuevamente"));
+    }
+}
+
+async function retirarTON(diamonds) {
+    try {
+        console.log("💎 Procesando retiro de:", diamonds, "diamantes");
+        
+        const wallet = tonConnectUI ? tonConnectUI.wallet : null;
+        if (!wallet) {
+            showError("Conecta tu billetera TON primero");
+            return;
+        }
+        
+        if (diamonds > userData.diamonds) {
+            showError("No tienes suficientes diamantes");
+            return;
+        }
+        
+        if (diamonds <= 0) {
+            showError("Cantidad inválida");
+            return;
+        }
+        
+        const pool = await getGlobalPool();
+        const price = calcPrice(pool);
+        const tonAmount = diamonds * price;
+        
+        // Validar mínimo de 1 TON
+        const minDiamondsFor1TON = Math.ceil(1 / price);
+        if (diamonds < minDiamondsFor1TON) {
+            showError(`Mínimo de retiro: ${minDiamondsFor1TON} 💎 para 1 TON`);
+            return;
+        }
+        
+        if (tonAmount > pool.pool_ton) {
+            showError("Liquidez insuficiente en el pool");
+            return;
+        }
+        
+        // Preparar transacción
+        const tx = {
+            validUntil: Math.floor(Date.now() / 1000) + 600,
+            messages: [{
+                address: wallet.address, // Enviar AL USUARIO
+                amount: (tonAmount * 1e9).toString() // Convertir a nanoTON
+            }]
+        };
+        
+        console.log("📤 Enviando TON al usuario:", tonAmount, "a", wallet.address);
+        
+        // Enviar transacción (TON Connect enviará los TON al usuario)
+        const result = await tonConnectUI.sendTransaction(tx);
+        console.log("✅ Transacción enviada:", result);
+        
+        // Actualizar usuario
+        userData.diamonds -= diamonds;
+        await _supabase.from("game_data")
+            .update({ diamonds: userData.diamonds })
+            .eq("telegram_id", userData.id);
+        
+        // Actualizar pool (RESTAR del pool porque estamos enviando TON)
+        await updateGlobalPool(
+            pool.pool_ton - tonAmount,
+            pool.total_diamonds - diamonds
+        );
+        
+        actualizarUI();
+        
+        // Mensaje de éxito
+        showMessage(
+            `✅ RETIRO EXITOSO!\n\n` +
+            `• Retirados: ${diamonds.toLocaleString()} 💎\n` +
+            `• Recibidos: ${tonAmount.toFixed(4)} TON\n` +
+            `• Enviados a: ${wallet.address.substring(0, 6)}...${wallet.address.substring(wallet.address.length - 4)}\n\n` +
+            `¡Los TON llegarán en unos segundos!`
+        );
+        
+        return result;
+        
+    } catch (error) {
+        console.error("❌ Error en retiro:", error);
+        
+        if (error.message && error.message.includes("rejected")) {
+            showError("❌ Retiro cancelado por el usuario");
+        } else if (error.message && error.message.includes("insufficient")) {
+            showError("❌ Fondos insuficientes en tu billetera para la transacción");
+        } else {
+            showError("❌ Error en el retiro: " + (error.message || "Intenta nuevamente"));
+        }
+        
+        throw error;
+    }
+}
+
+// =======================
+// PRODUCCIÓN Y UI
 // =======================
 function actualizarUI() {
     try {
@@ -666,9 +903,9 @@ function startProduction() {
     }, 1000);
 }
 
-// Resto de funciones (openStore, buyUpgrade, openCentral, etc.)
-// ... (mantén el código que ya tenías para estas funciones)
-
+// =======================
+// TIENDA DE MEJORAS
+// =======================
 function openStore() {
     try {
         const items = [
@@ -762,6 +999,9 @@ async function buyUpgrade(name, price) {
     }
 }
 
+// =======================
+// FUNCIONES RESTANTES
+// =======================
 function openCentral() {
     try {
         const prod = {
