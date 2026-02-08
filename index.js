@@ -617,41 +617,62 @@ function startProduction() {
 // MODALES Y NAVEGACIÓN
 // =======================
 
-// Abrir banco
+// Abrir banco 
 async function openBank() {
     try {
+        console.log("🏦 Abriendo banco...");
         showModal("modalBank");
         
-        // Actualizar UI de billetera
-        updateWalletUI(tonConnectUI.wallet);
+        // Forzar actualización de UI de billetera
+        const wallet = tonConnectUI.wallet;
+        console.log("Estado de billetera:", wallet ? "Conectada" : "Desconectada", wallet);
         
-        // Si hay billetera conectada, mostrar opciones
-        if (tonConnectUI.wallet) {
-            const pool = await getGlobalPool();
-            const price = calcPrice(pool);
-            
-            let html = "";
-            const tonOptions = [0.1, 0.5, 1, 2, 5, 10];
-            
-            // Cabecera con precio
-            html = `<div class="stat" style="background:#0f172a; margin-bottom: 15px;">
+        updateWalletUI(wallet);
+        
+        // Obtener pool y precio
+        const pool = await getGlobalPool();
+        const price = calcPrice(pool);
+        console.log("💰 Precio calculado:", price, "TON/💎");
+        
+        // SIEMPRE generar HTML de compra, incluso si no hay billetera
+        let html = `<div class="stat" style="background:#0f172a; margin-bottom: 15px;">
                       <span><b>💰 Precio actual</b></span>
                       <span><b>${price.toFixed(6)} TON/💎</b></span>
                     </div>`;
+        
+        // Opciones de compra desde 0.10 TON
+        const tonOptions = [0.10, 0.50, 1, 2, 5, 10];
+        
+        tonOptions.forEach(ton => {
+            const diamonds = Math.floor((ton * USER_SHARE) / price);
+            // Asegurar mínimo 100 diamantes como pediste
+            const finalDiamonds = Math.max(diamonds, 100);
             
-            // Opciones de compra
-            tonOptions.forEach(ton => {
-                const diamonds = Math.floor((ton * USER_SHARE) / price);
-                html += `
-                <div class="stat">
-                    <span>${ton.toFixed(2)} TON</span>
-                    <span>≈ ${diamonds} 💎</span>
-                    <button onclick="comprarTON(${ton})">Comprar</button>
-                </div>`;
-            });
-            
-            document.getElementById("bankList").innerHTML = html;
+            html += `
+            <div class="stat" style="border-left: 4px solid var(--primary);">
+                <div>
+                    <strong>${ton.toFixed(2)} TON</strong><br>
+                    <small style="color: #94a3b8;">→ ${finalDiamonds.toLocaleString()} 💎</small>
+                </div>
+                <button onclick="comprarTON(${ton})" 
+                        style="background: linear-gradient(135deg, #10b981, #059669); 
+                               width: auto; min-width: 100px;"
+                        ${!wallet ? 'disabled' : ''}>
+                    ${wallet ? 'COMPRAR' : 'CONECTA BILLETERA'}
+                </button>
+            </div>`;
+        });
+        
+        // Mensaje si no hay billetera
+        if (!wallet) {
+            html += `<div class="stat" style="background: #1e293b; text-align: center; padding: 15px;">
+                       <p style="margin: 0; color: #facc15;">
+                         <i class="fa-solid fa-wallet"></i> Conecta tu billetera para comprar
+                       </p>
+                     </div>`;
         }
+        
+        document.getElementById("bankList").innerHTML = html;
         
     } catch (error) {
         console.error("❌ Error abriendo banco:", error);
