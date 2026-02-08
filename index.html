@@ -139,6 +139,7 @@ button{
 }
 button:disabled{
     background:#334155;
+    cursor:not-allowed;
 }
 .close{
     background:#dc2626;
@@ -207,6 +208,11 @@ button:disabled{
 .input-group {
     margin: 20px 0;
 }
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #94a3b8;
+}
 .input-group input {
     width: 100%;
     padding: 15px;
@@ -216,15 +222,23 @@ button:disabled{
     color: white;
     font-size: 16px;
     box-sizing: border-box;
-    margin-top: 8px;
 }
 .info-text {
     color: #94a3b8;
     font-size: 0.9rem;
     margin: 10px 0;
+    text-align: center;
 }
 .highlight {
     color: var(--primary);
+    font-weight: bold;
+}
+.error-text {
+    color: #ef4444;
+    font-weight: bold;
+}
+.success-text {
+    color: #10b981;
     font-weight: bold;
 }
 </style>
@@ -338,8 +352,8 @@ button:disabled{
     </div>
     <div class="input-group">
         <label>💎 Diamantes a retirar:</label>
-        <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1" max="1000000">
-        <p class="info-text">Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
+        <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1">
+        <p class="info-text" id="withdraw-info">Mínimo: calculando...<br>Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
     </div>
     <button onclick="processWithdraw()" id="withdraw-btn">
         <i class="fa-solid fa-money-bill-transfer"></i> Retirar TON
@@ -360,4 +374,4 @@ button:disabled{
 
 <script src="index.js"></script>
 </body>
-</html>
+    </html>
