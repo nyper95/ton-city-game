@@ -404,7 +404,7 @@ async function sendTon(amount, to) {
     }
 }
 
-// Comprar TON (obtener diamantes)
+// Comprar TON - VERSIÓN CON MÍNIMO 100 DIAMANTES
 async function comprarTON(tonAmount) {
     try {
         console.log("🛒 Comprando", tonAmount, "TON");
@@ -412,7 +412,13 @@ async function comprarTON(tonAmount) {
         // Verificar billetera conectada
         const wallet = tonConnectUI.wallet;
         if (!wallet) {
-            showError("Conecta tu billetera TON primero");
+            showError("⚠️ Conecta tu billetera TON primero");
+            return;
+        }
+        
+        // Validar cantidad mínima
+        if (tonAmount < 0.1) {
+            showError("⚠️ Cantidad mínima: 0.10 TON");
             return;
         }
         
@@ -420,14 +426,26 @@ async function comprarTON(tonAmount) {
         const pool = await getGlobalPool();
         const price = calcPrice(pool);
         const userTon = tonAmount * USER_SHARE;
-        const diamonds = Math.floor(userTon / price);
+        let diamonds = Math.floor(userTon / price);
         
-        if (diamonds <= 0) {
-            showError("Cantidad muy pequeña");
+        // FORZAR MÍNIMO 100 DIAMANTES como pediste
+        if (diamonds < 100) {
+            diamonds = 100;
+            console.log("⚡ Ajustando a mínimo 100 diamantes");
+        }
+        
+        // Mostrar confirmación
+        const confirmMsg = `¿Comprar ${tonAmount.toFixed(2)} TON por ${diamonds.toLocaleString()} 💎?\n\n` +
+                          `• Precio: ${price.toFixed(6)} TON/💎\n` +
+                          `• Recibirás: ${diamonds.toLocaleString()} 💎\n` +
+                          `• Costo real: ${(diamonds * price).toFixed(4)} TON`;
+        
+        if (!confirm(confirmMsg)) {
             return;
         }
         
         // Enviar TON
+        console.log("💸 Enviando transacción...");
         await sendTon(tonAmount, MI_BILLETERA);
         
         // Actualizar usuario
@@ -444,13 +462,19 @@ async function comprarTON(tonAmount) {
         
         // Actualizar UI
         actualizarUI();
-        openBank(); // Refrescar precios
         
-        showMessage(`✅ Compra exitosa: ${diamonds} 💎`);
+        // Refrescar banco para mostrar nuevos precios
+        setTimeout(() => openBank(), 500);
+        
+        // Mostrar éxito
+        showMessage(`✅ ¡COMPRA EXITOSA!\n\n` +
+                   `Has recibido: ${diamonds.toLocaleString()} 💎\n` +
+                   `Por: ${tonAmount.toFixed(2)} TON\n\n` +
+                   `Precio: ${price.toFixed(6)} TON/💎`);
         
     } catch (error) {
         console.error("❌ Error en compra:", error);
-        showError("Error en la compra");
+        showError("❌ Error en la compra: " + (error.message || "Transacción fallida"));
     }
 }
 
