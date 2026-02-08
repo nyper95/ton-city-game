@@ -652,66 +652,89 @@ function startProduction() {
 
 // Abrir banco 
 async function openBank() {
+    console.log("🏦 Abriendo banco...");
+    showModal("modalBank");
+
+    // Intentar conectar si no hay billetera y está disponible
+    const wallet = tonConnectUI.wallet;
+    if (!wallet && typeof tonConnectUI.openModal === 'function') {
+        try {
+            // Abre el modal de conexión directamente
+            await tonConnectUI.openModal();
+        } catch (modalError) {
+            // Error conocido: simplemente lo registramos[citation:2]
+            console.warn("Modal de TON Connect:", modalError);
+        }
+    }
+
+    // 1. FORZAR que la sección de compra sea visible SIEMPRE
+    const purchaseSection = document.getElementById("purchase-section");
+    if (purchaseSection) {
+        purchaseSection.classList.remove("hidden");
+        purchaseSection.style.display = "block";
+        purchaseSection.innerHTML = "<p>Cargando opciones...</p>"; // Mensaje temporal
+    }
+
     try {
-        console.log("🏦 Abriendo banco...");
-        showModal("modalBank");
-        
-        // Forzar actualización de UI de billetera
-        const wallet = tonConnectUI.wallet;
-        console.log("Estado de billetera:", wallet ? "Conectada" : "Desconectada", wallet);
-        
-        updateWalletUI(wallet);
-        
-        // Obtener pool y precio
+        // 2. Cargar datos y generar opciones de compra
         const pool = await getGlobalPool();
         const price = calcPrice(pool);
         console.log("💰 Precio calculado:", price, "TON/💎");
-        
-        // SIEMPRE generar HTML de compra, incluso si no hay billetera
+
+        // Opciones de compra desde 0.10 TON
+        const tonOptions = [0.10, 0.50, 1, 2, 5, 10];
         let html = `<div class="stat" style="background:#0f172a; margin-bottom: 15px;">
                       <span><b>💰 Precio actual</b></span>
                       <span><b>${price.toFixed(6)} TON/💎</b></span>
                     </div>`;
-        
-        // Opciones de compra desde 0.10 TON
-        const tonOptions = [0.10, 0.50, 1, 2, 5, 10];
-        
+
         tonOptions.forEach(ton => {
             const diamonds = Math.floor((ton * USER_SHARE) / price);
-            // Asegurar mínimo 100 diamantes como pediste
-            const finalDiamonds = Math.max(diamonds, 100);
-            
+            const finalDiamonds = Math.max(diamonds, 100); // Mínimo 100 diamantes
+
+            // Determinar estado del botón
+            const isConnected = !!wallet;
+            const buttonText = isConnected ? 'COMPRAR' : 'CONECTA BILLETERA';
+            const buttonStyle = isConnected ?
+                'background: linear-gradient(135deg, #10b981, #059669);' :
+                'background: #475569;';
+            const buttonAction = isConnected ? `comprarTON(${ton})` : 'openBank()'; // Reabrir para conectar
+
             html += `
-            <div class="stat" style="border-left: 4px solid var(--primary);">
+            <div class="stat" style="border-left: 4px solid ${isConnected ? '#facc15' : '#94a3b8'};">
                 <div>
                     <strong>${ton.toFixed(2)} TON</strong><br>
                     <small style="color: #94a3b8;">→ ${finalDiamonds.toLocaleString()} 💎</small>
                 </div>
-                <button onclick="comprarTON(${ton})" 
-                        style="background: linear-gradient(135deg, #10b981, #059669); 
-                               width: auto; min-width: 100px;"
-                        ${!wallet ? 'disabled' : ''}>
-                    ${wallet ? 'COMPRAR' : 'CONECTA BILLETERA'}
+                <button onclick="${buttonAction}"
+                        style="${buttonStyle} width: auto; min-width: 100px;"
+                        ${!isConnected ? 'disabled' : ''}>
+                    ${buttonText}
                 </button>
             </div>`;
         });
-        
-        // Mensaje si no hay billetera
-        if (!wallet) {
-            html += `<div class="stat" style="background: #1e293b; text-align: center; padding: 15px;">
-                       <p style="margin: 0; color: #facc15;">
-                         <i class="fa-solid fa-wallet"></i> Conecta tu billetera para comprar
-                       </p>
-                     </div>`;
+
+        // 3. INYECTAR el HTML en el lugar CORRECTO
+        const bankListElement = document.getElementById("bankList");
+        if (bankListElement) {
+            bankListElement.innerHTML = html;
+            console.log("✅ Opciones de compra generadas.");
+        } else {
+            console.error("❌ No se encontró el elemento #bankList en el DOM.");
         }
-        
-        document.getElementById("bankList").innerHTML = html;
-        
+
     } catch (error) {
-        console.error("❌ Error abriendo banco:", error);
-        showError("Error al cargar el banco");
+        console.error("❌ Error generando opciones de banco:", error);
+        // Mostrar error amigable al usuario
+        const bankListElement = document.getElementById("bankList");
+        if (bankListElement) {
+            bankListElement.innerHTML = `
+                <div class="stat" style="background:#7f1d1d; color: white; text-align:center;">
+                    <p>Error al cargar el banco. Recarga la página.</p>
+                </div>`;
+        }
     }
-}
+                }
 
 // Abrir tienda 
 function openStore() {
