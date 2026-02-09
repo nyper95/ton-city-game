@@ -268,10 +268,19 @@
             color: var(--primary);
             font-weight: bold;
         }
+        
+        .error-text {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        
+        .success-text {
+            color: #10b981;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-
     <!-- Header -->
     <div class="header">
         <div>@<span id="user-display">Cargando...</span></div>
@@ -340,7 +349,7 @@
             <div id="ton-connect-button"></div>
             <div id="wallet-info" class="hidden">
                 <p>Conectado: <span id="wallet-address"></span></p>
-                <button onclick="tonConnectUI.disconnect()">Desconectar</button>
+                <button onclick="window.tonConnectUI.disconnect()">Desconectar</button>
             </div>
         </div>
         <div id="purchase-section">
@@ -406,6 +415,5 @@
 
     <!-- JavaScript -->
     <script src="index.js"></script>
-
 </body>
-</html>
+    </html>
