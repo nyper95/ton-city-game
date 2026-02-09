@@ -1,377 +1,383 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ton City 💎</title>
-
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<style>
-:root {
-    --primary: #facc15;
-    --bg: #0b0f1a;
-    --card: #161d2f;
-    --accent: #38bdf8;
-    --green: #4ade80;
-    --orange: #fb923c;
-    --pink: #f472b6;
-}
-body {
-    margin:0;
-    font-family: 'Segoe UI', sans-serif;
-    background: radial-gradient(circle at top,#0f172a,#020617);
-    color:white;
-    overflow-x:hidden;
-    padding-bottom: 70px;
-}
-.header{
-    text-align:center;
-    padding:14px;
-}
-.balance{
-    font-size:44px;
-    font-weight:800;
-}
-.rate{
-    color:var(--green);
-    font-weight:600;
-    margin-top:4px;
-}
-.central{
-    margin:12px;
-    background:linear-gradient(145deg,#0b1225,#020617);
-    border-radius:22px;
-    padding:18px;
-    border:2px solid var(--primary);
-    box-shadow:0 0 25px rgba(250,204,21,.25);
-    text-align:center;
-    cursor:pointer;
-}
-.central i{
-    font-size:48px;
-    color:var(--primary);
-}
-.central h2{
-    margin:6px 0;
-}
-.central small{
-    color:#94a3b8;
-}
-.grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:12px;
-    padding:12px;
-}
-.card{
-    background: linear-gradient(145deg,#0b1225,#020617);
-    border-radius:18px;
-    padding:14px;
-    border:1px solid rgba(255,255,255,.06);
-    box-shadow:0 0 15px rgba(0,0,0,.7);
-    cursor:pointer;
-    transition:.15s;
-    text-align:center;
-}
-.card:hover{
-    transform:scale(1.04);
-}
-.card i{
-    font-size:34px;
-    margin-bottom:6px;
-}
-.card h3{
-    margin:4px 0;
-}
-.green{color:var(--green)}
-.blue{color:var(--accent)}
-.orange{color:var(--orange)}
-.pink{color:var(--pink)}
-.yellow{color:var(--primary)}
-.overlay,.modal{
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    display:none;
-}
-.overlay{
-    background:rgba(0,0,0,.7);
-    z-index:10;
-}
-.modal{
-    z-index:11;
-    background:#020617;
-    border-radius:22px;
-    padding:20px;
-    max-width:380px;
-    margin:auto;
-    inset:0;
-    height:max-content;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-.stat{
-    display:flex;
-    justify-content:space-between;
-    padding:8px 12px;
-    background:#020617;
-    border-radius:10px;
-    margin:6px 0;
-    border:1px solid rgba(255,255,255,.05);
-}
-button{
-    width:100%;
-    padding:12px;
-    border-radius:14px;
-    border:none;
-    background:#2563eb;
-    color:white;
-    font-weight:700;
-    font-size:15px;
-    cursor:pointer;
-    margin-top:6px;
-}
-button:disabled{
-    background:#334155;
-    cursor:not-allowed;
-}
-.close{
-    background:#dc2626;
-    margin-top:10px;
-}
-.nav-bar{
-    position:fixed;
-    bottom:0;
-    width:100%;
-    background:#0f172a;
-    display:flex;
-    justify-content:space-around;
-    padding:12px 0;
-    border-top:1px solid #1e293b;
-    z-index: 5;
-}
-.nav-item{
-    text-align:center;
-    font-size:0.8rem;
-    color:#94a3b8;
-    font-weight:bold;
-    cursor:pointer;
-    padding:8px 12px;
-    border-radius:10px;
-    transition:0.2s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-.nav-item:hover{
-    background:#1e293b;
-}
-.nav-item i{
-    font-size: 20px;
-}
-#ton-connect-container {
-    margin: 15px 0;
-    text-align: center;
-}
-.hidden {
-    display: none !important;
-}
-.referral-code {
-    background: #0f172a;
-    padding: 15px;
-    border-radius: 12px;
-    text-align: center;
-    margin: 15px 0;
-    border: 1px solid #38bdf8;
-}
-.referral-code code {
-    font-size: 1.3rem;
-    font-weight: bold;
-    color: #facc15;
-    letter-spacing: 2px;
-    display: block;
-    margin: 10px 0;
-    padding: 10px;
-    background: rgba(0,0,0,0.3);
-    border-radius: 8px;
-}
-.copy-btn {
-    background: #10b981 !important;
-}
-.input-group {
-    margin: 20px 0;
-}
-.input-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: #94a3b8;
-}
-.input-group input {
-    width: 100%;
-    padding: 15px;
-    border-radius: 12px;
-    background: #0f172a;
-    border: 2px solid #334155;
-    color: white;
-    font-size: 16px;
-    box-sizing: border-box;
-}
-.info-text {
-    color: #94a3b8;
-    font-size: 0.9rem;
-    margin: 10px 0;
-    text-align: center;
-}
-.highlight {
-    color: var(--primary);
-    font-weight: bold;
-}
-.error-text {
-    color: #ef4444;
-    font-weight: bold;
-}
-.success-text {
-    color: #10b981;
-    font-weight: bold;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ton City 💎</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #facc15;
+            --bg: #0b0f1a;
+            --card: #161d2f;
+            --accent: #38bdf8;
+            --green: #4ade80;
+            --orange: #fb923c;
+            --pink: #f472b6;
+        }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at top, #0f172a, #020617);
+            color: white;
+            overflow-x: hidden;
+            padding-bottom: 70px;
+        }
+        .header {
+            text-align: center;
+            padding: 14px;
+        }
+        .balance {
+            font-size: 44px;
+            font-weight: 800;
+        }
+        .rate {
+            color: var(--green);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .central {
+            margin: 12px;
+            background: linear-gradient(145deg, #0b1225, #020617);
+            border-radius: 22px;
+            padding: 18px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 25px rgba(250, 204, 21, .25);
+            text-align: center;
+            cursor: pointer;
+        }
+        .central i {
+            font-size: 48px;
+            color: var(--primary);
+        }
+        .central h2 {
+            margin: 6px 0;
+        }
+        .central small {
+            color: #94a3b8;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 12px;
+        }
+        .card {
+            background: linear-gradient(145deg, #0b1225, #020617);
+            border-radius: 18px;
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, .06);
+            box-shadow: 0 0 15px rgba(0, 0, 0, .7);
+            cursor: pointer;
+            transition: .15s;
+            text-align: center;
+        }
+        .card:hover {
+            transform: scale(1.04);
+        }
+        .card i {
+            font-size: 34px;
+            margin-bottom: 6px;
+        }
+        .card h3 {
+            margin: 4px 0;
+        }
+        .green { color: var(--green); }
+        .blue { color: var(--accent); }
+        .orange { color: var(--orange); }
+        .pink { color: var(--pink); }
+        .yellow { color: var(--primary); }
+        
+        .overlay, .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        .overlay {
+            background: rgba(0, 0, 0, .7);
+            z-index: 10;
+        }
+        .modal {
+            z-index: 11;
+            background: #020617;
+            border-radius: 22px;
+            padding: 20px;
+            max-width: 380px;
+            margin: auto;
+            inset: 0;
+            height: max-content;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #020617;
+            border-radius: 10px;
+            margin: 6px 0;
+            border: 1px solid rgba(255, 255, 255, .05);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 14px;
+            border: none;
+            background: #2563eb;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+        button:disabled {
+            background: #334155;
+            cursor: not-allowed;
+        }
+        .close {
+            background: #dc2626;
+            margin-top: 10px;
+        }
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #0f172a;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #1e293b;
+            z-index: 5;
+        }
+        .nav-item {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 10px;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .nav-item:hover {
+            background: #1e293b;
+        }
+        .nav-item i {
+            font-size: 20px;
+        }
+        #ton-connect-container {
+            margin: 15px 0;
+            text-align: center;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .referral-code {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 15px 0;
+            border: 1px solid #38bdf8;
+        }
+        .referral-code code {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #facc15;
+            letter-spacing: 2px;
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+        .copy-btn {
+            background: #10b981 !important;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #94a3b8;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .info-text {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .highlight {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        .error-text {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        .success-text {
+            color: #10b981;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-
-<div class="header">
-    <div>@<span id="user-display">Cargando...</span></div>
-    <div class="balance"><span id="diamonds">0</span> 💎</div>
-    <div class="rate">+ <span id="rate">0</span> / hr</div>
-</div>
-
-<div class="central" onclick="openCentral()">
-    <i class="fa-solid fa-city"></i>
-    <h2>Edificio Central</h2>
-    <small>Estadísticas generales</small>
-</div>
-
-<div class="grid">
-    <div class="card yellow" onclick="openBank()">
-        <i class="fa-solid fa-building-columns"></i>
-        <h3>Banco</h3>
-        <small>Comprar TON → 💎</small>
+    <!-- Header -->
+    <div class="header">
+        <div>@<span id="user-display">Cargando...</span></div>
+        <div class="balance"><span id="diamonds">0</span> 💎</div>
+        <div class="rate">+ <span id="rate">0</span> / hr</div>
     </div>
-    <div class="card green" onclick="openStore()">
-        <i class="fa-solid fa-cart-shopping"></i>
-        <h3>Tienda</h3>
-        <small>Mejoras</small>
-    </div>
-    <div class="card orange">
-        <i class="fa-solid fa-dice"></i>
-        <h3>Casino</h3>
-        <small>Lvl: <span id="lvl_casino">0</span></small>
-    </div>
-    <div class="card blue">
-        <i class="fa-solid fa-water-ladder"></i>
-        <h3>Piscina</h3>
-        <small>Lvl: <span id="lvl_piscina">0</span></small>
-    </div>
-    <div class="card green">
-        <i class="fa-solid fa-tree"></i>
-        <h3>Parque</h3>
-        <small>Lvl: <span id="lvl_parque">0</span></small>
-    </div>
-    <div class="card pink">
-        <i class="fa-solid fa-gamepad"></i>
-        <h3>Diversión</h3>
-        <small>Lvl: <span id="lvl_diversion">0</span></small>
-    </div>
-</div>
 
-<div class="overlay" id="overlay" onclick="closeAll()"></div>
+    <!-- Edificio Central -->
+    <div class="central" onclick="openCentral()">
+        <i class="fa-solid fa-city"></i>
+        <h2>Edificio Central</h2>
+        <small>Estadísticas generales</small>
+    </div>
 
-<div class="modal" id="centralModal">
-    <h3>🏛 Edificio Central</h3>
-    <div class="stat"><span>Tienda</span><span id="s_tienda">0</span></div>
-    <div class="stat"><span>Casino</span><span id="s_casino">0</span></div>
-    <div class="stat"><span>Piscina</span><span id="s_piscina">0</span></div>
-    <div class="stat"><span>Parque</span><span id="s_parque">0</span></div>
-    <div class="stat"><span>Diversión</span><span id="s_diversion">0</span></div>
-    <div class="stat" style="background:#022c22"><b>Total / hr</b><b id="s_total">0</b></div>
-    <button class="close" onclick="closeAll()">Cerrar</button>
-</div>
-
-<div class="modal" id="modalBank">
-    <h3>🏦 Banco TON</h3>
-    <div id="ton-connect-container">
-        <div id="ton-connect-button"></div>
-        <div id="wallet-info" class="hidden">
-            <p>Conectado: <span id="wallet-address"></span></p>
-            <button onclick="tonConnectUI.disconnect()">Desconectar</button>
+    <!-- Grid de Edificios -->
+    <div class="grid">
+        <div class="card yellow" onclick="openBank()">
+            <i class="fa-solid fa-building-columns"></i>
+            <h3>Banco</h3>
+            <small>Comprar TON → 💎</small>
+        </div>
+        <div class="card green" onclick="openStore()">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <h3>Tienda</h3>
+            <small>Mejoras</small>
+        </div>
+        <div class="card orange" onclick="openCentral()">
+            <i class="fa-solid fa-dice"></i>
+            <h3>Casino</h3>
+            <small>Lvl: <span id="lvl_casino">0</span></small>
+        </div>
+        <div class="card blue" onclick="openCentral()">
+            <i class="fa-solid fa-water-ladder"></i>
+            <h3>Piscina</h3>
+            <small>Lvl: <span id="lvl_piscina">0</span></small>
+        </div>
+        <div class="card green" onclick="openCentral()">
+            <i class="fa-solid fa-tree"></i>
+            <h3>Parque</h3>
+            <small>Lvl: <span id="lvl_parque">0</span></small>
+        </div>
+        <div class="card pink" onclick="openCentral()">
+            <i class="fa-solid fa-gamepad"></i>
+            <h3>Diversión</h3>
+            <small>Lvl: <span id="lvl_diversion">0</span></small>
         </div>
     </div>
-    <div id="purchase-section">
-        <div id="bankList"></div>
+
+    <!-- Overlay y Modales -->
+    <div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+    <div class="modal" id="centralModal">
+        <h3>🏛 Edificio Central</h3>
+        <div class="stat"><span>Tienda</span><span id="s_tienda">0</span></div>
+        <div class="stat"><span>Casino</span><span id="s_casino">0</span></div>
+        <div class="stat"><span>Piscina</span><span id="s_piscina">0</span></div>
+        <div class="stat"><span>Parque</span><span id="s_parque">0</span></div>
+        <div class="stat"><span>Diversión</span><span id="s_diversion">0</span></div>
+        <div class="stat" style="background:#022c22"><b>Total / hr</b><b id="s_total">0</b></div>
+        <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
-    <button class="close" onclick="closeAll()">Cerrar</button>
-</div>
 
-<div class="modal" id="modalStore">
-    <h3>🛒 Tienda de Mejoras</h3>
-    <div id="storeList"></div>
-    <button class="close" onclick="closeAll()">Cerrar</button>
-</div>
+    <div class="modal" id="modalBank">
+        <h3>🏦 Banco TON</h3>
+        <div id="ton-connect-container">
+            <div id="ton-connect-button"></div>
+            <div id="wallet-info" class="hidden">
+                <p>Conectado: <span id="wallet-address"></span></p>
+                <button onclick="window.tonConnectUI.disconnect()">Desconectar</button>
+            </div>
+        </div>
+        <div id="purchase-section">
+            <div id="bankList"></div>
+        </div>
+        <button class="close" onclick="closeAll()">Cerrar</button>
+    </div>
 
-<div class="modal" id="modalFriends">
-    <h3>👥 Sistema de Amigos</h3>
-    <div class="referral-code">
-        <p>Tu código de referencia:</p>
-        <code id="referral-code">CARGANDO...</code>
-        <button class="copy-btn" onclick="copyReferralCode()">
-            <i class="fa-regular fa-copy"></i> Copiar Código
+    <div class="modal" id="modalStore">
+        <h3>🛒 Tienda de Mejoras</h3>
+        <div id="storeList"></div>
+        <button class="close" onclick="closeAll()">Cerrar</button>
+    </div>
+
+    <div class="modal" id="modalFriends">
+        <h3>👥 Sistema de Amigos</h3>
+        <div class="referral-code">
+            <p>Tu código de referencia:</p>
+            <code id="referral-code">CARGANDO...</code>
+            <button class="copy-btn" onclick="copyReferralCode()">
+                <i class="fa-regular fa-copy"></i> Copiar Código
+            </button>
+        </div>
+        <div class="stat"><span>Amigos referidos</span><span id="ref-count">0</span></div>
+        <div class="stat"><span>Ganancias por referidos</span><span id="ref-earnings">0 💎</span></div>
+        <div class="stat" style="background:#0f172a"><span>Total ganado (10%)</span><span id="ref-total">0 💎</span></div>
+        <p class="info-text">Ganas el <span class="highlight">10%</span> de los diamantes que produzcan tus amigos referidos.</p>
+        <button class="close" onclick="closeAll()">Cerrar</button>
+    </div>
+
+    <div class="modal" id="modalWithdraw">
+        <h3>💰 Retirar TON</h3>
+        <div class="stat">
+            <span>Precio actual</span>
+            <span id="current-price">0 TON/💎</span>
+        </div>
+        <div class="stat">
+            <span>Tus diamantes</span>
+            <span id="available-diamonds">0 💎</span>
+        </div>
+        <div class="input-group">
+            <label>💎 Diamantes a retirar:</label>
+            <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1">
+            <p class="info-text" id="withdraw-info">Mínimo: calculando...<br>Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
+        </div>
+        <button onclick="processWithdraw()" id="withdraw-btn">
+            <i class="fa-solid fa-money-bill-transfer"></i> Retirar TON
         </button>
+        <button class="close" onclick="closeAll()">Cancelar</button>
     </div>
-    <div class="stat"><span>Amigos referidos</span><span id="ref-count">0</span></div>
-    <div class="stat"><span>Ganancias por referidos</span><span id="ref-earnings">0 💎</span></div>
-    <div class="stat" style="background:#0f172a"><span>Total ganado (10%)</span><span id="ref-total">0 💎</span></div>
-    <p class="info-text">Ganas el <span class="highlight">10%</span> de los diamantes que produzcan tus amigos referidos.</p>
-    <button class="close" onclick="closeAll()">Cerrar</button>
-</div>
 
-<div class="modal" id="modalWithdraw">
-    <h3>💰 Retirar TON</h3>
-    <div class="stat">
-        <span>Precio actual</span>
-        <span id="current-price">0 TON/💎</span>
+    <!-- Barra de Navegación -->
+    <div class="nav-bar">
+        <div class="nav-item" onclick="openFriends()">
+            <i class="fa-solid fa-user-group"></i>
+            <span>AMIGOS</span>
+        </div>
+        <div class="nav-item" onclick="openWithdraw()">
+            <i class="fa-solid fa-money-bill-transfer"></i>
+            <span>RETIRAR</span>
+        </div>
     </div>
-    <div class="stat">
-        <span>Tus diamantes</span>
-        <span id="available-diamonds">0 💎</span>
-    </div>
-    <div class="input-group">
-        <label>💎 Diamantes a retirar:</label>
-        <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1">
-        <p class="info-text" id="withdraw-info">Mínimo: calculando...<br>Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
-    </div>
-    <button onclick="processWithdraw()" id="withdraw-btn">
-        <i class="fa-solid fa-money-bill-transfer"></i> Retirar TON
-    </button>
-    <button class="close" onclick="closeAll()">Cancelar</button>
-</div>
 
-<div class="nav-bar">
-    <div class="nav-item" onclick="openFriends()">
-        <i class="fa-solid fa-user-group"></i>
-        <span>AMIGOS</span>
-    </div>
-    <div class="nav-item" onclick="openWithdraw()">
-        <i class="fa-solid fa-money-bill-transfer"></i>
-        <span>RETIRAR</span>
-    </div>
-</div>
-
-<script src="index.js"></script>
+    <!-- JavaScript -->
+    <script src="index.js"></script>
 </body>
 </html>
