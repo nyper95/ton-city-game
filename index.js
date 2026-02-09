@@ -1,25 +1,22 @@
 // =======================
 // CONFIGURACIÓN INICIAL
 // =======================
-console.log("✅ index.js cargado correctamente");
+console.log("✅ Ton City Game - Inicializando...");
 
-// Inicializar Telegram Web App
+// Telegram Web App
 const tg = window.Telegram.WebApp;
 
-// Configuración de Supabase
+// Direcciones de billeteras (80/20)
+const BILLETERA_PROPIETARIO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw"; // Tu 20%
+const BILLETERA_POOL = "UQDY-D_6F1oyftwpq_AZNBOd3Fh4xKDj2C8sjz6Cx1A_Lvxb"; // Pool 80%
+
+// Supabase
 const SUPABASE_URL = 'https://xkkifqxxglcuyruwkbih.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Tu billetera TON
-const MI_BILLETERA = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw";
-
-// Configuración de TON Connect - INICIALIZACIÓN RETARDADA
+// Variables globales
 let tonConnectUI = null;
-
-// =======================
-// ESTADO GLOBAL
-// =======================
 let userData = {
     id: null,
     username: "Usuario",
@@ -34,146 +31,102 @@ let userData = {
     referral_earnings: 0
 };
 
-// Configuración económica
-const USER_SHARE = 0.8;    // 80% para usuarios
-const OWNER_SHARE = 0.2;   // 20% para el dueño
-
-// Producción por hora - SIN BANCO
-const PROD_VAL = {
-    tienda: 10,
-    casino: 25, 
-    piscina: 60,
-    parque: 15,
-    diversion: 120,
-    banco: 0
-};
+// Configuración
+const USER_SHARE = 0.8;
+const PROD_VAL = { tienda:10, casino:25, piscina:60, parque:15, diversion:120, banco:0 };
 
 // =======================
-// FUNCIONES DE INICIALIZACIÓN
+// INICIALIZACIÓN PRINCIPAL
 // =======================
 async function initApp() {
-    console.log("🚀 Inicializando aplicación...");
+    console.log("🚀 Iniciando aplicación...");
     
-    tg.expand();
-    
-    // 1. Cargar usuario primero
-    const user = tg.initDataUnsafe.user;
-    if (user) {
-        console.log("✅ Usuario de Telegram detectado:", user.username);
-        await loadUser(user);
-    } else {
-        console.log("⚠️ No hay usuario de Telegram");
-        document.getElementById("user-display").textContent = "Invitado";
-        showError("Abre el juego desde Telegram para jugar");
-        return;
-    }
-    
-    // 2. Inicializar TON Connect DESPUÉS de cargar usuario
-    await initTONConnect();
-    
-    // 3. Iniciar producción
-    startProduction();
-    
-    console.log("✅ Aplicación inicializada correctamente");
-}
-
-// INICIALIZAR TON CONNECT DE FORMA SEGURA
-async function initTONConnect() {
     try {
-        console.log("🔗 Inicializando TON Connect...");
+        tg.expand();
         
-        // Esperar a que el DOM esté listo
-        if (!document.getElementById('ton-connect-button')) {
-            console.log("⏳ Esperando elemento del botón...");
-            await new Promise(resolve => setTimeout(resolve, 500));
+        const user = tg.initDataUnsafe.user;
+        if (user) {
+            console.log("✅ Usuario:", user.username);
+            await loadUser(user);
+            document.getElementById("user-display").textContent = user.username || "Usuario";
+        } else {
+            document.getElementById("user-display").textContent = "Invitado";
         }
         
-        // Inicializar TON Connect
+        await initTONConnect();
+        startProduction();
+        getGlobalPool();
+        
+        console.log("✅ Aplicación lista");
+        
+    } catch (error) {
+        console.error("❌ Error initApp:", error);
+    }
+}
+
+async function initTONConnect() {
+    try {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
         tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://nyper95.github.io/ton-city-game/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-button',
             uiPreferences: { theme: 'DARK' }
         });
         
-        // Configurar eventos
         tonConnectUI.onStatusChange((wallet) => {
-            console.log("🔄 Estado de TON Connect:", wallet ? "Conectado" : "Desconectado");
+            console.log("🔄 Wallet:", wallet ? "Conectado" : "Desconectado");
             updateWalletUI(wallet);
         });
         
-        // Estado inicial
-        const wallet = await tonConnectUI.connectionRestored;
-        updateWalletUI(wallet);
-        
-        console.log("✅ TON Connect inicializado");
+        updateWalletUI(await tonConnectUI.connectionRestored);
         
     } catch (error) {
-        console.error("❌ Error inicializando TON Connect:", error);
-        showError("Error con la conexión de billetera");
+        console.error("❌ Error TON Connect:", error);
     }
 }
 
 function updateWalletUI(wallet) {
     try {
-        const connectButton = document.getElementById('ton-connect-button');
-        const walletInfo = document.getElementById('wallet-info');
-        const walletAddress = document.getElementById('wallet-address');
+        const btn = document.getElementById('ton-connect-button');
+        const info = document.getElementById('wallet-info');
+        const addr = document.getElementById('wallet-address');
         
-        if (!connectButton || !walletInfo) {
-            console.warn("⚠️ Elementos del DOM no listos para TON Connect");
-            return;
-        }
+        if (!btn || !info) return;
         
         if (wallet) {
-            // Ocultar botón de conexión, mostrar info
-            connectButton.style.display = 'none';
-            walletInfo.classList.remove('hidden');
-            
-            // Formatear dirección
-            const shortAddress = wallet.address.substring(0, 6) + '...' + 
-                               wallet.address.substring(wallet.address.length - 4);
-            walletAddress.textContent = shortAddress;
-            
-            console.log("👛 Billetera conectada:", shortAddress);
+            btn.style.display = 'none';
+            info.classList.remove('hidden');
+            addr.textContent = wallet.address.substring(0,6) + '...' + wallet.address.substring(wallet.address.length-4);
         } else {
-            // Mostrar botón de conexión
-            connectButton.style.display = 'block';
-            walletInfo.classList.add('hidden');
-            
-            console.log("👛 Billetera desconectada");
+            btn.style.display = 'block';
+            info.classList.add('hidden');
         }
     } catch (error) {
-        console.error("❌ Error actualizando UI de billetera:", error);
+        console.error("❌ Error wallet UI:", error);
     }
 }
 
 // =======================
-// POOL GLOBAL - TABLA ÚNICA
+// POOL GLOBAL
 // =======================
 async function getGlobalPool(){
     try {
-        let { data, error } = await _supabase
+        let { data } = await _supabase
             .from("game_data")
             .select("pool_ton, total_diamonds")
             .eq("telegram_id", "MASTER")
             .single();
-        
-        if (error) {
-            console.error("❌ Error SQL en getGlobalPool:", error);
-            return { pool_ton: 100, total_diamonds: 100000 };
-        }
-        
-        console.log("📊 Pool global cargado:", data);
         return data || { pool_ton: 100, total_diamonds: 100000 };
     } catch (error) {
-        console.error("❌ Error cargando pool global:", error);
+        console.error("❌ Error pool:", error);
         return { pool_ton: 100, total_diamonds: 100000 };
     }
 }
 
 async function updateGlobalPool(newTon, newDiamonds){
     try {
-        const { error } = await _supabase
+        await _supabase
             .from("game_data")
             .update({
                 pool_ton: newTon,
@@ -181,92 +134,65 @@ async function updateGlobalPool(newTon, newDiamonds){
                 last_seen: new Date().toISOString()
             })
             .eq("telegram_id", "MASTER");
-        
-        if (error) throw error;
-        console.log("✅ Pool actualizado:", { newTon, newDiamonds });
     } catch (error) {
         console.error("❌ Error actualizando pool:", error);
     }
 }
 
-function calcPrice(pool = null) {
-    if (!pool) pool = { pool_ton: 100, total_diamonds: 100000 };
+function calcPrice(pool) {
     if (!pool || pool.total_diamonds <= 0) return 0.001;
     const price = (pool.pool_ton * USER_SHARE) / pool.total_diamonds;
     return Math.max(price, 0.000001);
 }
 
 // =======================
-// FUNCIONES DE USUARIO - CORREGIDAS
+// USUARIO Y REFERIDOS
 // =======================
 async function loadUser(user) {
     try {
-        console.log("👤 Cargando usuario:", user.id);
-        
         userData.id = user.id.toString();
         userData.username = user.username || "Usuario";
         
         const referralCode = 'REF' + user.id.toString().slice(-6);
-        userData.referral_code = referralCode;
         
-        // 1. VERIFICAR SI EL USUARIO EXISTE
+        // Detectar referencia
+        let refCode = null;
+        const urlParams = new URLSearchParams(window.location.search);
+        refCode = urlParams.get('ref');
+        
+        if (tg.initData) {
+            const initData = new URLSearchParams(tg.initData);
+            const startParam = initData.get('start');
+            if (startParam) refCode = startParam;
+        }
+        
+        console.log("🔍 Referencia:", refCode);
+        
         let { data, error } = await _supabase
             .from('game_data')
             .select('*')
             .eq('telegram_id', userData.id)
             .single();
         
-        console.log("📋 Resultado consulta usuario:", { data, error });
-        
         if (error && error.code === 'PGRST116') {
-            // ===== USUARIO NUEVO =====
-            console.log("➕ Creando NUEVO usuario");
-            
-            // Obtener código de referencia
-            const initData = new URLSearchParams(tg.initData || '');
-            const startParam = initData.get('start');
-            const refCode = startParam || new URLSearchParams(window.location.search).get('ref');
-            
-            console.log("🔗 Código de referencia detectado:", refCode);
-            
-            // Crear usuario en la base de datos
-            const newUserData = {
+            // Nuevo usuario
+            await _supabase.from('game_data').insert([{
                 telegram_id: userData.id,
                 username: userData.username,
                 diamonds: 0,
                 referral_code: referralCode,
                 referred_by: refCode || null,
-                pool_ton: 100,
-                total_diamonds: 100000,
-                created_at: new Date().toISOString(),
-                last_seen: new Date().toISOString()
-            };
+                created_at: new Date().toISOString()
+            }]);
             
-            console.log("💾 Insertando usuario:", newUserData);
-            
-            const { error: insertError } = await _supabase
-                .from('game_data')
-                .insert([newUserData]);
-            
-            if (insertError) {
-                console.error("❌ Error insertando usuario:", insertError);
-                throw insertError;
-            }
-            
-            // Actualizar objeto local
             userData.diamonds = 0;
+            userData.referral_code = referralCode;
             userData.referred_by = refCode;
             
-            // PROCESAR REFERIDO SI EXISTE
-            if (refCode) {
-                await processReferral(refCode, userData.id);
-            }
+            if (refCode) await processReferral(refCode, userData.id);
             
         } else if (data) {
-            // ===== USUARIO EXISTENTE =====
-            console.log("📂 Usuario encontrado en DB");
-            
-            // Cargar todos los datos
+            // Usuario existente
             userData.diamonds = data.diamonds || 0;
             userData.lvl_tienda = data.lvl_tienda || 0;
             userData.lvl_casino = data.lvl_casino || 0;
@@ -276,360 +202,376 @@ async function loadUser(user) {
             userData.referral_code = data.referral_code || referralCode;
             userData.referred_by = data.referred_by || null;
             userData.referral_earnings = data.referral_earnings || 0;
-            
-            // Actualizar last_seen
-            await _supabase
-                .from('game_data')
-                .update({ last_seen: new Date().toISOString() })
-                .eq('telegram_id', userData.id);
         }
         
-        // Actualizar UI
-        document.getElementById("user-display").textContent = userData.username;
         actualizarUI();
-        
-        // Cargar estadísticas de referidos
         await updateReferralStats();
         
-        console.log("✅ Usuario cargado:", userData);
-        
     } catch (error) {
-        console.error("❌ Error CRÍTICO en loadUser:", error);
-        showError("Error al cargar el perfil");
+        console.error("❌ Error cargando usuario:", error);
     }
 }
 
-// =======================
-// SISTEMA DE REFERIDOS - CORREGIDO
-// =======================
 async function processReferral(referralCode, newUserId) {
     try {
-        console.log("🤝 Procesando referencia:", referralCode, "para", newUserId);
+        if (!referralCode) return;
         
-        if (!referralCode) {
-            console.log("⚠️ No hay código de referencia");
-            return;
-        }
-        
-        // 1. Buscar al referidor por su código
-        const { data: referrer, error } = await _supabase
+        const { data: referrer } = await _supabase
             .from('game_data')
-            .select('telegram_id, diamonds, referral_earnings, referred_users')
+            .select('telegram_id, referred_users')
             .eq('referral_code', referralCode)
             .single();
         
-        console.log("🔍 Resultado búsqueda referidor:", { referrer, error });
+        if (!referrer) return;
         
-        if (!referrer || error) {
-            console.log("⚠️ Código de referencia inválido o no encontrado:", referralCode);
-            return;
-        }
+        const current = referrer.referred_users || [];
+        const updated = [...current, newUserId];
         
-        // 2. Calcular bonificación (10 diamantes)
-        const bonus = 10;
-        
-        // 3. Actualizar lista de referidos
-        const currentReferredUsers = referrer.referred_users || [];
-        const updatedReferredUsers = [...currentReferredUsers, newUserId];
-        
-        // 4. Actualizar referidor en Supabase
-        const updateData = {
-            diamonds: (referrer.diamonds || 0) + bonus,
-            referral_earnings: (referrer.referral_earnings || 0) + bonus,
-            referred_users: updatedReferredUsers,
-            last_seen: new Date().toISOString()
-        };
-        
-        console.log("📤 Actualizando referidor:", updateData);
-        
-        const { error: updateError } = await _supabase
-            .from('game_data')
-            .update(updateData)
+        await _supabase.from('game_data')
+            .update({ referred_users: updated })
             .eq('telegram_id', referrer.telegram_id);
         
-        if (updateError) {
-            console.error("❌ Error actualizando referidor:", updateError);
-            return;
-        }
-        
-        console.log(`✅ Referencia procesada: ${referrer.telegram_id} gana ${bonus}💎`);
-        
     } catch (error) {
-        console.error("❌ Error procesando referencia:", error);
+        console.error("❌ Error referencia:", error);
     }
 }
 
 async function updateReferralStats() {
     try {
-        if (!userData.id) {
-            console.log("⚠️ No hay userData.id para referidos");
-            return;
-        }
+        if (!userData.id) return;
         
-        console.log("📊 Actualizando stats de referidos para:", userData.id);
-        
-        // Obtener datos ACTUALIZADOS del usuario
-        const { data, error } = await _supabase
+        const { data } = await _supabase
             .from('game_data')
             .select('referral_earnings, referred_users, referral_code')
             .eq('telegram_id', userData.id)
             .single();
         
-        console.log("📋 Datos de referidos:", { data, error });
-        
         if (data) {
-            // Contar referidos
+            userData.referral_earnings = data.referral_earnings || 0;
+            userData.referral_code = data.referral_code || userData.referral_code;
+            
             const refCount = data.referred_users?.length || 0;
             const earnings = data.referral_earnings || 0;
-            const referralCode = data.referral_code || userData.referral_code;
             
-            console.log(`📈 Stats: ${refCount} referidos, ${earnings}💎 ganados`);
-            
-            // Actualizar objeto local
-            userData.referral_earnings = earnings;
-            userData.referral_code = referralCode;
-            
-            // Actualizar UI SI LOS ELEMENTOS EXISTEN
-            const refCountElem = document.getElementById("ref-count");
-            const refEarningsElem = document.getElementById("ref-earnings");
-            const refTotalElem = document.getElementById("ref-total");
-            const referralCodeElem = document.getElementById("referral-code");
-            
-            if (refCountElem) refCountElem.textContent = refCount;
-            if (refEarningsElem) refEarningsElem.textContent = `${earnings} 💎`;
-            if (refTotalElem) refTotalElem.textContent = `${earnings} 💎`;
-            if (referralCodeElem) referralCodeElem.textContent = referralCode || "NO DISPONIBLE";
-            
-        } else if (error) {
-            console.error("❌ Error obteniendo datos de referidos:", error);
+            document.getElementById("ref-count").textContent = refCount;
+            document.getElementById("ref-earnings").textContent = `${earnings} 💎`;
+            document.getElementById("ref-total").textContent = `${earnings} 💎`;
+            document.getElementById("referral-code").textContent = userData.referral_code || "NO DISPONIBLE";
         }
-        
     } catch (error) {
-        console.error("❌ Error actualizando stats de referidos:", error);
+        console.error("❌ Error stats:", error);
     }
 }
 
 function copyReferralCode() {
     try {
         if (!userData.referral_code) {
-            showError("El código de referencia aún no está disponible");
+            alert("Código no disponible");
             return;
         }
         
         const BOT_USERNAME = 'ton_city_bot';
-        const telegramDeepLink = `https://t.me/${BOT_USERNAME}?start=${userData.referral_code}`;
-        
-        const message = `🎮 ¡Únete a Ton City Game! 🎮\n\nUsa este enlace para registrarte y obtenemos ambos 10 💎 de bonificación:\n${telegramDeepLink}\n\n📱 Solo funciona en la app de Telegram`;
+        const link = `https://t.me/${BOT_USERNAME}?start=${userData.referral_code}`;
+        const message = `🎮 Ton City Game\n\nRegístrate aquí:\n${link}`;
         
         navigator.clipboard.writeText(message).then(() => {
-            showMessage("✅ Enlace copiado al portapapeles!\n\nComparte este enlace con tus amigos.\nDeben hacer clic desde la app de Telegram.");
-            
-            const referralCodeElem = document.getElementById("referral-code");
-            if (referralCodeElem) {
-                referralCodeElem.innerHTML = 
-                    `<div style="text-align: center; padding: 10px; background: #0f172a; border-radius: 10px;">
-                        <code style="font-size: 0.9rem; word-break: break-all;">${telegramDeepLink}</code>
-                        <br>
-                        <small style="color: #94a3b8;">Haz clic derecho para copiar manualmente</small>
-                    </div>`;
-            }
-                
-        }).catch(err => {
-            console.error("❌ Error copiando:", err);
-            const manualCopyText = `🔗 Copia manualmente este enlace:\n\n${telegramDeepLink}`;
-            showMessage(manualCopyText);
+            alert("✅ Enlace copiado");
+            document.getElementById("referral-code").innerHTML = 
+                `<div style="text-align: center;">
+                    <code>${link}</code>
+                </div>`;
+        }).catch(() => {
+            alert(`🔗 Copia manual:\n\n${link}`);
         });
         
-        console.log("📋 Código de referencia copiado:", telegramDeepLink);
-        
     } catch (error) {
-        console.error("❌ Error en copyReferralCode:", error);
-        showError("Error al generar el enlace de referencia");
+        console.error("❌ Error copiar:", error);
+        alert("Error al copiar");
     }
 }
 
 // =======================
-// BANCO - FUNCIÓN CORREGIDA
+// BANCO Y COMPRAS (80/20)
 // =======================
 async function openBank() {
     try {
-        console.log("🏦 Abriendo banco...");
+        console.log("🏦 Abriendo banco");
+        document.getElementById("overlay").style.display = "block";
+        document.getElementById("modalBank").style.display = "block";
         
-        // Mostrar modal primero
-        showModal("modalBank");
-        
-        // Actualizar UI de billetera inmediatamente
-        const wallet = tonConnectUI ? tonConnectUI.wallet : null;
+        const wallet = tonConnectUI?.wallet;
         updateWalletUI(wallet);
         
-        // Cargar pool global
         const pool = await getGlobalPool();
         const price = calcPrice(pool);
         
-        console.log("💰 Precio calculado:", price, "TON/💎");
-        
-        // Generar HTML de opciones
         let html = `<div class="stat" style="background:#0f172a; margin-bottom: 15px;">
                       <span><b>💰 Precio actual</b></span>
                       <span><b>${price.toFixed(6)} TON/💎</b></span>
                     </div>`;
         
         const tonOptions = [0.10, 0.50, 1, 2, 5, 10];
+        const isConnected = !!wallet;
         
         tonOptions.forEach(ton => {
             const diamonds = Math.floor((ton * USER_SHARE) / price);
             const finalDiamonds = Math.max(diamonds, 100);
             
-            // Verificar si hay billetera conectada
-            const isConnected = !!wallet;
-            const buttonText = isConnected ? 'COMPRAR' : 'CONECTA BILLETERA';
-            const buttonStyle = isConnected ?
-                'background: linear-gradient(135deg, #10b981, #059669);' :
-                'background: #475569; cursor: not-allowed;';
-            const buttonAction = isConnected ? `comprarTON(${ton})` : 'alert("Conecta tu billetera primero")';
-            const buttonDisabled = !isConnected ? 'disabled' : '';
-            
             html += `
-            <div class="stat" style="border-left: 4px solid ${isConnected ? '#facc15' : '#94a3b8'};">
-                <div>
-                    <strong>${ton.toFixed(2)} TON</strong><br>
-                    <small style="color: #94a3b8;">→ ${finalDiamonds.toLocaleString()} 💎</small>
-                </div>
-                <button onclick="${buttonAction}"
-                        style="${buttonStyle} width: auto; min-width: 100px;"
-                        ${buttonDisabled}>
-                    ${buttonText}
+            <div class="stat">
+                <span>${ton.toFixed(2)} TON</span>
+                <span>${finalDiamonds.toLocaleString()} 💎</span>
+                <button onclick="comprarTON(${ton})" ${!isConnected ? 'disabled' : ''}>
+                    ${isConnected ? 'COMPRAR' : 'CONECTA'}
                 </button>
             </div>`;
         });
         
-        // Mensaje informativo
         if (!wallet) {
-            html += `<div class="stat" style="background: #1e293b; text-align: center; padding: 15px; margin-top: 10px;">
-                       <p style="margin: 0; color: #facc15;">
-                         <i class="fa-solid fa-wallet"></i> Conecta tu billetera TON para comprar
-                       </p>
+            html += `<div style="text-align:center;color:#facc15;margin-top:10px;">
+                       <i class="fa-solid fa-wallet"></i> Conecta tu billetera
                      </div>`;
         }
         
-        // Insertar en el DOM
-        const bankListElement = document.getElementById("bankList");
-        if (bankListElement) {
-            bankListElement.innerHTML = html;
-            console.log("✅ Opciones de banco generadas");
-        } else {
-            console.error("❌ No se encontró #bankList");
-            showError("Error al cargar el banco");
-        }
+        document.getElementById("bankList").innerHTML = html;
         
     } catch (error) {
-        console.error("❌ Error abriendo banco:", error);
-        showError("Error al cargar el banco");
+        console.error("❌ Error banco:", error);
+        alert("Error al abrir banco");
     }
 }
 
 async function comprarTON(tonAmount) {
     try {
-        console.log("🛒 Comprando", tonAmount, "TON");
-        
         if (!tonConnectUI || !tonConnectUI.wallet) {
-            showError("⚠️ Conecta tu billetera TON primero");
+            alert("Conecta tu billetera primero");
             return;
         }
         
         if (tonAmount < 0.1) {
-            showError("⚠️ Cantidad mínima: 0.10 TON");
+            alert("Mínimo: 0.10 TON");
             return;
         }
         
         const pool = await getGlobalPool();
         const price = calcPrice(pool);
-        const userTon = tonAmount * USER_SHARE;
-        let diamonds = Math.floor(userTon / price);
-        
+        let diamonds = Math.floor((tonAmount * USER_SHARE) / price);
         if (diamonds < 100) diamonds = 100;
         
-        const confirmMsg = `¿Comprar ${tonAmount.toFixed(2)} TON por ${diamonds.toLocaleString()} 💎?\n\n` +
-                          `• Precio: ${price.toFixed(6)} TON/💎\n` +
-                          `• Recibirás: ${diamonds.toLocaleString()} 💎`;
+        // 80/20
+        const comisionPropietario = tonAmount * 0.2;
+        const fondoPool = tonAmount * 0.8;
         
-        if (!confirm(confirmMsg)) return;
+        if (!confirm(`Comprar ${tonAmount} TON por ${diamonds} 💎?\n\n80% → Pool\n20% → Propietario`)) return;
         
-        // Enviar transacción
         const tx = {
             validUntil: Math.floor(Date.now() / 1000) + 600,
-            messages: [{
-                address: MI_BILLETERA,
-                amount: (tonAmount * 1e9).toString()
-            }]
+            messages: [
+                { address: BILLETERA_POOL, amount: (fondoPool * 1e9).toString() },
+                { address: BILLETERA_PROPIETARIO, amount: (comisionPropietario * 1e9).toString() }
+            ]
         };
         
         await tonConnectUI.sendTransaction(tx);
         
-        // Actualizar usuario
         userData.diamonds += diamonds;
         await _supabase.from("game_data")
             .update({ diamonds: userData.diamonds })
             .eq("telegram_id", userData.id);
         
-        // Actualizar pool global (SUMAR TON al pool)
-        await updateGlobalPool(
-            pool.pool_ton + userTon,
-            pool.total_diamonds + diamonds
-        );
+        await updateGlobalPool(pool.pool_ton + fondoPool, pool.total_diamonds + diamonds);
         
         actualizarUI();
-        
-        // Recargar banco para mostrar nuevo precio
         setTimeout(() => openBank(), 500);
         
-        showMessage(`✅ ¡COMPRA EXITOSA!\n\nHas recibido: ${diamonds.toLocaleString()} 💎\nPor: ${tonAmount.toFixed(2)} TON`);
+        alert(`✅ Compra exitosa!\n${diamonds} 💎 recibidos`);
         
     } catch (error) {
-        console.error("❌ Error en compra:", error);
-        showError("❌ Error en la compra: " + (error.message || "Transacción fallida"));
+        console.error("❌ Error compra:", error);
+        alert("Error en la compra");
     }
 }
 
 // =======================
-// SISTEMA DE RETIROS - COMPLETO CON MÍNIMO 1 TON
+// RETIROS
 // =======================
+async function retirarTON(diamonds) {
+    try {
+        const wallet = tonConnectUI?.wallet;
+        if (!wallet) {
+            alert("Conecta tu billetera");
+            return;
+        }
+        
+        if (diamonds > userData.diamonds) {
+            alert("Diamantes insuficientes");
+            return;
+        }
+        
+        const pool = await getGlobalPool();
+        const price = calcPrice(pool);
+        const tonAmount = diamonds * price;
+        
+        if (tonAmount > pool.pool_ton) {
+            alert("Liquidez insuficiente");
+            return;
+        }
+        
+        if (!confirm(`Retirar ${diamonds} 💎 por ${tonAmount.toFixed(4)} TON?`)) return;
+        
+        // Para automatización futura
+        console.log(`📤 Retiro aprobado: ${tonAmount} TON para ${wallet.address}`);
+        
+        userData.diamonds -= diamonds;
+        await _supabase.from("game_data")
+            .update({ diamonds: userData.diamonds })
+            .eq("telegram_id", userData.id);
+        
+        await updateGlobalPool(pool.pool_ton - tonAmount, pool.total_diamonds - diamonds);
+        
+        actualizarUI();
+        alert(`✅ Retiro procesado\nSe enviarán ${tonAmount.toFixed(4)} TON manualmente`);
+        
+    } catch (error) {
+        console.error("❌ Error retiro:", error);
+        alert("Error en retiro");
+    }
+}
+
+// =======================
+// TIENDA Y PRODUCCIÓN
+// =======================
+function openStore() {
+    try {
+        console.log("🛒 Abriendo tienda");
+        document.getElementById("overlay").style.display = "block";
+        document.getElementById("modalStore").style.display = "block";
+        
+        const items = [
+            {name: "Tienda", lvl: userData.lvl_tienda, price: 1000, prod: 10},
+            {name: "Casino", lvl: userData.lvl_casino, price: 2500, prod: 25},
+            {name: "Piscina", lvl: userData.lvl_piscina, price: 5000, prod: 60},
+            {name: "Parque", lvl: userData.lvl_parque, price: 1500, prod: 15},
+            {name: "Diversión", lvl: userData.lvl_diversion, price: 10000, prod: 120}
+        ];
+        
+        let html = `<div class="stat" style="background:#0f172a; margin-bottom: 15px;">
+                      <span><b>🏪 Tienda de Mejoras</b></span>
+                      <span><b>${Math.floor(userData.diamonds).toLocaleString()} 💎</b></span>
+                    </div>`;
+        
+        items.forEach(item => {
+            const canAfford = userData.diamonds >= item.price;
+            html += `<div class="stat">
+                <div>
+                    <strong>${item.name} Nvl ${item.lvl}</strong><br>
+                    <small>+${item.prod} 💎/hora</small>
+                </div>
+                <div>
+                    <div style="color: ${canAfford ? '#facc15' : '#94a3b8'}">
+                        ${item.price} 💎
+                    </div>
+                    <button onclick="buyUpgrade('${item.name}',${item.price})" ${!canAfford ? 'disabled' : ''}>
+                        ${canAfford ? 'MEJORAR' : 'INSUFICIENTES'}
+                    </button>
+                </div>
+            </div>`;
+        });
+        
+        document.getElementById("storeList").innerHTML = html;
+        
+    } catch (error) {
+        console.error("❌ Error tienda:", error);
+        alert("Error al abrir tienda");
+    }
+}
+
+async function buyUpgrade(name, price) {
+    try {
+        if (userData.diamonds < price) {
+            alert("Diamantes insuficientes");
+            return;
+        }
+        
+        const fieldMap = {
+            "Tienda": "lvl_tienda",
+            "Casino": "lvl_casino", 
+            "Piscina": "lvl_piscina",
+            "Parque": "lvl_parque",
+            "Diversión": "lvl_diversion"
+        };
+        
+        const field = fieldMap[name];
+        if (!field) return;
+        
+        userData[field]++;
+        userData.diamonds -= price;
+        
+        await _supabase.from('game_data')
+            .update({ 
+                diamonds: userData.diamonds,
+                [field]: userData[field]
+            })
+            .eq('telegram_id', userData.id);
+        
+        actualizarUI();
+        openStore();
+        
+        alert(`✅ ${name} mejorada a nivel ${userData[field]}`);
+        
+    } catch (error) {
+        console.error("❌ Error mejora:", error);
+    }
+}
+
+function openCentral() {
+    try {
+        console.log("🏛 Abriendo central");
+        document.getElementById("overlay").style.display = "block";
+        document.getElementById("centralModal").style.display = "block";
+        
+        const prod = {
+            tienda: userData.lvl_tienda * PROD_VAL.tienda,
+            casino: userData.lvl_casino * PROD_VAL.casino,
+            piscina: userData.lvl_piscina * PROD_VAL.piscina,
+            parque: userData.lvl_parque * PROD_VAL.parque,
+            diversion: userData.lvl_diversion * PROD_VAL.diversion
+        };
+        
+        const total = prod.tienda + prod.casino + prod.piscina + prod.parque + prod.diversion;
+        
+        document.getElementById("s_tienda").textContent = prod.tienda;
+        document.getElementById("s_casino").textContent = prod.casino;
+        document.getElementById("s_piscina").textContent = prod.piscina;
+        document.getElementById("s_parque").textContent = prod.parque;
+        document.getElementById("s_diversion").textContent = prod.diversion;
+        document.getElementById("s_total").textContent = total;
+        
+    } catch (error) {
+        console.error("❌ Error central:", error);
+        alert("Error estadísticas");
+    }
+}
+
 async function openWithdraw() {
     try {
-        console.log("💰 Abriendo retiro...");
+        console.log("💰 Abriendo retiro");
+        document.getElementById("overlay").style.display = "block";
+        document.getElementById("modalWithdraw").style.display = "block";
         
         const pool = await getGlobalPool();
         const price = calcPrice(pool);
         
-        // Mostrar información
         document.getElementById("current-price").textContent = price.toFixed(6) + " TON/💎";
         document.getElementById("available-diamonds").textContent = Math.floor(userData.diamonds) + " 💎";
         
-        // Calcular mínimo de diamantes para 1 TON
-        const minDiamondsFor1TON = Math.ceil(1 / price);
-        
-        // Configurar input
-        const input = document.getElementById("withdraw-amount");
-        if (input) {
-            input.value = "";
-            input.min = 1;
-            input.max = Math.floor(userData.diamonds);
-            input.placeholder = `Mínimo: ${minDiamondsFor1TON} 💎`;
-        }
-        
-        // Actualizar información de mínimo
-        const infoElement = document.getElementById("withdraw-info");
-        if (infoElement) {
-            infoElement.innerHTML = `Mínimo de retiro: <span class="highlight">${minDiamondsFor1TON} 💎 (1 TON)</span><br>Recibirás: <span id="ton-receive" class="highlight">0</span> TON`;
-        }
-        
-        showModal("modalWithdraw");
-        
-        console.log(`📊 Retiro - Precio: ${price}, Mínimo: ${minDiamondsFor1TON}💎 para 1 TON`);
+        const minDiamonds = Math.ceil(1 / price);
+        document.getElementById("withdraw-info").innerHTML = 
+            `Mínimo: <span class="highlight">${minDiamonds} 💎 (1 TON)</span><br>Recibirás: <span id="ton-receive">0</span> TON`;
         
     } catch (error) {
-        console.error("❌ Error abriendo retiro:", error);
-        showError("Error al cargar retiro");
+        console.error("❌ Error retiro:", error);
+        alert("Error cargando retiro");
     }
 }
 
@@ -647,26 +589,10 @@ function updateWithdrawCalculation() {
         const price = calcPrice(pool);
         const tonAmount = diamonds * price;
         
-        // Verificar mínimo de 1 TON
-        const minDiamondsFor1TON = Math.ceil(1 / price);
-        
-        if (diamonds < minDiamondsFor1TON) {
-            document.getElementById("ton-receive").innerHTML = 
-                `<span class="error-text">MÍNIMO ${minDiamondsFor1TON} 💎</span>`;
-            return;
-        }
-        
-        if (diamonds > userData.diamonds) {
-            document.getElementById("ton-receive").innerHTML = 
-                `<span class="error-text">EXCEDE TUS ${Math.floor(userData.diamonds)} 💎</span>`;
-            return;
-        }
-        
-        // Mostrar cantidad a recibir
         document.getElementById("ton-receive").textContent = tonAmount.toFixed(4);
         
     } catch (error) {
-        console.error("❌ Error calculando retiro:", error);
+        console.error("❌ Error cálculo:", error);
     }
 }
 
@@ -676,164 +602,50 @@ async function processWithdraw() {
         const diamonds = parseInt(input.value);
         
         if (!diamonds || diamonds <= 0) {
-            showError("Ingresa una cantidad válida de diamantes");
+            alert("Cantidad inválida");
             return;
         }
         
-        // Obtener precio actual
-        const pool = await getGlobalPool();
-        const price = calcPrice(pool);
-        const tonAmount = diamonds * price;
-        const minDiamondsFor1TON = Math.ceil(1 / price);
-        
-        // Validación 1: Mínimo de 1 TON
-        if (diamonds < minDiamondsFor1TON) {
-            showError(`Mínimo de retiro: ${minDiamondsFor1TON} 💎 (1 TON)\n\nActualmente ${diamonds} 💎 = ${tonAmount.toFixed(4)} TON`);
-            return;
-        }
-        
-        // Validación 2: Fondos suficientes
-        if (diamonds > userData.diamonds) {
-            showError(`No tienes suficientes diamantes\n\nTienes: ${Math.floor(userData.diamonds)} 💎\nIntentas retirar: ${diamonds} 💎`);
-            return;
-        }
-        
-        // Validación 3: Liquidez en el pool
-        if (tonAmount > pool.pool_ton) {
-            showError(`Liquidez insuficiente en el pool\n\nPool disponible: ${pool.pool_ton.toFixed(2)} TON\nNecesitas: ${tonAmount.toFixed(2)} TON\n\nIntenta más tarde o retira menos`);
-            return;
-        }
-        
-        // Validación 4: Billetera conectada
-        const wallet = tonConnectUI ? tonConnectUI.wallet : null;
-        if (!wallet) {
-            showError("Conecta tu billetera TON primero");
-            openBank(); // Redirigir al banco para conectar
-            return;
-        }
-        
-        // Confirmación final
-        const confirmMsg = 
-            `¿Retirar ${diamonds.toLocaleString()} 💎?\n\n` +
-            `• Recibirás: ${tonAmount.toFixed(4)} TON\n` +
-            `• Precio: ${price.toFixed(6)} TON/💎\n` +
-            `• A tu billetera: ${wallet.address.substring(0, 6)}...${wallet.address.substring(wallet.address.length - 4)}\n\n` +
-            `¿Confirmar retiro?`;
-        
-        if (!confirm(confirmMsg)) {
-            return;
-        }
-        
-        // Procesar retiro
         await retirarTON(diamonds);
         closeAll();
         
     } catch (error) {
-        console.error("❌ Error procesando retiro:", error);
-        showError("Error en el retiro: " + (error.message || "Intenta nuevamente"));
+        console.error("❌ Error procesando:", error);
+        alert("Error en retiro");
     }
 }
 
-async function retirarTON(diamonds) {
+function openFriends() {
     try {
-        console.log("💎 Procesando retiro de:", diamonds, "diamantes");
-        
-        const wallet = tonConnectUI ? tonConnectUI.wallet : null;
-        if (!wallet) {
-            showError("Conecta tu billetera TON primero");
-            return;
-        }
-        
-        if (diamonds > userData.diamonds) {
-            showError("No tienes suficientes diamantes");
-            return;
-        }
-        
-        if (diamonds <= 0) {
-            showError("Cantidad inválida");
-            return;
-        }
-        
-        const pool = await getGlobalPool();
-        const price = calcPrice(pool);
-        const tonAmount = diamonds * price;
-        
-        // Validar mínimo de 1 TON
-        const minDiamondsFor1TON = Math.ceil(1 / price);
-        if (diamonds < minDiamondsFor1TON) {
-            showError(`Mínimo de retiro: ${minDiamondsFor1TON} 💎 para 1 TON`);
-            return;
-        }
-        
-        if (tonAmount > pool.pool_ton) {
-            showError("Liquidez insuficiente en el pool");
-            return;
-        }
-        
-        // Preparar transacción
-        const tx = {
-            validUntil: Math.floor(Date.now() / 1000) + 600,
-            messages: [{
-                address: wallet.address, // Enviar AL USUARIO
-                amount: (tonAmount * 1e9).toString() // Convertir a nanoTON
-            }]
-        };
-        
-        console.log("📤 Enviando TON al usuario:", tonAmount, "a", wallet.address);
-        
-        // Enviar transacción (TON Connect enviará los TON al usuario)
-        const result = await tonConnectUI.sendTransaction(tx);
-        console.log("✅ Transacción enviada:", result);
-        
-        // Actualizar usuario
-        userData.diamonds -= diamonds;
-        await _supabase.from("game_data")
-            .update({ diamonds: userData.diamonds })
-            .eq("telegram_id", userData.id);
-        
-        // Actualizar pool (RESTAR del pool porque estamos enviando TON)
-        await updateGlobalPool(
-            pool.pool_ton - tonAmount,
-            pool.total_diamonds - diamonds
-        );
-        
-        actualizarUI();
-        
-        // Mensaje de éxito
-        showMessage(
-            `✅ RETIRO EXITOSO!\n\n` +
-            `• Retirados: ${diamonds.toLocaleString()} 💎\n` +
-            `• Recibidos: ${tonAmount.toFixed(4)} TON\n` +
-            `• Enviados a: ${wallet.address.substring(0, 6)}...${wallet.address.substring(wallet.address.length - 4)}\n\n` +
-            `¡Los TON llegarán en unos segundos!`
-        );
-        
-        return result;
-        
+        console.log("👥 Abriendo amigos");
+        document.getElementById("overlay").style.display = "block";
+        document.getElementById("modalFriends").style.display = "block";
+        updateReferralStats();
     } catch (error) {
-        console.error("❌ Error en retiro:", error);
-        
-        if (error.message && error.message.includes("rejected")) {
-            showError("❌ Retiro cancelado por el usuario");
-        } else if (error.message && error.message.includes("insufficient")) {
-            showError("❌ Fondos insuficientes en tu billetera para la transacción");
-        } else {
-            showError("❌ Error en el retiro: " + (error.message || "Intenta nuevamente"));
-        }
-        
-        throw error;
+        console.error("❌ Error amigos:", error);
+        alert("Error amigos");
+    }
+}
+
+function closeAll() {
+    try {
+        document.getElementById("overlay").style.display = "none";
+        ["centralModal", "modalBank", "modalStore", "modalFriends", "modalWithdraw"]
+            .forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = "none";
+            });
+    } catch (error) {
+        console.error("❌ Error cerrando:", error);
     }
 }
 
 // =======================
-// PRODUCCIÓN Y UI
+// UI Y PRODUCCIÓN
 // =======================
 function actualizarUI() {
     try {
-        const diamondsElem = document.getElementById("diamonds");
-        if (diamondsElem) {
-            diamondsElem.textContent = Math.floor(userData.diamonds).toLocaleString();
-        }
+        document.getElementById("diamonds").textContent = Math.floor(userData.diamonds).toLocaleString();
         
         const totalPerHr = 
             userData.lvl_tienda * PROD_VAL.tienda +
@@ -842,26 +654,20 @@ function actualizarUI() {
             userData.lvl_parque * PROD_VAL.parque +
             userData.lvl_diversion * PROD_VAL.diversion;
         
-        const rateElem = document.getElementById("rate");
-        if (rateElem) rateElem.textContent = totalPerHr;
+        document.getElementById("rate").textContent = totalPerHr;
         
-        const updateLevel = (id, level) => {
-            const elem = document.getElementById(id);
-            if (elem) elem.textContent = level;
-        };
-        
-        updateLevel("lvl_casino", userData.lvl_casino);
-        updateLevel("lvl_piscina", userData.lvl_piscina);
-        updateLevel("lvl_parque", userData.lvl_parque);
-        updateLevel("lvl_diversion", userData.lvl_diversion);
+        document.getElementById("lvl_casino").textContent = userData.lvl_casino;
+        document.getElementById("lvl_piscina").textContent = userData.lvl_piscina;
+        document.getElementById("lvl_parque").textContent = userData.lvl_parque;
+        document.getElementById("lvl_diversion").textContent = userData.lvl_diversion;
         
     } catch (error) {
-        console.error("❌ Error actualizando UI:", error);
+        console.error("❌ Error UI:", error);
     }
 }
 
 function startProduction() {
-    console.log("⚙️ Iniciando producción automática");
+    console.log("⚙️ Iniciando producción");
     
     setInterval(async () => {
         try {
@@ -882,15 +688,7 @@ function startProduction() {
             
             actualizarUI();
             
-            if (document.getElementById("centralModal").style.display === "block") {
-                document.getElementById("s_tienda").textContent = Math.floor(prodPerSecond.tienda * 3600);
-                document.getElementById("s_casino").textContent = Math.floor(prodPerSecond.casino * 3600);
-                document.getElementById("s_piscina").textContent = Math.floor(prodPerSecond.piscina * 3600);
-                document.getElementById("s_parque").textContent = Math.floor(prodPerSecond.parque * 3600);
-                document.getElementById("s_diversion").textContent = Math.floor(prodPerSecond.diversion * 3600);
-                document.getElementById("s_total").textContent = Math.floor(totalPerSecond * 3600);
-            }
-            
+            // Guardar cada 30 segundos
             if (Math.floor(Date.now() / 1000) % 30 === 0 && userData.id) {
                 await _supabase.from('game_data')
                     .update({ diamonds: userData.diamonds })
@@ -898,192 +696,22 @@ function startProduction() {
             }
             
         } catch (error) {
-            console.error("❌ Error en producción:", error);
+            console.error("❌ Error producción:", error);
         }
     }, 1000);
-}
-
-// =======================
-// TIENDA DE MEJORAS
-// =======================
-function openStore() {
-    try {
-        const items = [
-            {name: "Tienda", lvl: userData.lvl_tienda, price: 1000, prod: 10},
-            {name: "Casino", lvl: userData.lvl_casino, price: 2500, prod: 25},
-            {name: "Piscina", lvl: userData.lvl_piscina, price: 5000, prod: 60},
-            {name: "Parque", lvl: userData.lvl_parque, price: 1500, prod: 15},
-            {name: "Diversión", lvl: userData.lvl_diversion, price: 10000, prod: 120}
-        ];
-        
-        let html = `<div class="stat" style="background:#0f172a; margin-bottom: 15px;">
-                      <span><b>🏪 Tienda de Mejoras</b></span>
-                      <span><b>${Math.floor(userData.diamonds).toLocaleString()} 💎</b></span>
-                    </div>`;
-        
-        items.forEach(item => {
-            const nextProduction = item.prod;
-            const canAfford = userData.diamonds >= item.price;
-            
-            html += `<div class="stat" style="${canAfford ? 'border-left: 4px solid #10b981;' : 'border-left: 4px solid #dc2626;'}">
-                <div>
-                    <strong>${item.name} Nvl ${item.lvl}</strong><br>
-                    <small style="color: #94a3b8;">+${nextProduction} 💎/hora</small>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-weight: bold; color: ${canAfford ? '#facc15' : '#94a3b8'}">
-                        ${item.price.toLocaleString()} 💎
-                    </div>
-                    <button onclick="buyUpgrade('${item.name}',${item.price})" 
-                            style="background: ${canAfford ? 'linear-gradient(135deg, #3b82f6, #1d4ed8)' : '#475569'}; 
-                                   width: auto; min-width: 100px; padding: 8px 12px; margin-top: 5px;"
-                            ${!canAfford ? 'disabled' : ''}>
-                        ${canAfford ? 'MEJORAR' : 'FONDOS INSUFICIENTES'}
-                    </button>
-                </div>
-            </div>`;
-        });
-        
-        html += `<div class="info-text" style="margin-top: 15px; text-align: center;">
-                   Cada mejora aumenta tu producción por hora
-                 </div>`;
-        
-        document.getElementById("storeList").innerHTML = html;
-        showModal("modalStore");
-        
-    } catch (error) {
-        console.error("❌ Error abriendo tienda:", error);
-        showError("Error al cargar la tienda");
-    }
-}
-
-async function buyUpgrade(name, price) {
-    try {
-        if (userData.diamonds < price) {
-            showError("No tienes suficientes 💎");
-            return;
-        }
-        
-        const fieldMap = {
-            "Tienda": "lvl_tienda",
-            "Casino": "lvl_casino", 
-            "Piscina": "lvl_piscina",
-            "Parque": "lvl_parque",
-            "Diversión": "lvl_diversion"
-        };
-        
-        const fieldToUpdate = fieldMap[name];
-        if (!fieldToUpdate) return;
-        
-        userData[fieldToUpdate]++;
-        userData.diamonds -= price;
-        
-        const updateData = {
-            diamonds: userData.diamonds,
-            [fieldToUpdate]: userData[fieldToUpdate],
-            last_seen: new Date().toISOString()
-        };
-        
-        await _supabase
-            .from('game_data')
-            .update(updateData)
-            .eq('telegram_id', userData.id);
-        
-        actualizarUI();
-        openStore();
-        
-        showMessage(`✅ ${name} mejorada a nivel ${userData[fieldToUpdate]}`);
-        
-    } catch (error) {
-        console.error("❌ Error en buyUpgrade:", error);
-    }
-}
-
-// =======================
-// FUNCIONES RESTANTES
-// =======================
-function openCentral() {
-    try {
-        const prod = {
-            tienda: userData.lvl_tienda * PROD_VAL.tienda,
-            casino: userData.lvl_casino * PROD_VAL.casino,
-            piscina: userData.lvl_piscina * PROD_VAL.piscina,
-            parque: userData.lvl_parque * PROD_VAL.parque,
-            diversion: userData.lvl_diversion * PROD_VAL.diversion
-        };
-        
-        const total = prod.tienda + prod.casino + prod.piscina + 
-                     prod.parque + prod.diversion;
-        
-        document.getElementById("s_tienda").textContent = prod.tienda;
-        document.getElementById("s_casino").textContent = prod.casino;
-        document.getElementById("s_piscina").textContent = prod.piscina;
-        document.getElementById("s_parque").textContent = prod.parque;
-        document.getElementById("s_diversion").textContent = prod.diversion;
-        document.getElementById("s_total").textContent = total;
-        
-        showModal("centralModal");
-        
-    } catch (error) {
-        console.error("❌ Error abriendo central:", error);
-        showError("Error al cargar estadísticas");
-    }
-}
-
-async function openFriends() {
-    try {
-        await updateReferralStats();
-        showModal("modalFriends");
-    } catch (error) {
-        console.error("❌ Error abriendo amigos:", error);
-        showError("Error al cargar amigos");
-    }
-}
-
-function showModal(id) {
-    try {
-        document.getElementById("overlay").style.display = "block";
-        document.getElementById(id).style.display = "block";
-    } catch (error) {
-        console.error("❌ Error mostrando modal:", error);
-    }
-}
-
-function closeAll() {
-    try {
-        document.getElementById("overlay").style.display = "none";
-        
-        const modals = [
-            "centralModal", "modalBank", "modalStore", 
-            "modalFriends", "modalWithdraw"
-        ];
-        
-        modals.forEach(id => {
-            const modal = document.getElementById(id);
-            if (modal) modal.style.display = "none";
-        });
-    } catch (error) {
-        console.error("❌ Error cerrando modales:", error);
-    }
-}
-
-function showMessage(text) {
-    alert(text);
-}
-
-function showError(text) {
-    alert("❌ " + text);
 }
 
 // =======================
 // INICIALIZACIÓN FINAL
 // =======================
 window.addEventListener('DOMContentLoaded', () => {
-    console.log("📄 DOM cargado, iniciando app...");
-    setTimeout(initApp, 100);
+    console.log("📄 DOM cargado");
+    setTimeout(initApp, 300);
 });
 
-// Hacer funciones globales
+// =======================
+// FUNCIONES GLOBALES (CRÍTICO)
+// =======================
 window.openBank = openBank;
 window.openStore = openStore;
 window.openCentral = openCentral;
@@ -1096,6 +724,10 @@ window.copyReferralCode = copyReferralCode;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 window.retirarTON = retirarTON;
-window.tonConnectUI = tonConnectUI;
+window.tonConnectUI = { 
+    get wallet() { return tonConnectUI ? tonConnectUI.wallet : null; },
+    disconnect: () => { if (tonConnectUI) tonConnectUI.disconnect(); }
+};
 
-console.log("🌐 Funciones globales asignadas");
+console.log("✅ Ton City Game - Código completo cargado");
+```
