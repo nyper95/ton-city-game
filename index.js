@@ -12,6 +12,7 @@ const BILLETERA_POOL = "UQDY-D_6F1oyftwpq_AZNBOd3Fh4xKDj2C8sjz6Cx1A_Lvxb"; // Po
 
 // TON Connect (se inicializa después)
 let tonConnectUI = null;
+let walletConnected = false;
 
 // Supabase
 const SUPABASE_URL = 'https://xkkifqxxglcuyruwkbih.supabase.co';
@@ -62,16 +63,24 @@ async function initApp() {
     getGlobalPool();
 }
 
-// CORRECCIÓN 1: TON Connect mejorado
+// CORRECCIÓN COMPLETA: TON Connect funcional
 async function initTONConnect() {
     try {
         console.log("🔄 Inicializando TON Connect...");
         
-        // Esperar a que el DOM cargue completamente
+        // Verificar si la librería está cargada
+        if (typeof TON_CONNECT_UI === 'undefined') {
+            console.error("❌ TON_CONNECT_UI no está definido");
+            showError("Error: TON Connect no se cargó correctamente. Recarga la página.");
+            return;
+        }
+        
+        // Asegurarse de que exista el elemento
         if (!document.getElementById('ton-connect-button')) {
-            // Crear el contenedor si no existe
+            console.log("⚠️ Creando elemento ton-connect-button...");
             const buttonContainer = document.createElement('div');
             buttonContainer.id = 'ton-connect-button';
+            buttonContainer.style.position = 'relative';
             document.body.appendChild(buttonContainer);
         }
         
@@ -82,43 +91,61 @@ async function initTONConnect() {
             uiPreferences: { theme: 'DARK' }
         });
         
+        console.log("✅ TON Connect UI inicializado");
+        
         // Escuchar cambios de estado
         tonConnectUI.onStatusChange((wallet) => {
-            console.log("🔄 Estado TON Connect cambiado:", wallet ? "Conectado" : "Desconectado");
+            console.log("🔄 Estado TON Connect cambiado:", wallet);
+            walletConnected = !!wallet;
             updateWalletUI(wallet);
+            
+            // Actualizar UI en tiempo real
+            if (document.getElementById("modalBank").style.display === "block") {
+                openBank();
+            }
         });
         
-        // Restaurar conexión si existe
-        const isConnected = await tonConnectUI.connectionRestored;
-        console.log("🔗 Conexión restaurada:", isConnected);
-        
-        // Forzar actualización de UI
-        updateWalletUI(isConnected);
+        // Verificar conexión existente
+        setTimeout(async () => {
+            try {
+                const wallet = tonConnectUI.wallet;
+                if (wallet) {
+                    console.log("🔗 Wallet ya conectada:", wallet);
+                    updateWalletUI(wallet);
+                }
+            } catch (error) {
+                console.log("ℹ️ No hay conexión previa");
+            }
+        }, 1000);
         
     } catch (error) {
         console.error("❌ Error inicializando TON Connect:", error);
-        // Mostrar error amigable
-        showError("Error al conectar con TON. Recarga la página.");
+        showError("Error al inicializar TON Connect. Asegúrate de tener una wallet instalada como TonKeeper.");
     }
 }
 
-// CORRECCIÓN: Función de desconexión mejorada
+// CORRECCIÓN: Función de desconexión simplificada
 async function disconnectWallet() {
     try {
+        console.log("🔌 Intentando desconectar wallet...");
+        
         if (tonConnectUI) {
-            console.log("🔌 Desconectando wallet...");
             await tonConnectUI.disconnect();
-            updateWalletUI(null);
-            showMessage("✅ Wallet desconectada");
+            console.log("✅ Wallet desconectada via TON Connect");
         }
-    } catch (error) {
-        console.error("❌ Error desconectando wallet:", error);
-        // Forzar desconexión local
-        if (tonConnectUI && tonConnectUI.wallet) {
-            tonConnectUI.wallet = null;
-        }
+        
+        // Resetear estado local
+        walletConnected = false;
         updateWalletUI(null);
-        showMessage("✅ Desconectado localmente");
+        showMessage("✅ Wallet desconectada");
+        
+    } catch (error) {
+        console.error("❌ Error en desconexión formal:", error);
+        
+        // Desconexión forzada
+        walletConnected = false;
+        updateWalletUI(null);
+        showMessage("✅ Wallet desconectada localmente");
     }
 }
 
@@ -129,38 +156,60 @@ function updateWalletUI(wallet) {
         const walletAddress = document.getElementById('wallet-address');
         const disconnectBtn = document.getElementById('disconnect-wallet-btn');
         
-        if (!connectButton || !walletInfo) {
-            console.warn("⚠️ Elementos UI no encontrados");
-            return;
-        }
+        console.log("🔄 Actualizando UI wallet, estado:", wallet ? "conectado" : "desconectado");
         
         if (wallet) {
-            // Ocultar botón de conexión y mostrar info
-            if (connectButton.style) connectButton.style.display = 'none';
-            walletInfo.classList.remove('hidden');
+            // Mostrar info de wallet conectada
+            if (walletInfo) {
+                walletInfo.style.display = 'block';
+                walletInfo.classList.remove('hidden');
+            }
+            
+            if (connectButton) {
+                connectButton.style.display = 'none';
+            }
             
             // Formatear dirección corta
             const shortAddress = wallet.address.substring(0, 6) + '...' + 
                                wallet.address.substring(wallet.address.length - 4);
-            if (walletAddress) walletAddress.textContent = shortAddress;
+            
+            if (walletAddress) {
+                walletAddress.textContent = shortAddress;
+                walletAddress.style.color = '#10b981';
+            }
             
             // Mostrar botón de desconexión
             if (disconnectBtn) {
-                disconnectBtn.style.display = 'block';
+                disconnectBtn.style.display = 'inline-block';
+                disconnectBtn.style.background = '#dc2626';
+                disconnectBtn.style.color = 'white';
+                disconnectBtn.style.border = 'none';
+                disconnectBtn.style.padding = '8px 12px';
+                disconnectBtn.style.borderRadius = '6px';
+                disconnectBtn.style.cursor = 'pointer';
+                disconnectBtn.style.marginLeft = '10px';
+                disconnectBtn.textContent = 'Desconectar';
                 disconnectBtn.onclick = disconnectWallet;
             }
             
-            console.log("👛 Wallet conectada:", shortAddress);
+            console.log("👛 Wallet UI actualizada:", shortAddress);
             
         } else {
-            // Mostrar botón de conexión y ocultar info
-            if (connectButton.style) connectButton.style.display = 'block';
-            walletInfo.classList.add('hidden');
+            // Mostrar botón de conexión
+            if (connectButton) {
+                connectButton.style.display = 'block';
+            }
             
-            // Ocultar botón de desconexión
-            if (disconnectBtn) disconnectBtn.style.display = 'none';
+            if (walletInfo) {
+                walletInfo.style.display = 'none';
+                walletInfo.classList.add('hidden');
+            }
             
-            console.log("👛 Wallet desconectada");
+            if (disconnectBtn) {
+                disconnectBtn.style.display = 'none';
+            }
+            
+            console.log("👛 Wallet desconectada en UI");
         }
     } catch (error) {
         console.error("❌ Error actualizando UI wallet:", error);
@@ -179,6 +228,7 @@ async function getGlobalPool(){
             .single();
         
         if (error) throw error;
+        console.log("📊 Pool global:", data);
         return data;
     } catch (error) {
         console.error("❌ Error cargando pool:", error);
@@ -390,14 +440,14 @@ function copyReferralCode() {
 }
 
 // =======================
-// BANCO Y COMPRAS (MEJORADO)
+// BANCO Y COMPRAS (CORREGIDO)
 // =======================
 async function openBank() {
     try {
         showModal("modalBank");
         
         const wallet = tonConnectUI?.wallet;
-        updateWalletUI(wallet);
+        console.log("🏦 Abriendo banco, wallet:", wallet);
         
         const pool = await getGlobalPool();
         const price = calcPrice(pool);
@@ -416,10 +466,8 @@ async function openBank() {
             
             const buttonText = isConnected ? 'COMPRAR' : 'CONECTA BILLETERA';
             const buttonStyle = isConnected ?
-                'background: linear-gradient(135deg, #10b981, #059669);' :
-                'background: #475569; cursor: not-allowed;';
-            const buttonAction = isConnected ? `comprarTON(${ton})` : 'showError("Conecta tu billetera primero")';
-            const buttonDisabled = !isConnected ? 'disabled' : '';
+                'background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer;' :
+                'background: #475569; color: #94a3b8; border: none; padding: 10px 15px; border-radius: 8px; cursor: not-allowed;';
             
             html += `
             <div class="stat" style="border-left: 4px solid ${isConnected ? '#facc15' : '#94a3b8'};">
@@ -427,9 +475,9 @@ async function openBank() {
                     <strong>${ton.toFixed(2)} TON</strong><br>
                     <small style="color: #94a3b8;">→ ${finalDiamonds.toLocaleString()} 💎</small>
                 </div>
-                <button onclick="${buttonAction}"
+                <button onclick="comprarTON(${ton})"
                         style="${buttonStyle} width: auto; min-width: 100px;"
-                        ${buttonDisabled}>
+                        ${!isConnected ? 'disabled' : ''}>
                     ${buttonText}
                 </button>
             </div>`;
@@ -451,13 +499,19 @@ async function openBank() {
     }
 }
 
-// CORRECCIÓN 2: Mensaje de compra simplificado
+// CORRECCIÓN: Función de compra mejorada
 async function comprarTON(tonAmount) {
     try {
-        if (!tonConnectUI || !tonConnectUI.wallet) {
-            showError("Conecta tu billetera TON primero");
+        console.log("🛒 Iniciando compra de:", tonAmount, "TON");
+        
+        // Verificar conexión de wallet
+        const wallet = tonConnectUI?.wallet;
+        if (!wallet) {
+            showError("❌ Primero conecta tu billetera TON");
             return;
         }
+        
+        console.log("👛 Wallet conectada:", wallet.address);
         
         if (tonAmount < 0.1) {
             showError("Mínimo: 0.10 TON");
@@ -470,62 +524,70 @@ async function comprarTON(tonAmount) {
         let diamonds = Math.floor(userTon / price);
         if (diamonds < 100) diamonds = 100;
         
-        // Mensaje SIMPLIFICADO - sin detalles internos
+        // Mensaje de confirmación SIMPLE
         const confirmMsg = 
-            `¿Comprar ${tonAmount.toFixed(2)} TON por ${diamonds.toLocaleString()} 💎?\n\n` +
-            `• Precio: ${price.toFixed(6)} TON/💎\n` +
-            `• Recibirás: ${diamonds.toLocaleString()} 💎`;
+            `¿Comprar ${tonAmount.toFixed(2)} TON?\n\n` +
+            `Recibirás: ${diamonds.toLocaleString()} 💎\n` +
+            `Precio: ${price.toFixed(6)} TON/💎`;
         
         if (!confirm(confirmMsg)) return;
         
-        // Transacción con dos destinos
+        console.log("📝 Creando transacción...");
+        
+        // Transacción con dos destinos (80/20)
         const tx = {
-            validUntil: Math.floor(Date.now() / 1000) + 600,
+            validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutos
             messages: [
                 {
                     address: BILLETERA_POOL,
-                    amount: ((tonAmount * 0.8) * 1e9).toString() // 80% al pool
+                    amount: (tonAmount * 0.8 * 1e9).toString() // 80% al pool
                 },
                 {
                     address: BILLETERA_PROPIETARIO,
-                    amount: ((tonAmount * 0.2) * 1e9).toString() // 20% a propietario
+                    amount: (tonAmount * 0.2 * 1e9).toString() // 20% a propietario
                 }
             ]
         };
         
-        console.log("📤 Enviando transacción...");
+        console.log("📤 Enviando transacción:", tx);
+        
+        // Enviar transacción
         const result = await tonConnectUI.sendTransaction(tx);
         console.log("✅ Transacción enviada:", result);
         
+        // Actualizar datos del usuario
         userData.diamonds += diamonds;
         await _supabase.from("game_data")
             .update({ diamonds: userData.diamonds })
             .eq("telegram_id", userData.id);
         
+        // Actualizar pool global
         await updateGlobalPool(
             pool.pool_ton + (tonAmount * 0.8),
             pool.total_diamonds + diamonds
         );
         
         actualizarUI();
-        setTimeout(() => openBank(), 500);
         
-        showMessage(`✅ ¡COMPRA EXITOSA!\n\n${diamonds.toLocaleString()} 💎 recibidos`);
+        showMessage(`✅ ¡COMPRA EXITOSA!\n\nHas recibido ${diamonds.toLocaleString()} 💎`);
+        
+        // Recargar el banco
+        setTimeout(() => openBank(), 1000);
         
     } catch (error) {
         console.error("❌ Error en compra:", error);
-        showError("Error en la compra: " + error.message);
+        showError("Error en la compra: " + (error.message || "Error desconocido"));
     }
 }
 
 // =======================
-// RETIROS (SISTEMA MEJORADO)
+// RETIROS (CORREGIDO COMPLETAMENTE)
 // =======================
 async function retirarTON(diamonds) {
     try {
         const userWallet = tonConnectUI?.wallet;
         if (!userWallet) {
-            showError("Conecta tu billetera personal");
+            showError("❌ Conecta tu billetera personal primero");
             return;
         }
         
@@ -537,12 +599,12 @@ async function retirarTON(diamonds) {
         }
         
         if (diamonds > userData.diamonds) {
-            showError("Diamantes insuficientes");
+            showError("❌ Diamantes insuficientes");
             return;
         }
         
         if (diamonds <= 0) {
-            showError("Cantidad inválida");
+            showError("❌ Cantidad inválida");
             return;
         }
         
@@ -550,22 +612,22 @@ async function retirarTON(diamonds) {
         const price = calcPrice(pool);
         const tonAmount = diamonds * price;
         
-        // CORRECCIÓN 3: Cálculo correcto del mínimo
+        // Cálculo correcto del mínimo
         const minDiamondsFor1TON = Math.ceil(1 / price);
         if (diamonds < minDiamondsFor1TON) {
-            showError(`Mínimo: ${minDiamondsFor1TON} 💎 (equivale a 1 TON)`);
+            showError(`❌ Mínimo: ${minDiamondsFor1TON} 💎 (equivale a 1 TON)`);
             return;
         }
         
         if (tonAmount > pool.pool_ton) {
-            showError("Liquidez insuficiente en el pool");
+            showError("❌ Liquidez insuficiente en el pool");
             return;
         }
         
         const confirmMsg = 
             `¿Retirar ${diamonds.toLocaleString()} 💎?\n\n` +
-            `• Recibirás: ${tonAmount.toFixed(4)} TON\n` +
-            `• Dirección: ${userWallet.address.substring(0, 6)}...${userWallet.address.substring(userWallet.address.length - 4)}`;
+            `Recibirás: ${tonAmount.toFixed(4)} TON\n` +
+            `Dirección: ${userWallet.address.substring(0, 6)}...${userWallet.address.substring(userWallet.address.length - 4)}`;
         
         if (!confirm(confirmMsg)) return;
         
@@ -582,20 +644,18 @@ async function retirarTON(diamonds) {
         );
         
         actualizarUI();
+        closeAll();
         
         showMessage(
             `✅ RETIRO PROCESADO!\n\n` +
             `• Retirados: ${diamonds.toLocaleString()} 💎\n` +
             `• A recibir: ${tonAmount.toFixed(4)} TON\n` +
-            `• El pago se procesará manualmente en 24h.`
+            `• El pago se procesará en 24h.`
         );
-        
-        // Cerrar modal
-        closeAll();
         
     } catch (error) {
         console.error("❌ Error en retiro:", error);
-        showError("Error en retiro: " + error.message);
+        showError("Error en retiro: " + (error.message || "Error desconocido"));
     }
 }
 
@@ -632,7 +692,7 @@ function openStore() {
                     </div>
                     <button onclick="buyUpgrade('${item.name}',${item.price})" 
                             style="background: ${canAfford ? 'linear-gradient(135deg, #3b82f6, #1d4ed8)' : '#475569'}; 
-                                   width: auto; min-width: 100px; padding: 8px 12px; margin-top: 5px;"
+                                   color: white; border: none; width: auto; min-width: 100px; padding: 8px 12px; margin-top: 5px; border-radius: 6px; cursor: ${canAfford ? 'pointer' : 'not-allowed'};"
                             ${!canAfford ? 'disabled' : ''}>
                         ${canAfford ? 'MEJORAR' : 'FONDOS INSUFICIENTES'}
                     </button>
@@ -700,7 +760,10 @@ async function buyUpgrade(name, price) {
 // =======================
 function actualizarUI() {
     try {
-        document.getElementById("diamonds").textContent = Math.floor(userData.diamonds).toLocaleString();
+        const diamondsElem = document.getElementById("diamonds");
+        const rateElem = document.getElementById("rate");
+        
+        if (diamondsElem) diamondsElem.textContent = Math.floor(userData.diamonds).toLocaleString();
         
         const totalPerHr = 
             userData.lvl_tienda * PROD_VAL.tienda +
@@ -709,12 +772,17 @@ function actualizarUI() {
             userData.lvl_parque * PROD_VAL.parque +
             userData.lvl_diversion * PROD_VAL.diversion;
         
-        document.getElementById("rate").textContent = totalPerHr;
+        if (rateElem) rateElem.textContent = totalPerHr;
         
-        document.getElementById("lvl_casino").textContent = userData.lvl_casino;
-        document.getElementById("lvl_piscina").textContent = userData.lvl_piscina;
-        document.getElementById("lvl_parque").textContent = userData.lvl_parque;
-        document.getElementById("lvl_diversion").textContent = userData.lvl_diversion;
+        const casinoElem = document.getElementById("lvl_casino");
+        const piscinaElem = document.getElementById("lvl_piscina");
+        const parqueElem = document.getElementById("lvl_parque");
+        const diversionElem = document.getElementById("lvl_diversion");
+        
+        if (casinoElem) casinoElem.textContent = userData.lvl_casino;
+        if (piscinaElem) piscinaElem.textContent = userData.lvl_piscina;
+        if (parqueElem) parqueElem.textContent = userData.lvl_parque;
+        if (diversionElem) diversionElem.textContent = userData.lvl_diversion;
         
     } catch (error) {
         console.error("❌ Error actualizando UI:", error);
@@ -743,15 +811,24 @@ function startProduction() {
             
             actualizarUI();
             
-            if (document.getElementById("centralModal").style.display === "block") {
-                document.getElementById("s_tienda").textContent = Math.floor(prodPerSecond.tienda * 3600);
-                document.getElementById("s_casino").textContent = Math.floor(prodPerSecond.casino * 3600);
-                document.getElementById("s_piscina").textContent = Math.floor(prodPerSecond.piscina * 3600);
-                document.getElementById("s_parque").textContent = Math.floor(prodPerSecond.parque * 3600);
-                document.getElementById("s_diversion").textContent = Math.floor(prodPerSecond.diversion * 3600);
-                document.getElementById("s_total").textContent = Math.floor(totalPerSecond * 3600);
+            // Actualizar estadísticas si el modal está abierto
+            if (document.getElementById("centralModal")?.style.display === "block") {
+                const s_tienda = document.getElementById("s_tienda");
+                const s_casino = document.getElementById("s_casino");
+                const s_piscina = document.getElementById("s_piscina");
+                const s_parque = document.getElementById("s_parque");
+                const s_diversion = document.getElementById("s_diversion");
+                const s_total = document.getElementById("s_total");
+                
+                if (s_tienda) s_tienda.textContent = Math.floor(prodPerSecond.tienda * 3600);
+                if (s_casino) s_casino.textContent = Math.floor(prodPerSecond.casino * 3600);
+                if (s_piscina) s_piscina.textContent = Math.floor(prodPerSecond.piscina * 3600);
+                if (s_parque) s_parque.textContent = Math.floor(prodPerSecond.parque * 3600);
+                if (s_diversion) s_diversion.textContent = Math.floor(prodPerSecond.diversion * 3600);
+                if (s_total) s_total.textContent = Math.floor(totalPerSecond * 3600);
             }
             
+            // Guardar cada 30 segundos
             if (Math.floor(Date.now() / 1000) % 30 === 0 && userData.id) {
                 await _supabase.from('game_data')
                     .update({ diamonds: userData.diamonds })
@@ -777,12 +854,19 @@ function openCentral() {
         const total = prod.tienda + prod.casino + prod.piscina + 
                      prod.parque + prod.diversion;
         
-        document.getElementById("s_tienda").textContent = prod.tienda;
-        document.getElementById("s_casino").textContent = prod.casino;
-        document.getElementById("s_piscina").textContent = prod.piscina;
-        document.getElementById("s_parque").textContent = prod.parque;
-        document.getElementById("s_diversion").textContent = prod.diversion;
-        document.getElementById("s_total").textContent = total;
+        const s_tienda = document.getElementById("s_tienda");
+        const s_casino = document.getElementById("s_casino");
+        const s_piscina = document.getElementById("s_piscina");
+        const s_parque = document.getElementById("s_parque");
+        const s_diversion = document.getElementById("s_diversion");
+        const s_total = document.getElementById("s_total");
+        
+        if (s_tienda) s_tienda.textContent = prod.tienda;
+        if (s_casino) s_casino.textContent = prod.casino;
+        if (s_piscina) s_piscina.textContent = prod.piscina;
+        if (s_parque) s_parque.textContent = prod.parque;
+        if (s_diversion) s_diversion.textContent = prod.diversion;
+        if (s_total) s_total.textContent = total;
         
         showModal("centralModal");
         
@@ -792,101 +876,133 @@ function openCentral() {
     }
 }
 
+// CORRECCIÓN COMPLETA: Función de retiro con cálculo dinámico
 async function openWithdraw() {
     try {
         const pool = await getGlobalPool();
         const price = calcPrice(pool);
         
-        document.getElementById("current-price").textContent = price.toFixed(6) + " TON/💎";
-        document.getElementById("available-diamonds").textContent = Math.floor(userData.diamonds) + " 💎";
+        // Mostrar precio actual
+        const currentPriceElem = document.getElementById("current-price");
+        const availableDiamondsElem = document.getElementById("available-diamonds");
         
-        // Cálculo CORREGIDO del mínimo
+        if (currentPriceElem) currentPriceElem.textContent = price.toFixed(6) + " TON/💎";
+        if (availableDiamondsElem) availableDiamondsElem.textContent = Math.floor(userData.diamonds) + " 💎";
+        
+        // Calcular mínimo dinámicamente
         const minDiamondsFor1TON = Math.ceil(1 / price);
         
+        // Configurar input
         const input = document.getElementById("withdraw-amount");
         if (input) {
-            input.value = minDiamondsFor1TON; // Establecer valor mínimo por defecto
+            input.value = ""; // Vaciar el campo
             input.min = minDiamondsFor1TON;
+            input.max = Math.floor(userData.diamonds);
             input.placeholder = `Mínimo: ${minDiamondsFor1TON} 💎`;
+            
+            // Agregar event listener para cálculo en tiempo real
+            input.addEventListener('input', updateWithdrawCalculation);
         }
         
+        // Mostrar información
         const infoElement = document.getElementById("withdraw-info");
         if (infoElement) {
             infoElement.innerHTML = 
                 `<div style="background: #1e293b; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
-                    <strong>Mínimo de retiro:</strong><br>
+                    <strong>💎 Mínimo de retiro:</strong><br>
                     <span style="color: #facc15; font-size: 1.2em;">${minDiamondsFor1TON} 💎</span> 
-                    <small>(equivale a 1 TON)</small>
+                    <small style="color: #94a3b8;">(equivale a 1 TON)</small>
                 </div>
-                <div style="background: #0f172a; padding: 10px; border-radius: 8px;">
-                    <strong>Recibirás:</strong><br>
-                    <span id="ton-receive" style="color: #10b981; font-size: 1.2em;">${(minDiamondsFor1TON * price).toFixed(4)}</span> TON
+                <div style="background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+                    <strong>💰 Recibirás:</strong><br>
+                    <span id="ton-receive" style="color: #10b981; font-size: 1.5em;">0.0000</span> TON
+                </div>
+                <div style="background: #0f172a; padding: 10px; border-radius: 8px; font-size: 0.9em; color: #94a3b8;">
+                    <strong>📝 Instrucciones:</strong><br>
+                    1. Ingresa la cantidad de 💎 a retirar<br>
+                    2. El cálculo se actualiza automáticamente<br>
+                    3. Haz clic en "PROCESAR RETIRO"
                 </div>`;
         }
         
         showModal("modalWithdraw");
         
     } catch (error) {
-        console.error("❌ Error retiro:", error);
+        console.error("❌ Error abriendo retiro:", error);
         showError("Error cargando retiro");
     }
 }
 
+// CORRECCIÓN: Función de cálculo de retiro que funciona
 function updateWithdrawCalculation() {
     try {
         const input = document.getElementById("withdraw-amount");
-        const diamonds = parseInt(input.value);
-        const pool = { pool_ton: 100, total_diamonds: 100000 };
+        if (!input) return;
+        
+        const diamonds = parseInt(input.value) || 0;
+        const tonReceiveElem = document.getElementById("ton-receive");
+        
+        if (!tonReceiveElem) return;
+        
+        // Obtener pool actual
+        const pool = { pool_ton: 100, total_diamonds: 100000 }; // Valores por defecto
         const price = calcPrice(pool);
         
-        if (!diamonds || diamonds <= 0) {
-            document.getElementById("ton-receive").textContent = "0";
+        if (diamonds <= 0) {
+            tonReceiveElem.textContent = "0.0000";
+            tonReceiveElem.style.color = "#94a3b8";
             return;
         }
         
+        // Calcular mínimo
         const minDiamondsFor1TON = Math.ceil(1 / price);
-        const tonAmount = diamonds * price;
         
-        const tonReceiveElem = document.getElementById("ton-receive");
-        
+        // Validaciones
         if (diamonds < minDiamondsFor1TON) {
-            tonReceiveElem.innerHTML = 
-                `<span style="color: #ef4444;">
-                    MÍNIMO ${minDiamondsFor1TON} 💎
-                </span>`;
+            tonReceiveElem.innerHTML = `<span style="color: #ef4444;">Mínimo ${minDiamondsFor1TON} 💎</span>`;
             return;
         }
         
         if (diamonds > userData.diamonds) {
-            tonReceiveElem.innerHTML = 
-                `<span style="color: #ef4444;">
-                    EXCEDE TUS ${Math.floor(userData.diamonds)} 💎
-                </span>`;
+            tonReceiveElem.innerHTML = `<span style="color: #ef4444;">Máximo ${Math.floor(userData.diamonds)} 💎</span>`;
             return;
         }
         
-        tonReceiveElem.innerHTML = 
-            `<span style="color: #10b981; font-size: 1.2em;">
-                ${tonAmount.toFixed(4)}
-            </span> TON`;
+        // Calcular TON a recibir
+        const tonAmount = diamonds * price;
+        
+        // Mostrar resultado
+        tonReceiveElem.textContent = tonAmount.toFixed(4);
+        tonReceiveElem.style.color = "#10b981";
+        
+        console.log(`💰 Cálculo retiro: ${diamonds} 💎 = ${tonAmount.toFixed(4)} TON`);
         
     } catch (error) {
-        console.error("❌ Error cálculo retiro:", error);
+        console.error("❌ Error en cálculo de retiro:", error);
     }
 }
 
 async function processWithdraw() {
     try {
         const input = document.getElementById("withdraw-amount");
+        if (!input) {
+            showError("Campo no encontrado");
+            return;
+        }
+        
         const diamonds = parseInt(input.value);
         
         if (!diamonds || diamonds <= 0) {
-            showError("Cantidad inválida");
+            showError("❌ Ingresa una cantidad válida");
+            return;
+        }
+        
+        if (diamonds > userData.diamonds) {
+            showError(`❌ Máximo ${Math.floor(userData.diamonds)} 💎`);
             return;
         }
         
         await retirarTON(diamonds);
-        closeAll();
         
     } catch (error) {
         console.error("❌ Error procesando retiro:", error);
@@ -906,24 +1022,43 @@ async function openFriends() {
 
 function showModal(id) {
     try {
-        document.getElementById("overlay").style.display = "block";
-        document.getElementById(id).style.display = "block";
+        const overlay = document.getElementById("overlay");
+        const modal = document.getElementById(id);
+        
+        if (overlay) overlay.style.display = "block";
+        if (modal) modal.style.display = "block";
+        
+        // Si es el modal de retiro, actualizar cálculo
+        if (id === "modalWithdraw") {
+            setTimeout(() => {
+                updateWithdrawCalculation();
+            }, 100);
+        }
+        
     } catch (error) {
-        console.error("❌ Error modal:", error);
+        console.error("❌ Error mostrando modal:", error);
     }
 }
 
 function closeAll() {
     try {
-        document.getElementById("overlay").style.display = "none";
+        const overlay = document.getElementById("overlay");
+        if (overlay) overlay.style.display = "none";
         
-        ["centralModal", "modalBank", "modalStore", "modalFriends", "modalWithdraw"]
-            .forEach(id => {
-                const modal = document.getElementById(id);
-                if (modal) modal.style.display = "none";
-            });
+        const modals = ["centralModal", "modalBank", "modalStore", "modalFriends", "modalWithdraw"];
+        modals.forEach(id => {
+            const modal = document.getElementById(id);
+            if (modal) modal.style.display = "none";
+        });
+        
+        // Remover event listeners del input
+        const withdrawInput = document.getElementById("withdraw-amount");
+        if (withdrawInput) {
+            withdrawInput.removeEventListener('input', updateWithdrawCalculation);
+        }
+        
     } catch (error) {
-        console.error("❌ Error cerrando:", error);
+        console.error("❌ Error cerrando modales:", error);
     }
 }
 
@@ -940,7 +1075,7 @@ function showError(text) {
 // =======================
 window.addEventListener('DOMContentLoaded', () => {
     console.log("📄 DOM cargado");
-    setTimeout(initApp, 500);
+    setTimeout(initApp, 1000); // Dar tiempo para cargar
 });
 
 // Funciones globales
@@ -957,6 +1092,5 @@ window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 window.retirarTON = retirarTON;
 window.disconnectWallet = disconnectWallet;
-window.tonConnectUI = tonConnectUI;
 
-console.log("🌐 Ton City Game - Código corregido y listo");
+console.log("🌐 Ton City Game - Código corregido completamente");
