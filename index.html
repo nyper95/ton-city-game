@@ -240,28 +240,6 @@
             text-align: center;
         }
         
-        #wallet-address {
-            font-family: monospace;
-            background: #1e293b;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin: 10px 0;
-            color: #10b981;
-            font-weight: bold;
-            display: inline-block;
-        }
-        
-        #disconnect-btn {
-            background: #dc2626;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        
         .hidden {
             display: none !important;
         }
@@ -364,6 +342,17 @@
             color: #10b981;
             font-weight: bold;
         }
+        
+        .wallet-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 5px;
+        }
     </style>
 </head>
 <body>
@@ -440,11 +429,9 @@
         <div id="wallet-info" class="hidden">
             <p style="text-align: center; margin-bottom: 10px;">
                 <i class="fa-solid fa-wallet" style="color: #10b981; margin-right: 8px;"></i>
-                <span style="font-weight: bold;">Wallet conectada:</span>
+                <span style="font-weight: bold;">Wallet conectada</span>
+                <span class="wallet-badge">✓</span>
             </p>
-            <div style="text-align: center;">
-                <code id="wallet-address">0x0000...0000</code>
-            </div>
             <div style="text-align: center;">
                 <button id="disconnect-btn" onclick="disconnectWallet()">
                     <i class="fa-solid fa-power-off"></i> Desconectar Wallet
@@ -518,5 +505,5 @@
 
     <!-- JavaScript -->
     <script src="index.js"></script>
-</body> 
+</body>
 </html>
