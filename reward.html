@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesando Recompensa - Ton City</title>
+    <style>
+        body {
+            background: #0f172a;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 400px;
+            border: 1px solid #facc15;
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.2);
+        }
+        h2 {
+            color: #facc15;
+            margin-top: 0;
+        }
+        .loading {
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        .success {
+            color: #4ade80;
+            display: none;
+        }
+        .error {
+            color: #ef4444;
+            display: none;
+        }
+        .spinner {
+            border: 4px solid #334155;
+            border-top: 4px solid #facc15;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>⚡ Ton City Game</h2>
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Procesando tu recompensa...</p>
+        </div>
+        <div class="success">
+            <p style="font-size: 48px; margin: 10px 0;">✅</p>
+            <h3>¡Recompensa entregada!</h3>
+            <p id="reward-amount"></p>
+            <p style="color: #94a3b8; margin-top: 20px;">Ya puedes cerrar esta ventana</p>
+        </div>
+        <div class="error">
+            <p style="font-size: 48px; margin: 10px 0;">❌</p>
+            <h3>Error al procesar</h3>
+            <p id="error-message"></p>
+            <p style="color: #94a3b8; margin-top: 20px;">Intenta de nuevo</p>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURACIÓN - CAMBIA ESTO CON TUS DATOS
+        // ============================================
+        const CONFIG = {
+            BOT_USERNAME: 'ton_city_bot', // TU BOT DE TELEGRAM
+            SUPABASE_URL: 'https://xkkifqxxglcuyruwkbih.supabase.co',
+            SUPABASE_KEY: 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE'
+        };
+
+        // ============================================
+        // PROCESAR RECOMPENSA
+        // ============================================
+        async function procesarRecompensa() {
+            try {
+                // Obtener parámetros de Adsgram
+                const urlParams = new URLSearchParams(window.location.search);
+                const userId = urlParams.get('user_id');
+                const amount = urlParams.get('amount');
+                const blockId = urlParams.get('block_id');
+                const timestamp = urlParams.get('timestamp');
+
+                console.log('📦 Datos de Adsgram:', { userId, amount, blockId, timestamp });
+
+                // Verificar que llegaron los datos
+                if (!userId || !amount) {
+                    throw new Error('Datos de recompensa incompletos');
+                }
+
+                // ============================================
+                // OPCIÓN 1: REDIRIGIR AL BOT (RECOMENDADO)
+                // ============================================
+                if (CONFIG.BOT_USERNAME) {
+                    const botLink = `https://t.me/${CONFIG.BOT_USERNAME}?start=reward_${userId}_${amount}_${Date.now()}`;
+                    
+                    // Mostrar mensaje de éxito antes de redirigir
+                    document.querySelector('.loading').style.display = 'none';
+                    document.querySelector('.success').style.display = 'block';
+                    document.getElementById('reward-amount').innerHTML = `💰 +${amount || 500} diamantes`;
+                    
+                    // Redirigir al bot después de 2 segundos
+                    setTimeout(() => {
+                        window.location.href = botLink;
+                    }, 2000);
+                    
+                    return;
+                }
+
+                // ============================================
+                // OPCIÓN 2: SUPABASE (FALLBACK)
+                // ============================================
+                if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_KEY) {
+                    try {
+                        const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+                        
+                        // Buscar usuario por telegram_id
+                        const { data: userData, error: userError } = await supabase
+                            .from('game_data')
+                            .select('*')
+                            .eq('telegram_id', userId)
+                            .single();
+                        
+                        if (userError) throw userError;
+                        
+                        // Añadir diamantes (500 por defecto)
+                        const recompensa = parseInt(amount) || 500;
+                        const nuevosDiamantes = (userData.diamonds || 0) + recompensa;
+                        
+                        // Actualizar en Supabase
+                        const { error: updateError } = await supabase
+                            .from('game_data')
+                            .update({ 
+                                diamonds: nuevosDiamantes,
+                                last_seen: new Date().toISOString()
+                            })
+                            .eq('telegram_id', userId);
+                        
+                        if (updateError) throw updateError;
+                        
+                        // Mostrar éxito
+                        document.querySelector('.loading').style.display = 'none';
+                        document.querySelector('.success').style.display = 'block';
+                        document.getElementById('reward-amount').innerHTML = `💰 +${recompensa} diamantes`;
+                        
+                    } catch (supabaseError) {
+                        throw new Error('Error al guardar en Supabase: ' + supabaseError.message);
+                    }
+                } else {
+                    throw new Error('No hay método configurado para entregar recompensas');
+                }
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                
+                // Mostrar error
+                document.querySelector('.loading').style.display = 'none';
+                document.querySelector('.error').style.display = 'block';
+                document.getElementById('error-message').textContent = error.message;
+            }
+        }
+
+        // Ejecutar cuando cargue la página
+        window.addEventListener('DOMContentLoaded', procesarRecompensa);
+    </script>
+</body>
+</html>
