@@ -555,10 +555,77 @@ function updateCentralStats() {
         console.error("❌ Error actualizando estadísticas:", error);
     }
 }
+        `
+// =======================
+// RETIRO - CORREGIDO
+// =======================
 
-// =======================
-// RETIRO
-// =======================
+// FÓRMULA ORIGINAL: 1 TON = total_diamonds / pool_ton
+function getTasaRetiro() {
+    if (!globalPoolData || globalPoolData.pool_ton <= 0 || globalPoolData.total_diamonds <= 0) {
+        return 1000;
+    }
+    return globalPoolData.total_diamonds / globalPoolData.pool_ton;
+}
+
+// Cálculo correcto: TON a recibir = diamantes / tasa
+function calcularTONPorDiamantes(diamantes) {
+    const tasa = getTasaRetiro();
+    return diamantes / tasa;
+}
+
+function updateWithdrawCalculation() {
+    try {
+        const input = document.getElementById("withdraw-amount");
+        if (!input) return;
+        
+        const diamantes = parseInt(input.value) || 0;
+        const tonReceiveElem = document.getElementById("ton-receive");
+        if (!tonReceiveElem) return;
+        
+        const tasa = getTasaRetiro();
+        const minimo = Math.ceil(tasa);
+        const misDiamantes = Math.floor(userData.diamonds || 0);
+        const poolDisponible = globalPoolData.pool_ton;
+        
+        if (diamantes <= 0) {
+            tonReceiveElem.textContent = "0.0000";
+            tonReceiveElem.style.color = "#10b981";
+            return;
+        }
+        
+        // Validaciones
+        if (diamantes < minimo) {
+            tonReceiveElem.innerHTML = `<span style="color: #ef4444;">Mínimo: ${minimo} 💎</span>`;
+            return;
+        }
+        
+        if (diamantes > misDiamantes) {
+            tonReceiveElem.innerHTML = `<span style="color: #ef4444;">Máximo: ${misDiamantes} 💎</span>`;
+            return;
+        }
+        
+        // CÁLCULO CORRECTO: TON = diamantes / tasa
+        const tonRecibido = diamantes / tasa;
+        
+        if (tonRecibido > poolDisponible) {
+            const maxDiamantes = Math.floor(poolDisponible * tasa);
+            tonReceiveElem.innerHTML = 
+                `<span style="color: #ef4444;">Pool insuficiente - Máx: ${maxDiamantes} 💎</span>`;
+            return;
+        }
+        
+        // MOSTRAR RESULTADO CORRECTO
+        tonReceiveElem.textContent = tonRecibido.toFixed(4);
+        tonReceiveElem.style.color = "#10b981";
+        
+        console.log(`💰 Retiro: ${diamantes} 💎 ÷ ${tasa.toFixed(2)} = ${tonRecibido.toFixed(4)} TON`);
+        
+    } catch (error) {
+        console.error("❌ Error en cálculo:", error);
+    }
+}
+
 async function openWithdraw() {
     try {
         showModal("modalWithdraw");
@@ -567,7 +634,6 @@ async function openWithdraw() {
         
         const tasa = getTasaRetiro();
         const poolTon = globalPoolData.pool_ton;
-        const totalDiamantes = globalPoolData.total_diamonds;
         const misDiamantes = Math.floor(userData.diamonds || 0);
         
         document.getElementById("current-price").textContent = `1 TON = ${Math.floor(tasa).toLocaleString()} 💎`;
@@ -604,10 +670,6 @@ async function openWithdraw() {
                         <span id="ton-receive" style="color: #10b981; font-size: 1.5rem; font-weight: bold;">0.0000</span>
                         <span style="color: #94a3b8;">TON</span>
                     </div>
-                </div>
-                <div style="background: #0f172a; padding: 12px; border-radius: 8px; font-size: 0.9rem; color: #94a3b8;">
-                    <strong>📊 Fórmula:</strong><br>
-                    1 TON = ${totalDiamantes.toLocaleString()} 💎 ÷ ${poolTon.toFixed(4)} TON = ${Math.floor(tasa).toLocaleString()} 💎
                 </div>`;
         }
         
@@ -616,57 +678,6 @@ async function openWithdraw() {
     } catch (error) {
         console.error("❌ Error abriendo retiro:", error);
         showError("Error cargando retiro");
-    }
-}
-
-function updateWithdrawCalculation() {
-    try {
-        const input = document.getElementById("withdraw-amount");
-        if (!input) return;
-        
-        const diamantes = parseInt(input.value) || 0;
-        const tonReceiveElem = document.getElementById("ton-receive");
-        if (!tonReceiveElem) return;
-        
-        const tasa = getTasaRetiro();
-        const minimo = Math.ceil(tasa);
-        const misDiamantes = Math.floor(userData.diamonds || 0);
-        const poolDisponible = globalPoolData.pool_ton;
-        
-        if (diamantes <= 0) {
-            tonReceiveElem.textContent = "0.0000";
-            tonReceiveElem.style.color = "#10b981";
-            return;
-        }
-        
-        if (diamantes < minimo) {
-            tonReceiveElem.innerHTML = `<span style="color: #ef4444; font-size: 1rem;">Mínimo: ${minimo} 💎</span>`;
-            return;
-        }
-        
-        if (diamantes > misDiamantes) {
-            tonReceiveElem.innerHTML = `<span style="color: #ef4444; font-size: 1rem;">Máximo: ${misDiamantes} 💎</span>`;
-            return;
-        }
-        
-        const tonRecibido = diamantes / tasa;
-        
-        if (tonRecibido > poolDisponible) {
-            const maxDiamantes = Math.floor(poolDisponible * tasa);
-            tonReceiveElem.innerHTML = 
-                `<span style="color: #ef4444; font-size: 1rem;">
-                    ❌ Pool insuficiente<br>Máximo: ${maxDiamantes.toLocaleString()} 💎
-                </span>`;
-            return;
-        }
-        
-        tonReceiveElem.textContent = tonRecibido.toFixed(4);
-        tonReceiveElem.style.color = "#10b981";
-        
-        console.log(`💰 Retiro: ${diamantes} 💎 = ${tonRecibido.toFixed(4)} TON`);
-        
-    } catch (error) {
-        console.error("❌ Error en cálculo:", error);
     }
 }
 
@@ -716,6 +727,7 @@ async function processWithdraw() {
         userData.diamonds -= diamantes;
         await saveUserData();
         
+        // Actualizar total_diamonds después del retiro
         try {
             const { data: allUsers } = await _supabase
                 .from("game_data")
@@ -732,6 +744,7 @@ async function processWithdraw() {
                 })
                 .eq("telegram_id", "MASTER");
             
+            // Actualizar pool local
             globalPoolData.total_diamonds = newTotalDiamonds;
             globalPoolData.pool_ton -= tonRecibido;
             
