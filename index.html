@@ -2,10 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ton City 💎</title>
     
-    <!-- IMPORTANTE: Orden correcto -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -229,6 +228,8 @@
         /* TON CONNECT */
         #ton-connect-button {
             margin: 15px 0;
+            display: flex;
+            justify-content: center;
         }
         
         #wallet-info {
@@ -333,44 +334,31 @@
             font-weight: bold;
         }
         
-        .error-text {
-            color: #ef4444;
-            font-weight: bold;
-        }
-        
-        .success-text {
-            color: #10b981;
-            font-weight: bold;
-        }
-        
         .wallet-badge {
             display: inline-block;
             background: #10b981;
             color: white;
-            padding: 6px 12px;
+            padding: 2px 8px;
             border-radius: 20px;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
-            margin: 5px;
+            margin-left: 5px;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
     <div class="header">
         <div>@<span id="user-display">Cargando...</span></div>
         <div class="balance"><span id="diamonds">0</span> 💎</div>
         <div class="rate">+ <span id="rate">0</span> / hr</div>
     </div>
 
-    <!-- Edificio Central -->
     <div class="central" onclick="openCentral()">
         <i class="fa-solid fa-city"></i>
         <h2>Edificio Central</h2>
         <small>Estadísticas generales</small>
     </div>
 
-    <!-- Grid de Edificios -->
     <div class="grid">
         <div class="card yellow" onclick="openBank()">
             <i class="fa-solid fa-building-columns"></i>
@@ -404,7 +392,6 @@
         </div>
     </div>
 
-    <!-- Overlay y Modales -->
     <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
     <div class="modal" id="centralModal">
@@ -418,80 +405,48 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- Modal Banco -->
     <div class="modal" id="modalBank">
         <h3>🏦 Banco TON</h3>
-        
-        <!-- TON Connect Button -->
         <div id="ton-connect-button"></div>
-        
-        <!-- Wallet Info (oculto inicialmente) -->
         <div id="wallet-info" class="hidden">
-            <p style="text-align: center; margin-bottom: 10px;">
-                <i class="fa-solid fa-wallet" style="color: #10b981; margin-right: 8px;"></i>
-                <span style="font-weight: bold;">Wallet conectada</span>
-                <span class="wallet-badge">✓</span>
-            </p>
-            <div style="text-align: center;">
-                <button id="disconnect-btn" onclick="disconnectWallet()">
-                    <i class="fa-solid fa-power-off"></i> Desconectar Wallet
-                </button>
-            </div>
+            <p><i class="fa-solid fa-wallet" style="color: #10b981;"></i> <b>Wallet conectada</b> <span class="wallet-badge">✓</span></p>
+            <button id="disconnect-btn" onclick="disconnectWallet()">Desconectar</button>
         </div>
-        
-        <!-- Lista de compras -->
         <div id="bankList"></div>
-        
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- Modal Tienda -->
     <div class="modal" id="modalStore">
         <h3>🛒 Tienda de Mejoras</h3>
         <div id="storeList"></div>
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- Modal Amigos -->
     <div class="modal" id="modalFriends">
         <h3>👥 Sistema de Amigos</h3>
         <div class="referral-code">
             <p>Tu código de referencia:</p>
             <code id="referral-code">CARGANDO...</code>
-            <button class="copy-btn" onclick="copyReferralCode()">
-                <i class="fa-regular fa-copy"></i> Copiar Código
-            </button>
+            <button class="copy-btn" onclick="copyReferralCode()">Copiar Código</button>
         </div>
         <div class="stat"><span>Amigos referidos</span><span id="ref-count">0</span></div>
-        <div class="stat"><span>Ganancias por referidos</span><span id="ref-earnings">0 💎</span></div>
-        <div class="stat" style="background:#0f172a"><span>Total ganado (10%)</span><span id="ref-total">0 💎</span></div>
-        <p class="info-text">Ganas el <span class="highlight">10%</span> de los diamantes que produzcan tus amigos referidos.</p>
+        <div class="stat"><span>Ganancias (10%)</span><span id="ref-total">0 💎</span></div>
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- Modal Retiro -->
     <div class="modal" id="modalWithdraw">
         <h3>💰 Retirar TON</h3>
-        <div class="stat">
-            <span>Precio actual</span>
-            <span id="current-price">0 TON/💎</span>
-        </div>
-        <div class="stat">
-            <span>Tus diamantes</span>
-            <span id="available-diamonds">0 💎</span>
-        </div>
+        <div class="stat"><span>Precio</span><span id="current-price">0 TON/💎</span></div>
+        <div class="stat"><span>Tus diamantes</span><span id="available-diamonds">0 💎</span></div>
         <div class="input-group">
-            <label>💎 Diamantes a retirar:</label>
-            <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1" oninput="updateWithdrawCalculation()">
-            <p class="info-text" id="withdraw-info">Mínimo: calculando...<br>Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
+            <label>💎 Cantidad:</label>
+            <input type="number" id="withdraw-amount" placeholder="Ej: 1000" oninput="updateWithdrawCalculation()">
+            <p class="info-text">Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
         </div>
-        <button onclick="processWithdraw()" id="withdraw-btn">
-            <i class="fa-solid fa-money-bill-transfer"></i> Retirar TON
-        </button>
+        <button onclick="processWithdraw()" id="withdraw-btn">Retirar TON</button>
         <button class="close" onclick="closeAll()">Cancelar</button>
     </div>
 
-    <!-- Barra de Navegación -->
     <div class="nav-bar">
         <div class="nav-item" onclick="openFriends()">
             <i class="fa-solid fa-user-group"></i>
@@ -503,7 +458,6 @@
         </div>
     </div>
 
-    <!-- JavaScript -->
     <script src="index.js"></script>
 </body>
 </html>
