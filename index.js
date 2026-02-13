@@ -1,3 +1,18 @@
+// ==========================================
+// CONFIGURACIÓN PARA KOYEB (No tocar lógica)
+// ==========================================
+const express = require('express');
+const path = require('path');
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+app.use(express.static(__dirname));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.listen(PORT, () => console.log(`✅ Servidor activo en puerto ${PORT}`));
+
+// Solo ejecutamos el resto si estamos en un navegador
+if (typeof window !== 'undefined') {
+
 // =======================
 // CONFIGURACIÓN INICIAL
 // =======================
@@ -1055,3 +1070,5 @@ window.disconnectWallet = disconnectWallet;
 console.log("✅ Ton City Game - FÓRMULA DE RETIRO 100% CORRECTA");
 console.log("✅ 1 💎 = pool_ton / total_diamonds TON");
 console.log("✅ 1 TON = total_diamonds / pool_ton 💎");
+
+} // Cierre del if(window)
