@@ -19,6 +19,8 @@
             --green: #4ade80;
             --orange: #fb923c;
             --pink: #f472b6;
+            --sunday-bg: #7b341e;
+            --sunday-border: #f97316;
         }
         
         body {
@@ -28,6 +30,35 @@
             color: white;
             overflow-x: hidden;
             padding-bottom: 70px;
+        }
+        
+        /* BANNER DE PRODUCCIÓN PAUSADA (DOMINGOS) */
+        .sunday-banner {
+            background: linear-gradient(135deg, #f97316, #c2410c);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 2px solid #facc15;
+            margin-bottom: 5px;
+            animation: pulse 2s infinite;
+        }
+        
+        .sunday-banner i {
+            margin-right: 8px;
+            animation: spin 3s linear infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.9; }
+            50% { opacity: 1; background: linear-gradient(135deg, #f97316, #dc2626); }
+            100% { opacity: 0.9; }
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
         
         .header {
@@ -322,6 +353,13 @@
             border-color: #3b82f6;
         }
         
+        .input-group input:disabled {
+            background: #1e293b;
+            color: #64748b;
+            border-color: #475569;
+            cursor: not-allowed;
+        }
+        
         .info-text {
             color: #94a3b8;
             font-size: 0.9rem;
@@ -344,9 +382,60 @@
             font-weight: bold;
             margin-left: 5px;
         }
+        
+        /* ESTILOS PARA RETIROS SEMANALES */
+        .withdraw-sunday-badge {
+            background: #f97316;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-left: 5px;
+        }
+        
+        .withdraw-disabled {
+            background: #334155 !important;
+            cursor: not-allowed !important;
+        }
+        
+        .withdraw-info-sunday {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #f97316;
+        }
+        
+        .withdraw-limit-info {
+            background: #0f172a;
+            padding: 8px;
+            border-radius: 6px;
+            margin: 5px 0;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            border: 1px dashed #f97316;
+        }
+        
+        .week-indicator {
+            background: #0f172a;
+            padding: 8px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 5px 0;
+            border: 1px solid #facc15;
+            color: #facc15;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
+    <!-- BANNER DE PRODUCCIÓN PAUSADA (SE MUESTRA SOLO EN DOMINGOS) -->
+    <div id="sunday-banner" style="display: none;" class="sunday-banner">
+        <i class="fa-solid fa-circle-pause"></i> PRODUCCIÓN PAUSADA - EVENTO DE RETIRO (DOMINGO) <i class="fa-solid fa-circle-pause"></i>
+    </div>
+
     <div class="header">
         <div>@<span id="user-display">Cargando...</span></div>
         <div class="balance"><span id="diamonds">0</span> 💎</div>
@@ -357,6 +446,9 @@
         <i class="fa-solid fa-city"></i>
         <h2>Edificio Central</h2>
         <small>Estadísticas generales</small>
+        <div id="central-sunday-indicator" style="display: none; margin-top: 8px; font-size: 12px; background: #f97316; color: white; padding: 4px; border-radius: 20px;">
+            ⏸️ Producción pausada (Domingo)
+        </div>
     </div>
 
     <div class="grid">
@@ -402,6 +494,7 @@
         <div class="stat"><span>Parque</span><span id="s_parque">0</span></div>
         <div class="stat"><span>Diversión</span><span id="s_diversion">0</span></div>
         <div class="stat" style="background:#022c22"><b>Total / hr</b><b id="s_total">0</b></div>
+        <div id="production-status-modal" style="margin-top: 10px;"></div>
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
@@ -434,16 +527,60 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
+    <!-- MODAL DE RETIRO SEMANAL - COMPLETAMENTE REDISEÑADO -->
     <div class="modal" id="modalWithdraw">
-        <h3>💰 Retirar TON</h3>
-        <div class="stat"><span>Precio</span><span id="current-price">0 TON/💎</span></div>
-        <div class="stat"><span>Tus diamantes</span><span id="available-diamonds">0 💎</span></div>
-        <div class="input-group">
-            <label>💎 Cantidad:</label>
-            <input type="number" id="withdraw-amount" placeholder="Ej: 1000" oninput="updateWithdrawCalculation()">
-            <p class="info-text">Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
+        <h3>💰 Retiro Semanal <span class="withdraw-sunday-badge">DOMINGOS</span></h3>
+        
+        <!-- Indicador de semana -->
+        <div style="text-align: center; margin-bottom: 10px;">
+            <span class="week-indicator" id="week-indicator">Semana #0</span>
         </div>
-        <button onclick="processWithdraw()" id="withdraw-btn">Retirar TON</button>
+        
+        <!-- Información del pool -->
+        <div class="stat">
+            <span>Pool disponible</span>
+            <span id="pool-amount" style="color: #10b981;">0 TON</span>
+        </div>
+        
+        <div class="stat">
+            <span>Diamantes totales</span>
+            <span id="total-diamonds" style="color: #facc15;">0 💎</span>
+        </div>
+        
+        <!-- Tasa de cambio -->
+        <div class="stat" style="background: #1e293b;">
+            <span>Tasa actual</span>
+            <span id="current-price" style="color: #facc15; font-weight: bold;">0 TON/💎</span>
+        </div>
+        
+        <!-- Información de diamantes del usuario -->
+        <div class="stat">
+            <span>Tus diamantes</span>
+            <span id="available-diamonds" style="color: #4ade80;">0 💎</span>
+        </div>
+        
+        <!-- Estado del retiro semanal -->
+        <div id="withdraw-status" class="withdraw-info-sunday">
+            <i class="fa-solid fa-circle-info"></i> Verificando disponibilidad...
+        </div>
+        
+        <!-- Input de cantidad -->
+        <div class="input-group">
+            <label>💎 Diamantes a retirar:</label>
+            <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1">
+            <p class="info-text" id="withdraw-info">Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
+        </div>
+        
+        <!-- Límite semanal -->
+        <div class="withdraw-limit-info">
+            <i class="fa-solid fa-clock"></i> <strong>1 retiro por semana</strong> - Solo domingos 00:00 a 23:59
+        </div>
+        
+        <!-- Botón de retiro -->
+        <button onclick="processWithdraw()" id="withdraw-btn" style="background: #10b981; font-size: 16px;">
+            <i class="fa-solid fa-money-bill-transfer"></i> RETIRAR (1 vez/semana)
+        </button>
+        
         <button class="close" onclick="closeAll()">Cancelar</button>
     </div>
 
