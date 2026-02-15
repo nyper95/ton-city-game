@@ -44,7 +44,8 @@ let userData = {
     lvl_parque: 0, 
     lvl_diversion: 0,
     referral_code: null,
-    last_online: null
+    last_online: null,
+    last_withdraw_week: null // Para controlar retiros semanales
 };
 
 let globalPoolData = { 
@@ -59,6 +60,298 @@ const PROD_VAL = {
     parque: 15, 
     diversion: 120 
 };
+
+// ==========================================
+// SISTEMA DE CONTROL DE PRODUCCIÓN Y RETIROS
+// ==========================================
+
+// Verificar si es domingo (0 = domingo en JavaScript)
+function esDomingo() {
+    const hoy = new Date();
+    return hoy.getDay() === 0; // 0 = domingo
+}
+
+// Verificar si estamos en ventana de retiro (domingo 00:00 - lunes 00:00)
+function enVentanaRetiro() {
+    const ahora = new Date();
+    const dia = ahora.getDay();
+    
+    // Domingo todo el día (00:00 a 23:59)
+    if (dia === 0) return true;
+    
+    return false;
+}
+
+// Verificar si la producción debe estar activa
+function produccionActiva() {
+    // La producción se PAUSA durante la ventana de retiros (domingos)
+    return !enVentanaRetiro();
+}
+
+// Obtener número de semana (para control)
+function getNumeroSemana() {
+    const ahora = new Date();
+    const inicio = new Date(ahora.getFullYear(), 0, 1);
+    const dias = Math.floor((ahora - inicio) / (24 * 60 * 60 * 1000));
+    return Math.ceil(dias / 7);
+}
+
+// FÓRMULA CORRECTA: 1 TON = pool_ton / total_diamonds
+function calcularTasaRetiro() {
+    if (!globalPoolData || globalPoolData.pool_ton <= 0 || globalPoolData.total_diamonds <= 0) {
+        return 0.001; // Valor por defecto: 0.001 TON por diamante
+    }
+    // 1 diamante = pool_ton / total_diamonds TON
+    const tasa = globalPoolData.pool_ton / globalPoolData.total_diamonds;
+    return Math.max(tasa, 0.0001); // Mínimo 0.0001 TON por diamante
+}
+
+function calcularTONPorDiamantes(diamantes) {
+    const tasa = calcularTasaRetiro();
+    return diamantes * tasa;
+}
+
+function calcularDiamantesPorTON(ton) {
+    const tasa = calcularTasaRetiro();
+    return Math.ceil(ton / tasa);
+}
+
+// ==========================================
+// SISTEMA DE RETIROS SEMANALES
+// ==========================================
+
+// Abrir modal de retiro
+async function openWithdraw() {
+    try {
+        // Verificar si estamos en ventana de retiro
+        if (!enVentanaRetiro()) {
+            const mensaje = "❌ Los retiros solo están disponibles los DOMINGOS (00:00 - 23:59)";
+            alert(mensaje);
+            return;
+        }
+        
+        // Verificar si ya retiró esta semana
+        const semanaActual = getNumeroSemana();
+        if (userData.last_withdraw_week === semanaActual) {
+            alert("❌ Ya has retirado esta semana. Vuelve el próximo domingo.");
+            return;
+        }
+        
+        showModal("modalWithdraw");
+        
+        // Actualizar pool antes de calcular
+        await updateGlobalPoolStats();
+        await loadTotalDiamondsFromDB();
+        
+        const tasa = calcularTasaRetiro(); // TON por diamante
+        const poolTon = globalPoolData.pool_ton;
+        const totalDiamantes = globalPoolData.total_diamonds;
+        const misDiamantes = Math.floor(userData.diamonds || 0);
+        
+        // Calcular cuántos diamantes necesitas para 1 TON
+        const diamantesPor1TON = Math.ceil(1 / tasa);
+        
+        // Actualizar UI
+        document.getElementById("current-price").textContent = `1 💎 = ${tasa.toFixed(6)} TON`;
+        document.getElementById("available-diamonds").textContent = `${misDiamantes} 💎`;
+        
+        const input = document.getElementById("withdraw-amount");
+        if (input) {
+            input.value = "";
+            input.min = 1;
+            input.max = misDiamantes;
+            input.placeholder = `Cantidad de 💎`;
+            input.removeEventListener('input', updateWithdrawCalculation);
+            input.addEventListener('input', updateWithdrawCalculation);
+        }
+        
+        const infoElement = document.getElementById("withdraw-info");
+        if (infoElement) {
+            infoElement.innerHTML = 
+                `<div style="background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="color: #94a3b8;">Valor actual:</span>
+                        <span style="color: #facc15; font-weight: bold; font-size: 1.2rem;">1 💎 = ${tasa.toFixed(6)} TON</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #94a3b8;">1 TON =</span>
+                        <span style="color: #10b981; font-weight: bold;">${diamantesPor1TON.toLocaleString()} 💎</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                        <span style="color: #94a3b8;">Pool disponible:</span>
+                        <span style="color: #10b981; font-weight: bold;">${poolTon.toFixed(4)} TON</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                        <span style="color: #94a3b8;">Semana actual:</span>
+                        <span style="color: #facc15; font-weight: bold;">#${semanaActual}</span>
+                    </div>
+                    <div style="background: #0f172a; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: center; color: #94a3b8;">
+                        ⏸️ PRODUCCIÓN PAUSADA (Domingo - Evento de Retiro)
+                    </div>
+                </div>
+                <div style="background: #0f172a; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #94a3b8;">Recibirás:</span>
+                        <span id="ton-receive" style="color: #10b981; font-size: 1.5rem; font-weight: bold;">0.0000</span>
+                        <span style="color: #94a3b8;">TON</span>
+                    </div>
+                </div>
+                <div style="background: #0f172a; padding: 12px; border-radius: 8px; font-size: 0.9rem; color: #94a3b8;">
+                    <strong>📊 Fórmula de retiro semanal:</strong><br>
+                    • Pool: ${poolTon.toFixed(4)} TON<br>
+                    • Diamantes totales (todos los usuarios): ${totalDiamantes.toLocaleString()} 💎<br>
+                    • 1 💎 = ${poolTon.toFixed(4)} TON ÷ ${totalDiamantes.toLocaleString()} 💎<br>
+                    • <strong style="color: #facc15;">1 💎 = ${tasa.toFixed(6)} TON</strong><br>
+                    • <strong style="color: #10b981;">1 TON = ${diamantesPor1TON.toLocaleString()} 💎</strong>
+                </div>`;
+        }
+        
+        updateWithdrawCalculation();
+        
+    } catch (error) {
+        console.error("❌ Error abriendo retiro:", error);
+        alert("Error cargando retiro");
+    }
+}
+
+function updateWithdrawCalculation() {
+    try {
+        const input = document.getElementById("withdraw-amount");
+        if (!input) return;
+        
+        const diamantes = parseInt(input.value) || 0;
+        const tonReceiveElem = document.getElementById("ton-receive");
+        if (!tonReceiveElem) return;
+        
+        const tasa = calcularTasaRetiro();
+        const misDiamantes = Math.floor(userData.diamonds || 0);
+        const poolDisponible = globalPoolData.pool_ton;
+        
+        if (diamantes <= 0) {
+            tonReceiveElem.textContent = "0.0000";
+            tonReceiveElem.style.color = "#10b981";
+            return;
+        }
+        
+        if (diamantes > misDiamantes) {
+            tonReceiveElem.innerHTML = `<span style="color: #ef4444;">Máximo: ${misDiamantes} 💎</span>`;
+            return;
+        }
+        
+        // CÁLCULO CORRECTO: TON = diamantes × tasa
+        const tonRecibido = diamantes * tasa;
+        
+        if (tonRecibido > poolDisponible) {
+            const maxDiamantes = Math.floor(poolDisponible / tasa);
+            tonReceiveElem.innerHTML = 
+                `<span style="color: #ef4444;">Pool insuficiente - Máx: ${maxDiamantes.toLocaleString()} 💎</span>`;
+            return;
+        }
+        
+        tonReceiveElem.textContent = tonRecibido.toFixed(4);
+        tonReceiveElem.style.color = "#10b981";
+        
+        console.log(`💰 Retiro semanal: ${diamantes} 💎 × ${tasa.toFixed(6)} = ${tonRecibido.toFixed(4)} TON`);
+        
+    } catch (error) {
+        console.error("❌ Error en cálculo:", error);
+    }
+}
+
+async function processWithdraw() {
+    try {
+        // Verificar nuevamente ventana de retiro
+        if (!enVentanaRetiro()) {
+            alert("❌ Los retiros solo están disponibles los DOMINGOS");
+            return;
+        }
+        
+        // Verificar si ya retiró esta semana
+        const semanaActual = getNumeroSemana();
+        if (userData.last_withdraw_week === semanaActual) {
+            alert("❌ Ya has retirado esta semana. Vuelve el próximo domingo.");
+            return;
+        }
+        
+        const input = document.getElementById("withdraw-amount");
+        if (!input) {
+            alert("Campo no encontrado");
+            return;
+        }
+        
+        const diamantes = parseInt(input.value);
+        const misDiamantes = Math.floor(userData.diamonds || 0);
+        
+        if (!diamantes || diamantes <= 0) {
+            alert("❌ Ingresa una cantidad válida");
+            return;
+        }
+        
+        if (diamantes > misDiamantes) {
+            alert(`❌ Solo tienes ${misDiamantes} 💎`);
+            return;
+        }
+        
+        const tasa = calcularTasaRetiro();
+        const tonRecibido = diamantes * tasa;
+        
+        if (tonRecibido > globalPoolData.pool_ton) {
+            alert(`❌ No hay suficiente TON en el pool`);
+            return;
+        }
+        
+        const diamantesPor1TON = Math.ceil(1 / tasa);
+        
+        const confirmMsg = 
+            `¿RETIRAR SEMANAL?\n\n` +
+            `Retirarás: ${diamantes.toLocaleString()} 💎\n` +
+            `Recibirás: ${tonRecibido.toFixed(4)} TON\n` +
+            `Tasa: 1 💎 = ${tasa.toFixed(6)} TON\n` +
+            `1 TON = ${diamantesPor1TON.toLocaleString()} 💎\n\n` +
+            `Esta operación solo se puede hacer UNA VEZ por semana.\n` +
+            `La producción se reanudará mañana (lunes).`;
+        
+        if (!confirm(confirmMsg)) return;
+        
+        // PROCESAR RETIRO
+        userData.diamonds -= diamantes;
+        userData.last_withdraw_week = semanaActual;
+        
+        await saveUserData();
+        
+        // Actualizar pool (restar TON)
+        try {
+            const newPoolTon = globalPoolData.pool_ton - tonRecibido;
+            
+            await _supabase
+                .from("game_data")
+                .update({
+                    pool_ton: newPoolTon,
+                    last_seen: new Date().toISOString()
+                })
+                .eq("telegram_id", "MASTER");
+            
+            globalPoolData.pool_ton = newPoolTon;
+            
+        } catch (updateError) {
+            console.error("❌ Error actualizando pool:", updateError);
+        }
+        
+        actualizarUI();
+        closeAll();
+        
+        alert(
+            `✅ RETIRO SEMANAL EXITOSO!\n\n` +
+            `Retiraste: ${diamantes.toLocaleString()} 💎\n` +
+            `Recibirás: ${tonRecibido.toFixed(4)} TON\n` +
+            `Próximo retiro: Domingo ${semanaActual + 1}`
+        );
+        
+    } catch (error) {
+        console.error("❌ Error en retiro:", error);
+        alert("Error al procesar retiro");
+    }
+}
 
 // ==========================================
 // INICIALIZACIÓN Y CARGA DE DATOS
@@ -86,6 +379,7 @@ async function initApp() {
 
         await initTONConnect();
         await updateGlobalPoolStats();
+        await loadTotalDiamondsFromDB();
         
         // Renderizar partes dinámicas
         renderStore();
@@ -95,8 +389,39 @@ async function initApp() {
         startProduction(); 
         setInterval(saveUserData, 30000); // Auto-guardado cada 30s
         
+        // Mostrar estado de producción al inicio
+        mostrarEstadoProduccion();
+        
     } catch (error) {
         console.error("❌ Error en initApp:", error);
+    }
+}
+
+function mostrarEstadoProduccion() {
+    if (!produccionActiva()) {
+        console.log("⏸️ PRODUCCIÓN PAUSADA - Es domingo (evento de retiro)");
+        // Opcional: mostrar un mensaje en UI
+        const statusElem = document.createElement("div");
+        statusElem.id = "production-status";
+        statusElem.style = "background: #f59e0b; color: black; text-align: center; padding: 5px; font-weight: bold;";
+        statusElem.textContent = "⏸️ PRODUCCIÓN PAUSADA - Evento de Retiro (Domingo)";
+        document.body.prepend(statusElem);
+    }
+}
+
+async function loadTotalDiamondsFromDB() {
+    try {
+        const { data, error } = await _supabase
+            .from("game_data")
+            .select("diamonds")
+            .neq("telegram_id", "MASTER");
+            
+        if (!error && data) {
+            globalPoolData.total_diamonds = data.reduce((sum, user) => sum + (Number(user.diamonds) || 0), 0);
+            console.log(`💎 Total diamantes TODOS los usuarios: ${globalPoolData.total_diamonds.toLocaleString()}`);
+        }
+    } catch (error) {
+        console.error("❌ Error cargando total_diamonds:", error);
     }
 }
 
@@ -119,7 +444,8 @@ async function loadUserFromDB(tgId) {
                 lvl_casino: Number(data.lvl_casino) || 0,
                 lvl_piscina: Number(data.lvl_piscina) || 0,
                 lvl_parque: Number(data.lvl_parque) || 0,
-                lvl_diversion: Number(data.lvl_diversion) || 0
+                lvl_diversion: Number(data.lvl_diversion) || 0,
+                last_withdraw_week: data.last_withdraw_week || null
             };
             
             if (!userData.referral_code) {
@@ -140,7 +466,8 @@ async function loadUserFromDB(tgId) {
                 lvl_parque: 0,
                 lvl_diversion: 0,
                 referral_code: userData.referral_code,
-                last_online: new Date().toISOString()
+                last_online: new Date().toISOString(),
+                last_withdraw_week: null
             }]);
         }
         actualizarUI();
@@ -260,13 +587,19 @@ function renderBank() {
 }
 
 // ==========================================
-// SISTEMA DE PRODUCCIÓN
+// SISTEMA DE PRODUCCIÓN (CON PAUSA EN DOMINGOS)
 // ==========================================
 function startProduction() {
     console.log("⚙️ Iniciando producción...");
     
     setInterval(() => {
         if (!userData.id) return;
+        
+        // ⚠️ VERIFICAR SI LA PRODUCCIÓN DEBE ESTAR ACTIVA
+        if (!produccionActiva()) {
+            // Producción pausada por ser domingo
+            return;
+        }
         
         const totalPerHr = 
             (userData.lvl_tienda * PROD_VAL.tienda) +
@@ -315,6 +648,16 @@ function updateCentralStats() {
         const el = document.getElementById(id);
         if (el) el.textContent = value.toLocaleString();
     });
+    
+    // Mostrar estado de producción en el central
+    const statusElem = document.getElementById("production-status-modal");
+    if (statusElem) {
+        if (!produccionActiva()) {
+            statusElem.innerHTML = '<div style="background: #f59e0b; color: black; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: center; font-weight: bold;">⏸️ PRODUCCIÓN PAUSADA - Evento de Retiro (Domingo)</div>';
+        } else {
+            statusElem.innerHTML = '';
+        }
+    }
 }
 
 // ==========================================
@@ -497,7 +840,8 @@ async function saveUserData() {
             lvl_piscina: userData.lvl_piscina || 0,
             lvl_parque: userData.lvl_parque || 0,
             lvl_diversion: userData.lvl_diversion || 0,
-            last_online: new Date().toISOString()
+            last_online: new Date().toISOString(),
+            last_withdraw_week: userData.last_withdraw_week
         }).eq('telegram_id', userData.id);
     } catch (error) {
         console.error("❌ Error guardando:", error);
@@ -536,5 +880,6 @@ window.copyReferralCode = copyReferralCode;
 window.comprarTON = comprarTON;
 window.buyUpgrade = buyUpgrade;
 window.disconnectWallet = disconnectWallet;
+window.processWithdraw = processWithdraw;
 
-console.log("✅ Ton City Game - Código listo");
+console.log("✅ Ton City Game - Código listo con RETIROS SEMANALES y PRODUCCIÓN PAUSADA EN DOMINGOS");
