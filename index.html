@@ -8,6 +8,8 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ADSGRAM SDK -->
+    <script src="https://sdk.adsgram.ai/js/sdk.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
     <style>
@@ -21,6 +23,8 @@
             --pink: #f472b6;
             --sunday-bg: #7b341e;
             --sunday-border: #f97316;
+            --school: #a78bfa;
+            --hospital: #f87171;
         }
         
         body {
@@ -48,6 +52,25 @@
         .sunday-banner i {
             margin-right: 8px;
             animation: spin 3s linear infinite;
+        }
+        
+        /* BANNER DE ANUNCIOS DISPONIBLES */
+        .ads-available {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            border-radius: 20px;
+            margin: 5px 12px;
+            cursor: pointer;
+            border: 1px solid #facc15;
+            box-shadow: 0 0 10px rgba(250, 204, 21, 0.3);
+        }
+        
+        .ads-available i {
+            margin-right: 5px;
         }
         
         @keyframes pulse {
@@ -137,6 +160,8 @@
         .orange { color: var(--orange); }
         .pink { color: var(--pink); }
         .yellow { color: var(--primary); }
+        .purple { color: var(--school); }
+        .red { color: var(--hospital); }
         
         .overlay, .modal {
             position: fixed;
@@ -302,6 +327,37 @@
             font-size: 18px;
         }
         
+        /* ANUNCIOS */
+        .ads-item {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid #facc15;
+            text-align: center;
+        }
+        
+        .ads-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+        }
+        
+        .ads-item i {
+            font-size: 30px;
+            margin-bottom: 5px;
+        }
+        
+        .ads-timer {
+            font-size: 12px;
+            background: rgba(0,0,0,0.3);
+            padding: 4px 8px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        
         .referral-code {
             background: #0f172a;
             padding: 15px;
@@ -436,6 +492,11 @@
         <i class="fa-solid fa-circle-pause"></i> PRODUCCIÓN PAUSADA - EVENTO DE RETIRO (DOMINGO) <i class="fa-solid fa-circle-pause"></i>
     </div>
 
+    <!-- BANNER DE ANUNCIOS DISPONIBLES -->
+    <div id="ads-banner" class="ads-available" onclick="showAdsModal()" style="display: none;">
+        <i class="fa-solid fa-circle-play"></i> ¡PARQUE DISPONIBLE! Gana 100 💎 viendo un anuncio <i class="fa-solid fa-circle-play"></i>
+    </div>
+
     <div class="header">
         <div>@<span id="user-display">Cargando...</span></div>
         <div class="balance"><span id="diamonds">0</span> 💎</div>
@@ -472,15 +533,27 @@
             <h3>Piscina</h3>
             <small>Lvl: <span id="lvl_piscina">0</span></small>
         </div>
-        <div class="card green">
+        <div class="card purple" onclick="showAdsModal()">
             <i class="fa-solid fa-tree"></i>
             <h3>Parque</h3>
-            <small>Lvl: <span id="lvl_parque">0</span></small>
+            <small>Ver anuncio → 100 💎</small>
+            <div id="park-timer" style="font-size: 10px; color: #f59e0b; margin-top: 5px;"></div>
         </div>
         <div class="card pink">
             <i class="fa-solid fa-gamepad"></i>
             <h3>Diversión</h3>
             <small>Lvl: <span id="lvl_diversion">0</span></small>
+        </div>
+        <!-- NUEVOS EDIFICIOS -->
+        <div class="card purple">
+            <i class="fa-solid fa-school"></i>
+            <h3>Escuela</h3>
+            <small>Lvl: <span id="lvl_escuela">0</span></small>
+        </div>
+        <div class="card red">
+            <i class="fa-solid fa-hospital"></i>
+            <h3>Hospital</h3>
+            <small>Lvl: <span id="lvl_hospital">0</span></small>
         </div>
     </div>
 
@@ -493,6 +566,8 @@
         <div class="stat"><span>Piscina</span><span id="s_piscina">0</span></div>
         <div class="stat"><span>Parque</span><span id="s_parque">0</span></div>
         <div class="stat"><span>Diversión</span><span id="s_diversion">0</span></div>
+        <div class="stat"><span>Escuela</span><span id="s_escuela">0</span></div>
+        <div class="stat"><span>Hospital</span><span id="s_hospital">0</span></div>
         <div class="stat" style="background:#022c22"><b>Total / hr</b><b id="s_total">0</b></div>
         <div id="production-status-modal" style="margin-top: 10px;"></div>
         <button class="close" onclick="closeAll()">Cerrar</button>
@@ -515,6 +590,30 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
+    <!-- NUEVO MODAL DE ANUNCIOS DEL PARQUE -->
+    <div class="modal" id="modalAds">
+        <h3>🌳 Parque - Anuncios</h3>
+        <div style="text-align: center; margin-bottom: 15px;">
+            <i class="fa-solid fa-tree" style="font-size: 48px; color: #10b981;"></i>
+        </div>
+        <div class="stat">
+            <span>Disponible cada</span>
+            <span>2 horas</span>
+        </div>
+        <div class="stat">
+            <span>Recompensa</span>
+            <span style="color: #facc15;">100 💎</span>
+        </div>
+        <div id="ads-status" class="info-text" style="margin: 15px 0; padding: 10px; background: #0f172a; border-radius: 8px;">
+            Verificando disponibilidad...
+        </div>
+        <div id="ads-timer-display" style="text-align: center; font-size: 1.2rem; margin: 15px 0; color: #f59e0b;"></div>
+        <button onclick="watchAd()" id="watch-ad-btn" style="background: #f59e0b;">
+            <i class="fa-solid fa-circle-play"></i> VER ANUNCIO +100 💎
+        </button>
+        <button class="close" onclick="closeAll()">Cerrar</button>
+    </div>
+
     <div class="modal" id="modalFriends">
         <h3>👥 Sistema de Amigos</h3>
         <div class="referral-code">
@@ -527,16 +626,14 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL DE RETIRO SEMANAL - COMPLETAMENTE REDISEÑADO -->
+    <!-- MODAL DE RETIRO SEMANAL -->
     <div class="modal" id="modalWithdraw">
         <h3>💰 Retiro Semanal <span class="withdraw-sunday-badge">DOMINGOS</span></h3>
         
-        <!-- Indicador de semana -->
         <div style="text-align: center; margin-bottom: 10px;">
             <span class="week-indicator" id="week-indicator">Semana #0</span>
         </div>
         
-        <!-- Información del pool -->
         <div class="stat">
             <span>Pool disponible</span>
             <span id="pool-amount" style="color: #10b981;">0 TON</span>
@@ -547,36 +644,30 @@
             <span id="total-diamonds" style="color: #facc15;">0 💎</span>
         </div>
         
-        <!-- Tasa de cambio -->
         <div class="stat" style="background: #1e293b;">
             <span>Tasa actual</span>
             <span id="current-price" style="color: #facc15; font-weight: bold;">0 TON/💎</span>
         </div>
         
-        <!-- Información de diamantes del usuario -->
         <div class="stat">
             <span>Tus diamantes</span>
             <span id="available-diamonds" style="color: #4ade80;">0 💎</span>
         </div>
         
-        <!-- Estado del retiro semanal -->
         <div id="withdraw-status" class="withdraw-info-sunday">
             <i class="fa-solid fa-circle-info"></i> Verificando disponibilidad...
         </div>
         
-        <!-- Input de cantidad -->
         <div class="input-group">
             <label>💎 Diamantes a retirar:</label>
             <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1">
             <p class="info-text" id="withdraw-info">Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
         </div>
         
-        <!-- Límite semanal -->
         <div class="withdraw-limit-info">
             <i class="fa-solid fa-clock"></i> <strong>1 retiro por semana</strong> - Solo domingos 00:00 a 23:59
         </div>
         
-        <!-- Botón de retiro -->
         <button onclick="processWithdraw()" id="withdraw-btn" style="background: #10b981; font-size: 16px;">
             <i class="fa-solid fa-money-bill-transfer"></i> RETIRAR (1 vez/semana)
         </button>
