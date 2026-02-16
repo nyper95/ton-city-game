@@ -25,6 +25,7 @@
             --sunday-border: #f97316;
             --school: #a78bfa;
             --hospital: #f87171;
+            --daily: #f59e0b;
         }
         
         body {
@@ -52,6 +53,31 @@
         .sunday-banner i {
             margin-right: 8px;
             animation: spin 3s linear infinite;
+        }
+        
+        /* BANNER DE RECOMPENSA DIARIA */
+        .daily-banner {
+            background: linear-gradient(135deg, #f59e0b, #b45309);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 2px solid #facc15;
+            margin-bottom: 5px;
+            cursor: pointer;
+            animation: glow 2s infinite;
+        }
+        
+        .daily-banner i {
+            margin-right: 8px;
+            color: #facc15;
+        }
+        
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px #f59e0b; }
+            50% { box-shadow: 0 0 20px #f59e0b; }
+            100% { box-shadow: 0 0 5px #f59e0b; }
         }
         
         /* BANNER DE ANUNCIOS DISPONIBLES */
@@ -162,6 +188,7 @@
         .yellow { color: var(--primary); }
         .purple { color: var(--school); }
         .red { color: var(--hospital); }
+        .daily { color: var(--daily); }
         
         .overlay, .modal {
             position: fixed;
@@ -325,6 +352,53 @@
             color: #facc15;
             font-weight: bold;
             font-size: 18px;
+        }
+        
+        /* RECOMPENSA DIARIA */
+        .daily-calendar {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+            margin: 15px 0;
+        }
+        
+        .daily-day {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 11px;
+            position: relative;
+        }
+        
+        .daily-day.completed {
+            background: #10b981;
+            border-color: #facc15;
+            color: white;
+        }
+        
+        .daily-day.current {
+            border: 2px solid #f59e0b;
+            animation: pulse 1s infinite;
+        }
+        
+        .daily-day.locked {
+            opacity: 0.5;
+        }
+        
+        .daily-reward {
+            font-weight: bold;
+            color: #facc15;
+            font-size: 12px;
+        }
+        
+        .daily-big-reward {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f59e0b;
+            text-align: center;
+            margin: 10px 0;
         }
         
         /* ANUNCIOS */
@@ -492,6 +566,11 @@
         <i class="fa-solid fa-circle-pause"></i> PRODUCCIÓN PAUSADA - EVENTO DE RETIRO (DOMINGO) <i class="fa-solid fa-circle-pause"></i>
     </div>
 
+    <!-- BANNER DE RECOMPENSA DIARIA -->
+    <div id="daily-banner" class="daily-banner" onclick="openDailyReward()" style="display: block;">
+        <i class="fa-solid fa-calendar-day"></i> ¡RECOMPENSA DIARIA DISPONIBLE! Reclama tus diamantes <i class="fa-solid fa-arrow-right"></i>
+    </div>
+
     <!-- BANNER DE ANUNCIOS DISPONIBLES -->
     <div id="ads-banner" class="ads-available" onclick="showAdsModal()" style="display: none;">
         <i class="fa-solid fa-circle-play"></i> ¡PARQUE DISPONIBLE! Gana 100 💎 viendo un anuncio <i class="fa-solid fa-circle-play"></i>
@@ -544,7 +623,6 @@
             <h3>Diversión</h3>
             <small>Lvl: <span id="lvl_diversion">0</span></small>
         </div>
-        <!-- NUEVOS EDIFICIOS -->
         <div class="card purple">
             <i class="fa-solid fa-school"></i>
             <h3>Escuela</h3>
@@ -590,7 +668,51 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- NUEVO MODAL DE ANUNCIOS DEL PARQUE -->
+    <!-- MODAL DE RECOMPENSA DIARIA -->
+    <div class="modal" id="modalDailyReward">
+        <h3>📅 Recompensa Diaria <span class="withdraw-sunday-badge">30 DÍAS</span></h3>
+        
+        <div style="text-align: center; margin: 15px 0;">
+            <i class="fa-solid fa-calendar-check" style="font-size: 48px; color: #f59e0b;"></i>
+        </div>
+        
+        <div class="stat">
+            <span>Día actual</span>
+            <span id="current-day" style="color: #f59e0b; font-weight: bold;">0</span>
+        </div>
+        
+        <div class="stat">
+            <span>Recompensa de hoy</span>
+            <span id="today-reward" style="color: #facc15; font-weight: bold;">0 💎</span>
+        </div>
+        
+        <div id="daily-status" class="info-text" style="margin: 15px 0; padding: 10px; background: #0f172a; border-radius: 8px;">
+            Cargando...
+        </div>
+        
+        <!-- Calendario de recompensas -->
+        <div style="margin: 20px 0;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span style="color: #94a3b8;">Progreso diario</span>
+                <span id="progress-text" style="color: #f59e0b;">0/30</span>
+            </div>
+            <div class="daily-calendar" id="daily-calendar">
+                <!-- Se llena con JavaScript -->
+            </div>
+        </div>
+        
+        <div class="daily-big-reward" id="big-reward">
+            ¡Día 30: 300 💎!
+        </div>
+        
+        <button onclick="claimDailyReward()" id="claim-daily-btn" style="background: #f59e0b;">
+            <i class="fa-solid fa-gift"></i> RECLAMAR RECOMPENSA DIARIA
+        </button>
+        
+        <button class="close" onclick="closeAll()">Cerrar</button>
+    </div>
+
+    <!-- MODAL DE ANUNCIOS DEL PARQUE -->
     <div class="modal" id="modalAds">
         <h3>🌳 Parque - Anuncios</h3>
         <div style="text-align: center; margin-bottom: 15px;">
@@ -676,6 +798,10 @@
     </div>
 
     <div class="nav-bar">
+        <div class="nav-item" onclick="openDailyReward()">
+            <i class="fa-solid fa-calendar-day"></i>
+            <span>DIARIO</span>
+        </div>
         <div class="nav-item" onclick="openFriends()">
             <i class="fa-solid fa-user-group"></i>
             <span>AMIGOS</span>
