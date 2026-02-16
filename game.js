@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN CORREGIDA
+// TON CITY GAME - VERSIÓN CORREGIDA (ADSGRAM 30💎)
 // ======================================================
 
 // ==========================================
@@ -50,7 +50,7 @@ let userData = {
     lvl_hospital: 0,
     referral_code: null,
     last_online: null,
-    last_production_update: null, // ← NUEVO: para producción offline
+    last_production_update: null,
     last_withdraw_week: null,
     last_ad_watch: null,
     daily_streak: 0,
@@ -73,7 +73,7 @@ const PROD_VAL = {
 };
 
 // ==========================================
-// SISTEMA DE PRODUCCIÓN OFFLINE (CORREGIDO)
+// SISTEMA DE PRODUCCIÓN OFFLINE
 // ==========================================
 
 // Calcular producción por hora total
@@ -95,7 +95,6 @@ async function calculateOfflineProduction() {
     const lastUpdate = new Date(userData.last_production_update);
     const secondsPassed = Math.floor((now - lastUpdate) / 1000);
     
-    // Si pasó menos de 1 segundo, no calcular
     if (secondsPassed < 1) return 0;
     
     const totalPerHour = getTotalProductionPerHour();
@@ -109,7 +108,7 @@ async function calculateOfflineProduction() {
 }
 
 // ==========================================
-// SISTEMA DE ANUNCIOS (CORREGIDO)
+// SISTEMA DE ANUNCIOS (CORREGIDO - 30💎)
 // ==========================================
 
 // Verificar si puede ver anuncio (cada 2 horas)
@@ -167,7 +166,7 @@ function actualizarEstadoAnuncio() {
     if (!statusElem || !timerElem || !btnElem) return;
     
     if (puedeVerAnuncio()) {
-        statusElem.innerHTML = '<span style="color: #4ade80;">✅ ¡Anuncio disponible! Gana 100 💎</span>';
+        statusElem.innerHTML = '<span style="color: #4ade80;">✅ ¡Anuncio disponible! Gana 30 💎</span>';
         timerElem.innerHTML = '';
         btnElem.disabled = false;
         btnElem.style.background = "#f59e0b";
@@ -180,7 +179,9 @@ function actualizarEstadoAnuncio() {
     }
 }
 
-// Ver anuncio con Adsgram (VERSIÓN CORREGIDA)
+// ==========================================
+// FUNCIÓN CORREGIDA DE ADSGRAM (30💎)
+// ==========================================
 async function watchAd() {
     try {
         if (!puedeVerAnuncio()) {
@@ -188,50 +189,57 @@ async function watchAd() {
             return;
         }
 
-        // Verificar si el script de Adsgram está presente
-        if (typeof Adsgram === 'undefined') {
-            console.error("❌ Adsgram no está definido");
-            alert("❌ El sistema de anuncios no está disponible. Recarga la página.");
+        // 1. Verificamos que el SDK esté cargado en el navegador
+        if (!window.Adsgram) {
+            console.error("SDK de Adsgram no encontrado");
+            alert("❌ El sistema de anuncios no cargó correctamente. Intenta recargar.");
             return;
         }
 
-        // Inicializar Adsgram (FORMA CORRECTA)
-        try {
-            const adsgram = new Adsgram({ blockId: ADSGRAM_BLOCK_ID });
+        console.log("🎬 Iniciando anuncio con Block ID:", ADSGRAM_BLOCK_ID);
+
+        // 2. Inicializamos usando el método .init (No usar 'new')
+        const AdController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
+
+        // 3. Mostramos el anuncio
+        const result = await AdController.show();
+        
+        console.log("📦 Resultado del anuncio:", result);
+        
+        // 4. Si el anuncio se completó con éxito (result.done)
+        if (result && result.done) {
+            // Recompensa de 30 diamantes (actualizado)
+            userData.diamonds += 30;
+            userData.last_ad_watch = new Date().toISOString();
             
-            // Mostrar anuncio
-            const result = await adsgram.show();
+            await saveUserData(); // Esto lo envía a tu Supabase
             
-            if (result && result.done) {
-                // Anuncio visto completamente
-                userData.diamonds += 100;
-                userData.last_ad_watch = new Date().toISOString();
-                
-                await saveUserData();
-                
-                actualizarUI();
-                actualizarTimerParque();
-                actualizarEstadoAnuncio();
-                actualizarBannerAds();
-                
-                alert("✅ ¡Ganaste 100 diamantes!");
-            } else {
-                alert("⚠️ No completaste el anuncio");
-            }
+            // Actualizamos toda la interfaz
+            actualizarUI();
+            actualizarTimerParque();
+            actualizarEstadoAnuncio();
+            actualizarBannerAds();
             
-        } catch (adError) {
-            console.error("❌ Error en Adsgram:", adError);
-            
-            if (adError.message && adError.message.includes('No ads')) {
-                alert("😔 No hay anuncios disponibles en este momento");
-            } else {
-                alert("❌ Error al cargar el anuncio: " + adError.message);
-            }
+            alert("✅ ¡Ganaste 30 diamantes!");
+        } else {
+            // El usuario cerró el anuncio antes de tiempo
+            alert("⚠️ No completaste el anuncio, no se otorgó la recompensa.");
         }
 
-    } catch (error) {
-        console.error("❌ Error general en watchAd:", error);
-        alert("❌ Error al procesar el anuncio");
+    } catch (adError) {
+        console.error("❌ Error de Adsgram:", adError);
+        
+        // Manejo de errores específicos según la documentación
+        if (adError.description === 'No ads') {
+            alert("😔 No hay anuncios disponibles para tu región ahora mismo.");
+        } else if (adError.description === 'User closed modal') {
+            console.log("El usuario cerró el modal sin ver el anuncio");
+            alert("⚠️ Cerraste el anuncio antes de tiempo.");
+        } else if (adError.message && adError.message.includes('Network')) {
+            alert("❌ Error de conexión. Verifica tu internet.");
+        } else {
+            alert("❌ Error: " + (adError.description || adError.message || "El sistema de anuncios no está disponible"));
+        }
     }
 }
 
@@ -408,7 +416,7 @@ function actualizarBannerAds() {
 }
 
 // ==========================================
-// SISTEMA DE PRODUCCIÓN (CORREGIDO)
+// SISTEMA DE PRODUCCIÓN
 // ==========================================
 function startProduction() {
     console.log("⚙️ Iniciando producción en tiempo real...");
@@ -461,7 +469,7 @@ function calcularTasaRetiro() {
 }
 
 // ==========================================
-// INICIALIZACIÓN Y CARGA DE DATOS (CORREGIDA)
+// INICIALIZACIÓN Y CARGA DE DATOS
 // ==========================================
 async function initApp() {
     try {
@@ -490,13 +498,10 @@ async function initApp() {
         renderStore();
         renderBank();
         
-        // Iniciar producción después de cargar
         startProduction();
         
-        // Guardar cada 30 segundos
         setInterval(saveUserData, 30000);
         
-        // Antes de cerrar la página, guardar
         window.addEventListener('beforeunload', () => {
             saveUserData();
         });
@@ -557,7 +562,6 @@ async function loadUserFromDB(tgId) {
         if (data) {
             console.log("📁 Usuario encontrado en DB");
             
-            // Guardar datos existentes
             const oldDiamonds = Number(data.diamonds) || 0;
             
             userData = { 
@@ -579,7 +583,6 @@ async function loadUserFromDB(tgId) {
                 last_daily_claim: data.last_daily_claim || null
             };
             
-            // CALCULAR PRODUCCIÓN OFFLINE (CORREGIDO)
             const offlineEarnings = await calculateOfflineProduction();
             if (offlineEarnings > 0) {
                 userData.diamonds += offlineEarnings;
@@ -614,7 +617,6 @@ async function loadUserFromDB(tgId) {
             }]);
         }
         
-        // Actualizar timestamp de producción
         userData.last_production_update = new Date().toISOString();
         
         actualizarUI();
@@ -1133,7 +1135,6 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(initApp, 500);
 });
 
-// Guardar antes de cerrar
 window.addEventListener('beforeunload', () => {
     saveUserData();
 });
@@ -1156,4 +1157,4 @@ window.disconnectWallet = disconnectWallet;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 
-console.log("✅ Ton City Game - Versión CORREGIDA");
+console.log("✅ Ton City Game - Versión CORREGIDA (Adsgram 30💎)");
