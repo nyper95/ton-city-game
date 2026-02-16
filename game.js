@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN CORREGIDA (ADSGRAM 30💎)
+// TON CITY GAME - VERSIÓN COMPLETA (ADSGRAM SEGURO)
 // ======================================================
 
 // ==========================================
@@ -17,9 +17,13 @@ const BILLETERA_POOL = "UQDY-D_6F1oyftwpq_AZNBOd3Fh4xKDj2C8sjz6Cx1A_Lvxb";
 const PRECIO_COMPRA = 0.008; // 1 Diamante = 0.008 TON
 
 // ==========================================
-// CONFIGURACIÓN ADSGRAM (CORREGIDA)
+// CONFIGURACIÓN ADSGRAM (BLOQUE CORREGIDO)
 // ==========================================
 const ADSGRAM_BLOCK_ID = '23040'; // ← TU BLOCK ID
+
+// Variables para Adsgram
+let adsReady = false;
+let adsInstance = null;
 
 // ==========================================
 // CONFIGURACIÓN TÉCNICA
@@ -76,7 +80,6 @@ const PROD_VAL = {
 // SISTEMA DE PRODUCCIÓN OFFLINE
 // ==========================================
 
-// Calcular producción por hora total
 function getTotalProductionPerHour() {
     return (userData.lvl_tienda * PROD_VAL.tienda) +
            (userData.lvl_casino * PROD_VAL.casino) +
@@ -87,7 +90,6 @@ function getTotalProductionPerHour() {
            (userData.lvl_hospital * PROD_VAL.hospital);
 }
 
-// Calcular producción desde la última vez que estuvo online
 async function calculateOfflineProduction() {
     if (!userData.last_production_update) return 0;
     
@@ -101,17 +103,105 @@ async function calculateOfflineProduction() {
     const earnedDiamonds = (totalPerHour / 3600) * secondsPassed;
     
     console.log(`⏱️ Tiempo offline: ${secondsPassed} segundos`);
-    console.log(`📊 Producción/hora: ${totalPerHour} 💎`);
-    console.log(`💰 Diamantes ganados offline: ${earnedDiamonds.toFixed(2)} 💎`);
+    console.log(`💰 Diamantes offline: +${earnedDiamonds.toFixed(2)} 💎`);
     
     return earnedDiamonds;
 }
 
 // ==========================================
-// SISTEMA DE ANUNCIOS (CORREGIDO - 30💎)
+// ADSGRAM - SISTEMA SEGURO (BLOQUE CORREGIDO)
 // ==========================================
 
-// Verificar si puede ver anuncio (cada 2 horas)
+function loadAdsgramSafe() {
+    return new Promise((resolve, reject) => {
+        if (window.Adsgram) {
+            console.log("✅ Adsgram ya estaba cargado");
+            return resolve();
+        }
+
+        console.log("📦 Cargando script de Adsgram...");
+        const script = document.createElement("script");
+        script.src = "https://sad.adsgram.ai/js/sad.min.js";
+        script.async = true;
+
+        script.onload = () => {
+            console.log("✅ Adsgram cargado correctamente");
+            resolve();
+        };
+
+        script.onerror = (err) => {
+            console.error("❌ Error cargando Adsgram:", err);
+            reject("No se pudo cargar Adsgram");
+        };
+
+        document.head.appendChild(script);
+    });
+}
+
+async function initAds() {
+    try {
+        await loadAdsgramSafe();
+
+        adsInstance = new window.Adsgram({
+            blockId: ADSGRAM_BLOCK_ID,
+            onReward: () => {
+                console.log("🎉 Recompensa recibida");
+                giveAdReward();
+            },
+            onError: (e) => {
+                console.error("Adsgram error:", e);
+                
+                if (e.description === 'No ads') {
+                    alert("😔 No hay anuncios disponibles. Intenta más tarde.");
+                } else if (e.description === 'User closed modal') {
+                    console.log("Usuario cerró el anuncio");
+                } else {
+                    alert("❌ Error al cargar anuncio: " + (e.description || "Intenta más tarde"));
+                }
+            }
+        });
+
+        adsReady = true;
+        console.log("✅ Sistema de anuncios listo");
+
+    } catch (err) {
+        console.error("❌ Error inicializando Adsgram:", err);
+        adsReady = false;
+    }
+}
+
+// Esperar que Telegram cargue bien el WebView
+setTimeout(initAds, 2500);
+
+function showAd() {
+    if (!adsReady || !adsInstance) {
+        alert("❌ Sistema de anuncios no disponible. Recarga la app.");
+        return;
+    }
+
+    console.log("🎬 Mostrando anuncio...");
+    adsInstance.show();
+}
+
+function giveAdReward() {
+    const reward = 30; // Recompensa de 30 diamantes
+    userData.diamonds += reward;
+    userData.last_ad_watch = new Date().toISOString();
+    
+    // Guardar en Supabase
+    saveUserData();
+    
+    // Actualizar UI
+    actualizarUI();
+    actualizarTimerParque();
+    actualizarEstadoAnuncio();
+    actualizarBannerAds();
+    
+    tg.showAlert(`🎁 Ganaste +${reward} 💎`);
+    console.log(`💰 Recompensa entregada: +${reward} 💎`);
+}
+
+// Funciones de UI para anuncios
 function puedeVerAnuncio() {
     if (!userData.last_ad_watch) return true;
     
@@ -122,7 +212,6 @@ function puedeVerAnuncio() {
     return horasPasadas >= 2;
 }
 
-// Obtener tiempo restante para próximo anuncio
 function tiempoRestanteAnuncio() {
     if (!userData.last_ad_watch) return 0;
     
@@ -136,7 +225,6 @@ function tiempoRestanteAnuncio() {
     return minutosRestantes;
 }
 
-// Actualizar UI del temporizador del parque
 function actualizarTimerParque() {
     const timerElem = document.getElementById("park-timer");
     if (!timerElem) return;
@@ -151,13 +239,11 @@ function actualizarTimerParque() {
     }
 }
 
-// Mostrar modal de anuncios
 function showAdsModal() {
     showModal("modalAds");
     actualizarEstadoAnuncio();
 }
 
-// Actualizar estado del anuncio en el modal
 function actualizarEstadoAnuncio() {
     const statusElem = document.getElementById("ads-status");
     const timerElem = document.getElementById("ads-timer-display");
@@ -165,81 +251,39 @@ function actualizarEstadoAnuncio() {
     
     if (!statusElem || !timerElem || !btnElem) return;
     
-    if (puedeVerAnuncio()) {
+    if (puedeVerAnuncio() && adsReady) {
         statusElem.innerHTML = '<span style="color: #4ade80;">✅ ¡Anuncio disponible! Gana 30 💎</span>';
         timerElem.innerHTML = '';
         btnElem.disabled = false;
         btnElem.style.background = "#f59e0b";
+        btnElem.onclick = showAd;
+    } else if (!adsReady) {
+        statusElem.innerHTML = '<span style="color: #f97316;">⏳ Cargando sistema de anuncios...</span>';
+        timerElem.innerHTML = '';
+        btnElem.disabled = true;
+        btnElem.style.background = "#475569";
     } else {
         const minutos = tiempoRestanteAnuncio();
         statusElem.innerHTML = '<span style="color: #f97316;">⏳ Anuncio no disponible</span>';
-        timerElem.innerHTML = `Próximo anuncio en: <span style="color: #f59e0b; font-weight: bold;">${minutos} minutos</span>`;
+        timerElem.innerHTML = `Próximo en: <span style="color: #f59e0b;">${minutos} minutos</span>`;
         btnElem.disabled = true;
         btnElem.style.background = "#475569";
     }
 }
 
-// ==========================================
-// FUNCIÓN CORREGIDA DE ADSGRAM (30💎)
-// ==========================================
-async function watchAd() {
-    try {
-        if (!puedeVerAnuncio()) {
-            alert(`❌ Debes esperar ${tiempoRestanteAnuncio()} minutos`);
-            return;
-        }
-
-        // 1. Verificamos que el SDK esté cargado en el navegador
-        if (!window.Adsgram) {
-            console.error("SDK de Adsgram no encontrado");
-            alert("❌ El sistema de anuncios no cargó correctamente. Intenta recargar.");
-            return;
-        }
-
-        console.log("🎬 Iniciando anuncio con Block ID:", ADSGRAM_BLOCK_ID);
-
-        // 2. Inicializamos usando el método .init (No usar 'new')
-        const AdController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
-
-        // 3. Mostramos el anuncio
-        const result = await AdController.show();
-        
-        console.log("📦 Resultado del anuncio:", result);
-        
-        // 4. Si el anuncio se completó con éxito (result.done)
-        if (result && result.done) {
-            // Recompensa de 30 diamantes (actualizado)
-            userData.diamonds += 30;
-            userData.last_ad_watch = new Date().toISOString();
-            
-            await saveUserData(); // Esto lo envía a tu Supabase
-            
-            // Actualizamos toda la interfaz
-            actualizarUI();
-            actualizarTimerParque();
-            actualizarEstadoAnuncio();
-            actualizarBannerAds();
-            
-            alert("✅ ¡Ganaste 30 diamantes!");
-        } else {
-            // El usuario cerró el anuncio antes de tiempo
-            alert("⚠️ No completaste el anuncio, no se otorgó la recompensa.");
-        }
-
-    } catch (adError) {
-        console.error("❌ Error de Adsgram:", adError);
-        
-        // Manejo de errores específicos según la documentación
-        if (adError.description === 'No ads') {
-            alert("😔 No hay anuncios disponibles para tu región ahora mismo.");
-        } else if (adError.description === 'User closed modal') {
-            console.log("El usuario cerró el modal sin ver el anuncio");
-            alert("⚠️ Cerraste el anuncio antes de tiempo.");
-        } else if (adError.message && adError.message.includes('Network')) {
-            alert("❌ Error de conexión. Verifica tu internet.");
-        } else {
-            alert("❌ Error: " + (adError.description || adError.message || "El sistema de anuncios no está disponible"));
-        }
+function actualizarBannerAds() {
+    const banner = document.getElementById("ads-banner");
+    if (!banner) return;
+    
+    if (enVentanaRetiro()) {
+        banner.style.display = "none";
+        return;
+    }
+    
+    if (puedeVerAnuncio() && adsReady) {
+        banner.style.display = "block";
+    } else {
+        banner.style.display = "none";
     }
 }
 
@@ -310,7 +354,7 @@ function actualizarDailyUI() {
         
         const horas = Math.ceil((proxima - new Date()) / (1000 * 60 * 60));
         
-        statusElem.innerHTML = `⏳ Ya reclamaste hoy. Próxima en <span style="color: #f59e0b;">${horas} horas</span>`;
+        statusElem.innerHTML = `⏳ Ya reclamaste. Próxima en <span style="color: #f59e0b;">${horas} horas</span>`;
         btnElem.disabled = true;
         btnElem.style.background = "#475569";
     } else {
@@ -399,52 +443,9 @@ function actualizarBannerDiario() {
     }
 }
 
-function actualizarBannerAds() {
-    const banner = document.getElementById("ads-banner");
-    if (!banner) return;
-    
-    if (enVentanaRetiro()) {
-        banner.style.display = "none";
-        return;
-    }
-    
-    if (puedeVerAnuncio()) {
-        banner.style.display = "block";
-    } else {
-        banner.style.display = "none";
-    }
-}
-
-// ==========================================
-// SISTEMA DE PRODUCCIÓN
-// ==========================================
-function startProduction() {
-    console.log("⚙️ Iniciando producción en tiempo real...");
-    
-    setInterval(async () => {
-        if (!userData.id) return;
-        
-        if (!produccionActiva()) return;
-        
-        const totalPerHr = getTotalProductionPerHour();
-        const earnedPerSecond = totalPerHr / 3600;
-        
-        userData.diamonds += earnedPerSecond;
-        actualizarUI();
-        
-        if (document.getElementById("centralModal")?.style.display === "block") {
-            updateCentralStats();
-        }
-    }, 1000);
-}
-
 // ==========================================
 // SISTEMA DE CONTROL DE PRODUCCIÓN Y RETIROS
 // ==========================================
-
-function esDomingo() {
-    return new Date().getDay() === 0;
-}
 
 function enVentanaRetiro() {
     return new Date().getDay() === 0;
@@ -586,7 +587,7 @@ async function loadUserFromDB(tgId) {
             const offlineEarnings = await calculateOfflineProduction();
             if (offlineEarnings > 0) {
                 userData.diamonds += offlineEarnings;
-                console.log(`💰 Producción offline total: +${offlineEarnings.toFixed(2)} 💎`);
+                console.log(`💰 Producción offline: +${offlineEarnings.toFixed(2)} 💎`);
             }
             
             if (!userData.referral_code) {
@@ -727,11 +728,23 @@ function renderBank() {
 }
 
 // ==========================================
-// EDIFICIO CENTRAL
+// PRODUCCIÓN
 // ==========================================
-function openCentral() {
-    updateCentralStats();
-    showModal("centralModal");
+function startProduction() {
+    console.log("⚙️ Iniciando producción...");
+    
+    setInterval(() => {
+        if (!userData.id) return;
+        if (!produccionActiva()) return;
+        
+        const totalPerHr = getTotalProductionPerHour();
+        userData.diamonds += (totalPerHr / 3600);
+        actualizarUI();
+        
+        if (document.getElementById("centralModal")?.style.display === "block") {
+            updateCentralStats();
+        }
+    }, 1000);
 }
 
 function updateCentralStats() {
@@ -761,6 +774,11 @@ function updateCentralStats() {
         const el = document.getElementById(id);
         if (el) el.textContent = Math.floor(value).toLocaleString();
     });
+}
+
+function openCentral() {
+    updateCentralStats();
+    showModal("centralModal");
 }
 
 // ==========================================
@@ -922,17 +940,12 @@ async function openWithdraw() {
         document.getElementById("available-diamonds").textContent = `${misDiamantes} 💎`;
         
         const statusElem = document.getElementById("withdraw-status");
-        if (userData.last_withdraw_week === semanaActual) {
-            statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #ef4444;"></i> Ya retiraste';
-        } else {
-            statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> Puedes retirar hoy';
-        }
+        statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> Puedes retirar hoy';
         
         const input = document.getElementById("withdraw-amount");
         if (input) {
             input.value = "";
             input.max = misDiamantes;
-            input.removeEventListener('input', updateWithdrawCalculation);
             input.addEventListener('input', updateWithdrawCalculation);
         }
         
@@ -945,97 +958,55 @@ async function openWithdraw() {
 }
 
 function updateWithdrawCalculation() {
-    try {
-        const input = document.getElementById("withdraw-amount");
-        if (!input) return;
-        
-        const diamantes = parseInt(input.value) || 0;
-        const tonElem = document.getElementById("ton-receive");
-        if (!tonElem) return;
-        
-        const tasa = calcularTasaRetiro();
-        const misDiamantes = Math.floor(userData.diamonds || 0);
-        const poolDisponible = globalPoolData.pool_ton;
-        
-        if (diamantes <= 0) {
-            tonElem.textContent = "0.0000";
-            return;
-        }
-        
-        if (diamantes > misDiamantes) {
-            tonElem.innerHTML = `<span style="color: #ef4444;">Máx: ${misDiamantes} 💎</span>`;
-            return;
-        }
-        
-        const tonRecibido = diamantes * tasa;
-        
-        if (tonRecibido > poolDisponible) {
-            const maxDiamantes = Math.floor(poolDisponible / tasa);
-            tonElem.innerHTML = `<span style="color: #ef4444;">Pool insuficiente (máx ${maxDiamantes} 💎)</span>`;
-            return;
-        }
-        
-        tonElem.textContent = tonRecibido.toFixed(4);
-        
-    } catch (error) {
-        console.error("❌ Error en cálculo:", error);
+    const input = document.getElementById("withdraw-amount");
+    const tonElem = document.getElementById("ton-receive");
+    if (!input || !tonElem) return;
+    
+    const diamantes = parseInt(input.value) || 0;
+    const tasa = calcularTasaRetiro();
+    const misDiamantes = Math.floor(userData.diamonds || 0);
+    
+    if (diamantes <= 0) {
+        tonElem.textContent = "0.0000";
+        return;
     }
+    
+    if (diamantes > misDiamantes) {
+        tonElem.innerHTML = `<span style="color: #ef4444;">Máx: ${misDiamantes} 💎</span>`;
+        return;
+    }
+    
+    const tonRecibido = diamantes * tasa;
+    tonElem.textContent = tonRecibido.toFixed(4);
 }
 
 async function processWithdraw() {
-    try {
-        if (!enVentanaRetiro()) {
-            alert("❌ Solo disponible los DOMINGOS");
-            return;
-        }
-        
-        const semanaActual = getNumeroSemana();
-        if (userData.last_withdraw_week === semanaActual) {
-            alert("❌ Ya retiraste esta semana");
-            return;
-        }
-        
-        const input = document.getElementById("withdraw-amount");
-        const diamantes = parseInt(input?.value || 0);
-        const misDiamantes = Math.floor(userData.diamonds || 0);
-        
-        if (!diamantes || diamantes <= 0 || diamantes > misDiamantes) {
-            alert("❌ Cantidad inválida");
-            return;
-        }
-        
-        const tasa = calcularTasaRetiro();
-        const tonRecibido = diamantes * tasa;
-        
-        if (tonRecibido > globalPoolData.pool_ton) {
-            alert("❌ No hay suficiente TON en el pool");
-            return;
-        }
-        
-        if (!confirm(`¿Retirar ${diamantes.toLocaleString()} 💎 por ${tonRecibido.toFixed(4)} TON?`)) return;
-        
-        userData.diamonds -= diamantes;
-        userData.last_withdraw_week = semanaActual;
-        
-        await saveUserData();
-        
-        const newPoolTon = globalPoolData.pool_ton - tonRecibido;
-        await _supabase
-            .from("game_data")
-            .update({ pool_ton: newPoolTon })
-            .eq("telegram_id", "MASTER");
-        
-        globalPoolData.pool_ton = newPoolTon;
-        
-        actualizarUI();
-        closeAll();
-        
-        alert(`✅ Retiro exitoso! Recibirás ${tonRecibido.toFixed(4)} TON`);
-        
-    } catch (error) {
-        console.error("❌ Error:", error);
-        alert("Error al procesar retiro");
+    if (!enVentanaRetiro()) return alert("❌ Solo disponible los DOMINGOS");
+    
+    const semanaActual = getNumeroSemana();
+    if (userData.last_withdraw_week === semanaActual) {
+        return alert("❌ Ya retiraste esta semana");
     }
+    
+    const input = document.getElementById("withdraw-amount");
+    const diamantes = parseInt(input?.value || 0);
+    const misDiamantes = Math.floor(userData.diamonds || 0);
+    
+    if (!diamantes || diamantes <= 0 || diamantes > misDiamantes) {
+        return alert("❌ Cantidad inválida");
+    }
+    
+    const tasa = calcularTasaRetiro();
+    const tonRecibido = diamantes * tasa;
+    
+    if (!confirm(`¿Retirar ${diamantes.toLocaleString()} 💎 por ${tonRecibido.toFixed(4)} TON?`)) return;
+    
+    userData.diamonds -= diamantes;
+    userData.last_withdraw_week = semanaActual;
+    await saveUserData();
+    
+    closeAll();
+    alert(`✅ Retiro exitoso! Recibirás ${tonRecibido.toFixed(4)} TON`);
 }
 
 // ==========================================
@@ -1046,10 +1017,7 @@ function actualizarUI() {
     if (dElem) dElem.textContent = Math.floor(userData.diamonds || 0).toLocaleString();
     
     const rElem = document.getElementById("rate");
-    if (rElem) {
-        const totalPerHr = getTotalProductionPerHour();
-        rElem.textContent = Math.floor(totalPerHr).toLocaleString();
-    }
+    if (rElem) rElem.textContent = Math.floor(getTotalProductionPerHour()).toLocaleString();
     
     const niveles = {
         "lvl_casino": userData.lvl_casino,
@@ -1107,7 +1075,7 @@ async function saveUserData() {
             last_daily_claim: userData.last_daily_claim
         }).eq('telegram_id', userData.id);
         
-        console.log("💾 Datos guardados en Supabase");
+        console.log("💾 Datos guardados");
         
     } catch (error) {
         console.error("❌ Error guardando:", error);
@@ -1148,7 +1116,7 @@ window.openWithdraw = openWithdraw;
 window.openDailyReward = openDailyReward;
 window.claimDailyReward = claimDailyReward;
 window.showAdsModal = showAdsModal;
-window.watchAd = watchAd;
+window.showAd = showAd;
 window.closeAll = closeAll;
 window.copyReferralCode = copyReferralCode;
 window.comprarTON = comprarTON;
@@ -1157,4 +1125,4 @@ window.disconnectWallet = disconnectWallet;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 
-console.log("✅ Ton City Game - Versión CORREGIDA (Adsgram 30💎)");
+console.log("✅ Ton City Game - Versión ADSGRAM SEGURO");
