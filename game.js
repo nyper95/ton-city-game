@@ -19,7 +19,7 @@ const PRECIO_COMPRA = 0.008; // 1 Diamante = 0.008 TON
 // ==========================================
 // CONFIGURACIÓN ADSGRAM
 // ==========================================
-const ADSGRAM_BLOCK_ID = 'INT-XXXXX'; // ← CAMBIA ESTO POR TU BLOCK ID REAL
+const ADSGRAM_BLOCK_ID = '23040'; // ← CAMBIA ESTO POR TU BLOCK ID REAL
 
 // ==========================================
 // CONFIGURACIÓN TÉCNICA
