@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN COMPLETA CON ADSGRAM
+// TON CITY GAME - VERSIÓN COMPLETA CON ADSGRAM Y RECOMPENSAS DIARIAS
 // ======================================================
 
 // ==========================================
@@ -19,7 +19,7 @@ const PRECIO_COMPRA = 0.008; // 1 Diamante = 0.008 TON
 // ==========================================
 // CONFIGURACIÓN ADSGRAM
 // ==========================================
-const ADSGRAM_BLOCK_ID = '23040'; // ← CAMBIA ESTO POR TU BLOCK ID REAL
+const ADSGRAM_BLOCK_ID = '23040'; // ← TU BLOCK ID
 
 // ==========================================
 // CONFIGURACIÓN TÉCNICA
@@ -51,7 +51,10 @@ let userData = {
     referral_code: null,
     last_online: null,
     last_withdraw_week: null,
-    last_ad_watch: null // Para control de anuncios cada 2 horas
+    last_ad_watch: null,
+    // Sistema de recompensa diaria
+    daily_streak: 0,
+    last_daily_claim: null
 };
 
 let globalPoolData = { 
@@ -68,6 +71,187 @@ const PROD_VAL = {
     escuela: 40,
     hospital: 80
 };
+
+// ==========================================
+// SISTEMA DE RECOMPENSA DIARIA (30 DÍAS)
+// ==========================================
+
+// Recompensas por día (día 1 = 10, día 30 = 300)
+function getDailyRewardAmount(day) {
+    if (day <= 0) return 0;
+    if (day >= 30) return 300;
+    // Progresión: 10, 15, 20, 25... hasta 300
+    return Math.min(10 + (day - 1) * 10, 300);
+}
+
+// Verificar si puede reclamar recompensa diaria
+function puedeReclamarDiaria() {
+    if (!userData.last_daily_claim) return true;
+    
+    const ahora = new Date();
+    const ultimo = new Date(userData.last_daily_claim);
+    
+    // Resetear a medianoche para comparar solo fechas
+    const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+    const ultimoDia = new Date(ultimo.getFullYear(), ultimo.getMonth(), ultimo.getDate());
+    
+    return hoy > ultimoDia;
+}
+
+// Verificar si la racha está activa (no se perdió ningún día)
+function rachaActiva() {
+    if (!userData.last_daily_claim || userData.daily_streak === 0) return false;
+    
+    const ahora = new Date();
+    const ultimo = new Date(userData.last_daily_claim);
+    
+    const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+    const ultimoDia = new Date(ultimo.getFullYear(), ultimo.getMonth(), ultimo.getDate());
+    
+    // La diferencia en días
+    const diffTime = hoy - ultimoDia;
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    
+    // Si pasó más de 1 día, la racha se perdió
+    return diffDays <= 1;
+}
+
+// Abrir modal de recompensa diaria
+function openDailyReward() {
+    actualizarDailyUI();
+    showModal("modalDailyReward");
+}
+
+// Actualizar UI de recompensa diaria
+function actualizarDailyUI() {
+    const puede = puedeReclamarDiaria();
+    const racha = userData.daily_streak || 0;
+    const diaActual = racha + 1;
+    const recompensaHoy = getDailyRewardAmount(diaActual);
+    
+    // Actualizar textos
+    const currentDayElem = document.getElementById("current-day");
+    if (currentDayElem) currentDayElem.textContent = diaActual > 30 ? 30 : diaActual;
+    
+    const todayRewardElem = document.getElementById("today-reward");
+    if (todayRewardElem) todayRewardElem.textContent = `${recompensaHoy} 💎`;
+    
+    const progressText = document.getElementById("progress-text");
+    if (progressText) progressText.textContent = `${Math.min(racha, 30)}/30`;
+    
+    const statusElem = document.getElementById("daily-status");
+    const btnElem = document.getElementById("claim-daily-btn");
+    
+    if (!puede) {
+        // Ya reclamó hoy
+        const proxima = new Date();
+        proxima.setDate(proxima.getDate() + 1);
+        proxima.setHours(0, 0, 0, 0);
+        
+        const horas = Math.ceil((proxima - new Date()) / (1000 * 60 * 60));
+        
+        statusElem.innerHTML = `⏳ Ya reclamaste hoy. Próxima recompensa en <span style="color: #f59e0b;">${horas} horas</span>`;
+        btnElem.disabled = true;
+        btnElem.style.background = "#475569";
+    } else {
+        if (!rachaActiva() && racha > 0) {
+            statusElem.innerHTML = '⚠️ Perdiste tu racha. ¡Empieza de nuevo hoy!';
+        } else {
+            statusElem.innerHTML = `✅ ¡Recompensa disponible! Día ${diaActual}`;
+        }
+        btnElem.disabled = false;
+        btnElem.style.background = "#f59e0b";
+    }
+    
+    // Generar calendario
+    const calendarElem = document.getElementById("daily-calendar");
+    if (calendarElem) {
+        let html = '';
+        for (let i = 1; i <= 30; i++) {
+            const reward = getDailyRewardAmount(i);
+            let clase = 'daily-day';
+            
+            if (i <= racha) {
+                clase += ' completed';
+            } else if (i === racha + 1 && puede) {
+                clase += ' current';
+            } else {
+                clase += ' locked';
+            }
+            
+            html += `<div class="${clase}">
+                        <div>Día ${i}</div>
+                        <div class="daily-reward">${reward}💎</div>
+                    </div>`;
+        }
+        calendarElem.innerHTML = html;
+    }
+    
+    const bigReward = document.getElementById("big-reward");
+    if (bigReward) {
+        if (racha >= 30) {
+            bigReward.innerHTML = '🎉 ¡COMPLETASTE LOS 30 DÍAS! 🎉';
+        } else {
+            bigReward.innerHTML = `¡Día 30: 300 💎!`;
+        }
+    }
+}
+
+// Reclamar recompensa diaria
+async function claimDailyReward() {
+    try {
+        if (!puedeReclamarDiaria()) {
+            alert("❌ Ya reclamaste tu recompensa hoy");
+            return;
+        }
+        
+        const racha = userData.daily_streak || 0;
+        let nuevoDia = 1;
+        
+        // Verificar si la racha está activa
+        if (rachaActiva() && racha < 30) {
+            nuevoDia = racha + 1;
+        } else if (racha >= 30) {
+            nuevoDia = 30; // Máximo
+        }
+        
+        const recompensa = getDailyRewardAmount(nuevoDia);
+        
+        if (!confirm(`¿Reclamar recompensa del Día ${nuevoDia} por ${recompensa} 💎?`)) return;
+        
+        // Añadir diamantes
+        userData.diamonds += recompensa;
+        userData.daily_streak = nuevoDia;
+        userData.last_daily_claim = new Date().toISOString();
+        
+        await saveUserData();
+        
+        actualizarUI();
+        actualizarDailyUI();
+        actualizarBannerDiario();
+        
+        alert(`✅ ¡Reclamaste ${recompensa} diamantes! Día ${nuevoDia}/30`);
+        
+    } catch (error) {
+        console.error("❌ Error reclamando recompensa:", error);
+        alert("Error al reclamar recompensa");
+    }
+}
+
+// Actualizar banner diario
+function actualizarBannerDiario() {
+    const banner = document.getElementById("daily-banner");
+    if (!banner) return;
+    
+    if (puedeReclamarDiaria()) {
+        banner.style.display = "block";
+        banner.innerHTML = '<i class="fa-solid fa-calendar-day"></i> ¡RECOMPENSA DIARIA DISPONIBLE! Reclama tus diamantes <i class="fa-solid fa-arrow-right"></i>';
+    } else {
+        const racha = userData.daily_streak || 0;
+        banner.style.display = "block";
+        banner.innerHTML = `<i class="fa-solid fa-calendar-check"></i> Día ${racha}/30 - Vuelve mañana <i class="fa-solid fa-clock"></i>`;
+    }
+}
 
 // ==========================================
 // SISTEMA DE ANUNCIOS (PARQUE)
@@ -155,13 +339,13 @@ async function watchAd() {
             return;
         }
 
-        // 2. Inicializar el controlador (Asegúrate de usar Adsgram.init)
+        // 2. Inicializar el controlador
         const AdController = Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
 
         // 3. Mostrar el anuncio y esperar el resultado
         const result = await AdController.show();
 
-        // 4. Verificar si el usuario terminó de ver el anuncio (done: true)
+        // 4. Verificar si el usuario terminó de ver el anuncio
         if (result.done) {
             // El usuario vió el anuncio completo
             userData.diamonds += 100;
@@ -172,21 +356,37 @@ async function watchAd() {
             actualizarUI();
             actualizarTimerParque();
             actualizarEstadoAnuncio();
+            actualizarBannerAds();
             
             alert("✅ ¡Felicidades! Ganaste 100 diamantes.");
         } else {
-            // El usuario cerró el anuncio antes de tiempo
             alert("⚠️ No terminaste de ver el anuncio, no recibiste la recompensa.");
         }
 
     } catch (error) {
         console.error("❌ Error en Adsgram:", error);
-        // Manejar errores comunes como falta de anuncios disponibles
         if (error.error === 'no_ads') {
             alert("😔 No hay anuncios disponibles en este momento. Intenta más tarde.");
         } else {
             alert("❌ Hubo un problema al cargar el anuncio.");
         }
+    }
+}
+
+// Actualizar banner de anuncios
+function actualizarBannerAds() {
+    const banner = document.getElementById("ads-banner");
+    if (!banner) return;
+    
+    if (enVentanaRetiro()) {
+        banner.style.display = "none";
+        return;
+    }
+    
+    if (puedeVerAnuncio()) {
+        banner.style.display = "block";
+    } else {
+        banner.style.display = "none";
     }
 }
 
@@ -258,9 +458,15 @@ async function initApp() {
         
         actualizarBannerDomingo();
         actualizarTimerParque();
+        actualizarBannerAds();
+        actualizarBannerDiario();
         
-        // Iniciar intervalo para actualizar timer del parque
+        // Iniciar intervalos
         setInterval(actualizarTimerParque, 60000); // Cada minuto
+        setInterval(() => {
+            actualizarBannerDiario();
+            actualizarBannerAds();
+        }, 60000); // Cada minuto
         
     } catch (error) {
         console.error("❌ Error en initApp:", error);
@@ -270,21 +476,13 @@ async function initApp() {
 function actualizarBannerDomingo() {
     const sundayBanner = document.getElementById("sunday-banner");
     const centralIndicator = document.getElementById("central-sunday-indicator");
-    const adsBanner = document.getElementById("ads-banner");
     
     if (enVentanaRetiro()) {
         if (sundayBanner) sundayBanner.style.display = "block";
         if (centralIndicator) centralIndicator.style.display = "block";
-        if (adsBanner) adsBanner.style.display = "none"; // Ocultar anuncios en domingo
     } else {
         if (sundayBanner) sundayBanner.style.display = "none";
         if (centralIndicator) centralIndicator.style.display = "none";
-        // Mostrar banner de anuncios si hay disponibilidad
-        if (adsBanner && puedeVerAnuncio()) {
-            adsBanner.style.display = "block";
-        } else if (adsBanner) {
-            adsBanner.style.display = "none";
-        }
     }
 }
 
@@ -327,7 +525,9 @@ async function loadUserFromDB(tgId) {
                 lvl_escuela: Number(data.lvl_escuela) || 0,
                 lvl_hospital: Number(data.lvl_hospital) || 0,
                 last_withdraw_week: data.last_withdraw_week || null,
-                last_ad_watch: data.last_ad_watch || null
+                last_ad_watch: data.last_ad_watch || null,
+                daily_streak: Number(data.daily_streak) || 0,
+                last_daily_claim: data.last_daily_claim || null
             };
             
             if (!userData.referral_code) {
@@ -351,12 +551,15 @@ async function loadUserFromDB(tgId) {
                 referral_code: userData.referral_code,
                 last_online: new Date().toISOString(),
                 last_withdraw_week: null,
-                last_ad_watch: null
+                last_ad_watch: null,
+                daily_streak: 0,
+                last_daily_claim: null
             }]);
         }
         actualizarUI();
         updateReferralUI();
         actualizarTimerParque();
+        actualizarDailyUI();
         
     } catch (error) {
         console.error("❌ Error cargando usuario:", error);
@@ -364,7 +567,7 @@ async function loadUserFromDB(tgId) {
 }
 
 // ==========================================
-// LÓGICA DE TIENDA (CON NUEVOS EDIFICIOS)
+// LÓGICA DE TIENDA
 // ==========================================
 function renderStore() {
     const storeContainer = document.getElementById("storeList");
@@ -850,7 +1053,7 @@ function showModal(id) {
 
 function closeAll() {
     document.getElementById("overlay").style.display = "none";
-    ["centralModal", "modalBank", "modalStore", "modalFriends", "modalWithdraw", "modalAds"].forEach(id => {
+    ["centralModal", "modalBank", "modalStore", "modalFriends", "modalWithdraw", "modalAds", "modalDailyReward"].forEach(id => {
         const m = document.getElementById(id);
         if (m) m.style.display = "none";
     });
@@ -871,7 +1074,9 @@ async function saveUserData() {
             lvl_hospital: userData.lvl_hospital || 0,
             last_online: new Date().toISOString(),
             last_withdraw_week: userData.last_withdraw_week,
-            last_ad_watch: userData.last_ad_watch
+            last_ad_watch: userData.last_ad_watch,
+            daily_streak: userData.daily_streak || 0,
+            last_daily_claim: userData.last_daily_claim
         }).eq('telegram_id', userData.id);
     } catch (error) {
         console.error("❌ Error guardando:", error);
@@ -905,6 +1110,8 @@ window.openStore = () => { renderStore(); showModal("modalStore"); };
 window.openBank = () => { renderBank(); showModal("modalBank"); };
 window.openFriends = openFriends;
 window.openWithdraw = openWithdraw;
+window.openDailyReward = openDailyReward;
+window.claimDailyReward = claimDailyReward;
 window.showAdsModal = showAdsModal;
 window.watchAd = watchAd;
 window.closeAll = closeAll;
@@ -915,4 +1122,4 @@ window.disconnectWallet = disconnectWallet;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 
-console.log("✅ Ton City Game - Versión completa con Adsgram, Escuela y Hospital");
+console.log("✅ Ton City Game - Versión completa con Adsgram, Escuela, Hospital y Recompensas Diarias");
