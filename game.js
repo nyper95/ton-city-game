@@ -254,72 +254,54 @@ function actualizarBannerDiario() {
 }
 
 // ==========================================
-// SISTEMA DE ANUNCIOS (PARQUE) - CORREGIDO
+// SISTEMA DE ANUNCIOS (PARQUE)
 // ==========================================
 
-// 1. Inicializar el controlador FUERA de la función para que esté listo antes del clic
-// Esto evita el error de "cargador no disponible"
-const AdController = window.Adsgram ? window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID }) : null;
+// Verificar si puede ver anuncio (cada 2 horas)
+function puedeVerAnuncio() {
+    if (!userData.last_ad_watch) return true;
+    
+    const ahora = new Date();
+    const ultimo = new Date(userData.last_ad_watch);
+    const horasPasadas = (ahora - ultimo) / (1000 * 60 * 60);
+    
+    return horasPasadas >= 2;
+}
 
-async function watchAd() {
-    try {
-        if (!puedeVerAnuncio()) {
-            alert(`❌ Debes esperar ${tiempoRestanteAnuncio()} minutos`);
-            return;
-        }
+// Obtener tiempo restante para próximo anuncio
+function tiempoRestanteAnuncio() {
+    if (!userData.last_ad_watch) return 0;
+    
+    const ahora = new Date();
+    const ultimo = new Date(userData.last_ad_watch);
+    const horasPasadas = (ahora - ultimo) / (1000 * 60 * 60);
+    
+    if (horasPasadas >= 2) return 0;
+    
+    const minutosRestantes = Math.ceil((2 - horasPasadas) * 60);
+    return minutosRestantes;
+}
 
-        // Verificar si el SDK cargó correctamente
-        if (!AdController) {
-            alert("❌ El cargador de anuncios aún no está listo o está bloqueado (verifica tu conexión/VPN).");
-            return;
-        }
-
-        const btnElem = document.getElementById("watch-ad-btn");
-        btnElem.disabled = true; // Evitar múltiples clics
-        btnElem.innerText = "CARGANDO...";
-
-        // Lanzar el anuncio
-        const result = await AdController.show();
-
-        // Manejar resultado
-        if (result.done) {
-            // El usuario vio el anuncio completo
-            userData.diamonds += 100;
-            userData.last_ad_watch = new Date().toISOString();
-            
-            await saveUserData();
-            
-            actualizarUI();
-            actualizarTimerParque();
-            actualizarEstadoAnuncio();
-            actualizarBannerAds();
-            
-            alert("✅ ¡Felicidades! Ganaste 100 diamantes.");
-            closeAll();
-        } else {
-            alert("⚠️ No terminaste de ver el anuncio, no recibiste la recompensa.");
-        }
-
-    } catch (error) {
-        console.error("❌ Error en Adsgram:", error);
-        
-        // Manejo de errores específicos de Adsgram
-        if (error.error === 'no_ads') {
-            alert("😔 No hay anuncios disponibles para tu región en este momento.");
-        } else if (error.error === 'closed') {
-            alert("⚠️ Cerraste el anuncio antes de tiempo.");
-        } else {
-            alert("❌ Error al cargar anuncio. Si estás en Cuba, intenta usar un VPN.");
-        }
-    } finally {
-        const btnElem = document.getElementById("watch-ad-btn");
-        if (btnElem) {
-            btnElem.disabled = false;
-            btnElem.innerHTML = '<i class="fa-solid fa-circle-play"></i> VER ANUNCIO +100 💎';
-        }
+// Actualizar UI del temporizador del parque
+function actualizarTimerParque() {
+    const timerElem = document.getElementById("park-timer");
+    if (!timerElem) return;
+    
+    if (!puedeVerAnuncio()) {
+        const minutos = tiempoRestanteAnuncio();
+        timerElem.textContent = `⏳ ${minutos} min`;
+        timerElem.style.color = "#f59e0b";
+    } else {
+        timerElem.textContent = "✅ DISPONIBLE";
+        timerElem.style.color = "#4ade80";
     }
 }
 
+// Mostrar modal de anuncios
+function showAdsModal() {
+    showModal("modalAds");
+    actualizarEstadoAnuncio();
+}
 
 // Actualizar estado del anuncio en el modal
 function actualizarEstadoAnuncio() {
