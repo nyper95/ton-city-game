@@ -141,38 +141,52 @@ function actualizarEstadoAnuncio() {
     }
 }
 
-// Ver anuncio con Adsgram
+// Ver anuncio con Adsgram (Versión Corregida)
 async function watchAd() {
     try {
         if (!puedeVerAnuncio()) {
-            alert(`❌ Debes esperar ${tiempoRestanteAnuncio()} minutos para el próximo anuncio`);
+            alert(`❌ Debes esperar ${tiempoRestanteAnuncio()} minutos`);
             return;
         }
-        
+
+        // 1. Verificar si el script de Adsgram está presente
         if (typeof Adsgram === 'undefined') {
-            alert("❌ Adsgram no está cargado");
+            alert("❌ El cargador de anuncios no está disponible.");
             return;
         }
-        
-        const adsgram = new Adsgram({ blockId: ADSGRAM_BLOCK_ID });
-        
-        await adsgram.show();
-        
-        // Sumar 100 diamantes
-        userData.diamonds += 100;
-        userData.last_ad_watch = new Date().toISOString();
-        
-        await saveUserData();
-        
-        actualizarUI();
-        actualizarTimerParque();
-        actualizarEstadoAnuncio();
-        
-        alert("✅ ¡Ganaste 100 diamantes!");
-        
+
+        // 2. Inicializar el controlador (Asegúrate de usar Adsgram.init)
+        const AdController = Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
+
+        // 3. Mostrar el anuncio y esperar el resultado
+        const result = await AdController.show();
+
+        // 4. Verificar si el usuario terminó de ver el anuncio (done: true)
+        if (result.done) {
+            // El usuario vió el anuncio completo
+            userData.diamonds += 100;
+            userData.last_ad_watch = new Date().toISOString();
+            
+            await saveUserData();
+            
+            actualizarUI();
+            actualizarTimerParque();
+            actualizarEstadoAnuncio();
+            
+            alert("✅ ¡Felicidades! Ganaste 100 diamantes.");
+        } else {
+            // El usuario cerró el anuncio antes de tiempo
+            alert("⚠️ No terminaste de ver el anuncio, no recibiste la recompensa.");
+        }
+
     } catch (error) {
-        console.error("❌ Error en anuncio:", error);
-        alert("❌ Error al ver el anuncio");
+        console.error("❌ Error en Adsgram:", error);
+        // Manejar errores comunes como falta de anuncios disponibles
+        if (error.error === 'no_ads') {
+            alert("😔 No hay anuncios disponibles en este momento. Intenta más tarde.");
+        } else {
+            alert("❌ Hubo un problema al cargar el anuncio.");
+        }
     }
 }
 
