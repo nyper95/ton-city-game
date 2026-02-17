@@ -8,8 +8,6 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- ADSGRAM SDK -->
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
     <style>
@@ -26,6 +24,7 @@
             --school: #a78bfa;
             --hospital: #f87171;
             --daily: #f59e0b;
+            --ads: #f97316;
         }
         
         body {
@@ -74,15 +73,9 @@
             color: #facc15;
         }
         
-        @keyframes glow {
-            0% { box-shadow: 0 0 5px #f59e0b; }
-            50% { box-shadow: 0 0 20px #f59e0b; }
-            100% { box-shadow: 0 0 5px #f59e0b; }
-        }
-        
         /* BANNER DE ANUNCIOS DISPONIBLES */
         .ads-available {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
+            background: linear-gradient(135deg, #f97316, #c2410c);
             color: white;
             text-align: center;
             padding: 8px;
@@ -93,10 +86,17 @@
             cursor: pointer;
             border: 1px solid #facc15;
             box-shadow: 0 0 10px rgba(250, 204, 21, 0.3);
+            animation: ads-pulse 2s infinite;
         }
         
         .ads-available i {
             margin-right: 5px;
+        }
+        
+        @keyframes ads-pulse {
+            0% { box-shadow: 0 0 5px #f97316; }
+            50% { box-shadow: 0 0 20px #f97316; }
+            100% { box-shadow: 0 0 5px #f97316; }
         }
         
         @keyframes pulse {
@@ -108,6 +108,12 @@
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+        }
+        
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px #f59e0b; }
+            50% { box-shadow: 0 0 20px #f59e0b; }
+            100% { box-shadow: 0 0 5px #f59e0b; }
         }
         
         .header {
@@ -189,6 +195,7 @@
         .purple { color: var(--school); }
         .red { color: var(--hospital); }
         .daily { color: var(--daily); }
+        .ads { color: var(--ads); }
         
         .overlay, .modal {
             position: fixed;
@@ -401,9 +408,9 @@
             margin: 10px 0;
         }
         
-        /* ANUNCIOS */
+        /* ANUNCIOS - ESTILOS ESPECÍFICOS */
         .ads-item {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
+            background: linear-gradient(135deg, #f97316, #c2410c);
             padding: 15px;
             border-radius: 12px;
             margin: 10px 0;
@@ -415,7 +422,7 @@
         
         .ads-item:hover {
             transform: scale(1.02);
-            box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
         }
         
         .ads-item i {
@@ -432,6 +439,18 @@
             margin-top: 5px;
         }
         
+        .ads-loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #facc15;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+        
+        /* REFERIDOS */
         .referral-code {
             background: #0f172a;
             padding: 15px;
@@ -571,7 +590,7 @@
         <i class="fa-solid fa-calendar-day"></i> ¡RECOMPENSA DIARIA DISPONIBLE! Reclama tus diamantes <i class="fa-solid fa-arrow-right"></i>
     </div>
 
-    <!-- BANNER DE ANUNCIOS DISPONIBLES -->
+    <!-- BANNER DE ANUNCIOS DISPONIBLES (30💎) -->
     <div id="ads-banner" class="ads-available" onclick="showAdsModal()" style="display: none;">
         <i class="fa-solid fa-circle-play"></i> ¡PARQUE DISPONIBLE! Gana 30 💎 viendo un anuncio <i class="fa-solid fa-circle-play"></i>
     </div>
@@ -616,7 +635,7 @@
             <i class="fa-solid fa-tree"></i>
             <h3>Parque</h3>
             <small>Ver anuncio → 30 💎</small>
-            <div id="park-timer" style="font-size: 10px; color: #f59e0b; margin-top: 5px;"></div>
+            <div id="park-timer" style="font-size: 10px; color: #f97316; margin-top: 5px;"></div>
         </div>
         <div class="card pink">
             <i class="fa-solid fa-gamepad"></i>
@@ -690,15 +709,12 @@
             Cargando...
         </div>
         
-        <!-- Calendario de recompensas -->
         <div style="margin: 20px 0;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                 <span style="color: #94a3b8;">Progreso diario</span>
                 <span id="progress-text" style="color: #f59e0b;">0/30</span>
             </div>
-            <div class="daily-calendar" id="daily-calendar">
-                <!-- Se llena con JavaScript -->
-            </div>
+            <div class="daily-calendar" id="daily-calendar"></div>
         </div>
         
         <div class="daily-big-reward" id="big-reward">
@@ -712,27 +728,37 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL DE ANUNCIOS DEL PARQUE -->
+    <!-- MODAL DE ANUNCIOS DEL PARQUE (30💎) -->
     <div class="modal" id="modalAds">
         <h3>🌳 Parque - Anuncios</h3>
         <div style="text-align: center; margin-bottom: 15px;">
-            <i class="fa-solid fa-tree" style="font-size: 48px; color: #10b981;"></i>
+            <i class="fa-solid fa-tree" style="font-size: 48px; color: #f97316;"></i>
         </div>
+        
         <div class="stat">
             <span>Disponible cada</span>
             <span>2 horas</span>
         </div>
+        
         <div class="stat">
             <span>Recompensa</span>
-            <span style="color: #facc15;">100 💎</span>
+            <span style="color: #facc15; font-weight: bold;">30 💎</span>
         </div>
-        <div id="ads-status" class="info-text" style="margin: 15px 0; padding: 10px; background: #0f172a; border-radius: 8px;">
-            Verificando disponibilidad...
+        
+        <div id="ads-status" class="info-text" style="margin: 15px 0; padding: 15px; background: #0f172a; border-radius: 12px; text-align: center;">
+            <div class="ads-loading"></div> Cargando sistema de anuncios...
         </div>
-        <div id="ads-timer-display" style="text-align: center; font-size: 1.2rem; margin: 15px 0; color: #f59e0b;"></div>
-        <button onclick="watchAd()" id="watch-ad-btn" style="background: #f59e0b;">
-            <i class="fa-solid fa-circle-play"></i> VER ANUNCIO +100 💎
+        
+        <div id="ads-timer-display" style="text-align: center; font-size: 1.2rem; margin: 15px 0; color: #f97316; font-weight: bold;"></div>
+        
+        <button onclick="showAd()" id="watch-ad-btn" style="background: #f97316; font-size: 16px;" disabled>
+            <i class="fa-solid fa-circle-play"></i> VER ANUNCIO +30 💎
         </button>
+        
+        <p class="info-text" style="margin-top: 10px;">
+            <i class="fa-solid fa-info-circle"></i> Los anuncios ayudan a mantener el juego gratis
+        </p>
+        
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
