@@ -2,9 +2,6 @@
 // TON CITY GAME - VERSIÓN COMPLETA (ADSGRAM SEGURO)
 // ======================================================
 
-// ==========================================
-// CONFIGURACIÓN INICIAL
-// ==========================================
 console.log("✅ Ton City Game - Inicializando...");
 
 const tg = window.Telegram.WebApp;
@@ -14,12 +11,12 @@ const tg = window.Telegram.WebApp;
 // ==========================================
 const BILLETERA_PROPIETARIO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw"; 
 const BILLETERA_POOL = "UQDY-D_6F1oyftwpq_AZNBOd3Fh4xKDj2C8sjz6Cx1A_Lvxb";      
-const PRECIO_COMPRA = 0.008; // 1 Diamante = 0.008 TON
+const PRECIO_COMPRA = 0.008;
 
 // ==========================================
-// CONFIGURACIÓN ADSGRAM (BLOQUE CORREGIDO)
+// CONFIGURACIÓN ADSGRAM
 // ==========================================
-const ADSGRAM_BLOCK_ID = '23040'; // ← TU BLOCK ID
+const ADSGRAM_BLOCK_ID = '23040';
 
 // Variables para Adsgram
 let adsReady = false;
@@ -77,6 +74,105 @@ const PROD_VAL = {
 };
 
 // ==========================================
+// ADSGRAM - SISTEMA SEGURO (BLOQUE CORREGIDO)
+// ==========================================
+
+function loadAdsgramSafe() {
+    return new Promise((resolve, reject) => {
+        if (window.Adsgram) {
+            console.log("✅ Adsgram ya estaba cargado");
+            return resolve();
+        }
+
+        console.log("📦 Cargando script de Adsgram...");
+        const script = document.createElement("script");
+        script.src = "https://sad.adsgram.ai/js/sad.min.js";
+        script.async = true;
+
+        script.onload = () => {
+            console.log("✅ Adsgram cargado correctamente");
+            resolve();
+        };
+
+        script.onerror = (err) => {
+            console.error("❌ Error cargando Adsgram:", err);
+            reject("❌ Adsgram bloqueado o no disponible");
+        };
+
+        document.head.appendChild(script);
+    });
+}
+
+async function initAds() {
+    try {
+        await loadAdsgramSafe();
+
+        adsInstance = new window.Adsgram({
+            blockId: ADSGRAM_BLOCK_ID,
+            onReward: () => {
+                console.log("🎉 Recompensa recibida");
+                giveAdReward();
+            },
+            onError: (e) => {
+                console.error("Adsgram error:", e);
+                if (e.description === 'No ads') {
+                    alert("😔 No hay anuncios disponibles. Intenta más tarde.");
+                } else if (e.description === 'User closed modal') {
+                    console.log("Usuario cerró el anuncio");
+                } else {
+                    alert("❌ Error al cargar anuncio: " + (e.description || "Intenta más tarde"));
+                }
+            }
+        });
+
+        adsReady = true;
+        console.log("✅ Sistema de anuncios listo");
+
+    } catch (err) {
+        console.warn("❌ Adsgram no disponible:", err);
+        adsReady = false;
+    }
+}
+
+// Espera realista para Telegram móvil
+setTimeout(initAds, 4500);
+
+// Detector anti bloqueo
+setTimeout(() => {
+    if (!window.Adsgram) {
+        console.warn("🚫 Adsgram bloqueado por red / VPN / AdBlock");
+        adsReady = false;
+    }
+}, 8000);
+
+function showAd() {
+    if (!adsReady || !adsInstance) {
+        alert("❌ Sistema de anuncios no disponible. Intenta más tarde.");
+        return;
+    }
+    adsInstance.show();
+}
+
+function showAdsModal() {
+    if (!adsReady) {
+        alert("⏳ Cargando sistema de anuncios, intenta en unos segundos...");
+        return;
+    }
+    showModal("modalAds");
+    actualizarEstadoAnuncio();
+}
+
+function giveAdReward() {
+    const reward = 30;
+    userData.diamonds += reward;
+    userData.last_ad_watch = new Date().toISOString();
+    saveUserData();
+    actualizarUI();
+    actualizarEstadoAnuncio();
+    tg.showAlert(`🎁 +${reward} 💎`);
+}
+
+// ==========================================
 // SISTEMA DE PRODUCCIÓN OFFLINE
 // ==========================================
 
@@ -109,99 +205,9 @@ async function calculateOfflineProduction() {
 }
 
 // ==========================================
-// ADSGRAM - SISTEMA SEGURO (BLOQUE CORREGIDO)
+// FUNCIONES DE UI PARA ANUNCIOS
 // ==========================================
 
-function loadAdsgramSafe() {
-    return new Promise((resolve, reject) => {
-        if (window.Adsgram) {
-            console.log("✅ Adsgram ya estaba cargado");
-            return resolve();
-        }
-
-        console.log("📦 Cargando script de Adsgram...");
-        const script = document.createElement("script");
-        script.src = "https://sad.adsgram.ai/js/sad.min.js";
-        script.async = true;
-
-        script.onload = () => {
-            console.log("✅ Adsgram cargado correctamente");
-            resolve();
-        };
-
-        script.onerror = (err) => {
-            console.error("❌ Error cargando Adsgram:", err);
-            reject("No se pudo cargar Adsgram");
-        };
-
-        document.head.appendChild(script);
-    });
-}
-
-async function initAds() {
-    try {
-        await loadAdsgramSafe();
-
-        adsInstance = new window.Adsgram({
-            blockId: ADSGRAM_BLOCK_ID,
-            onReward: () => {
-                console.log("🎉 Recompensa recibida");
-                giveAdReward();
-            },
-            onError: (e) => {
-                console.error("Adsgram error:", e);
-                
-                if (e.description === 'No ads') {
-                    alert("😔 No hay anuncios disponibles. Intenta más tarde.");
-                } else if (e.description === 'User closed modal') {
-                    console.log("Usuario cerró el anuncio");
-                } else {
-                    alert("❌ Error al cargar anuncio: " + (e.description || "Intenta más tarde"));
-                }
-            }
-        });
-
-        adsReady = true;
-        console.log("✅ Sistema de anuncios listo");
-
-    } catch (err) {
-        console.error("❌ Error inicializando Adsgram:", err);
-        adsReady = false;
-    }
-}
-
-// Esperar que Telegram cargue bien el WebView
-setTimeout(initAds, 2500);
-
-function showAd() {
-    if (!adsReady || !adsInstance) {
-        alert("❌ Sistema de anuncios no disponible. Recarga la app.");
-        return;
-    }
-
-    console.log("🎬 Mostrando anuncio...");
-    adsInstance.show();
-}
-
-function giveAdReward() {
-    const reward = 30; // Recompensa de 30 diamantes
-    userData.diamonds += reward;
-    userData.last_ad_watch = new Date().toISOString();
-    
-    // Guardar en Supabase
-    saveUserData();
-    
-    // Actualizar UI
-    actualizarUI();
-    actualizarTimerParque();
-    actualizarEstadoAnuncio();
-    actualizarBannerAds();
-    
-    tg.showAlert(`🎁 Ganaste +${reward} 💎`);
-    console.log(`💰 Recompensa entregada: +${reward} 💎`);
-}
-
-// Funciones de UI para anuncios
 function puedeVerAnuncio() {
     if (!userData.last_ad_watch) return true;
     
@@ -237,11 +243,6 @@ function actualizarTimerParque() {
         timerElem.textContent = "✅ DISPONIBLE";
         timerElem.style.color = "#4ade80";
     }
-}
-
-function showAdsModal() {
-    showModal("modalAds");
-    actualizarEstadoAnuncio();
 }
 
 function actualizarEstadoAnuncio() {
