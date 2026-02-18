@@ -1,22 +1,18 @@
 // ======================================================
-// TON CITY GAME - SERVER.JS COMPLETO (CON DIAGNÓSTICO)
+// TON CITY GAME - SERVER.JS (ACTUALIZADO 2026)
 // ======================================================
 
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
-const { TonClient, WalletContractV4 } = require("ton");
-const { mnemonicToPrivateKey } = require("ton-crypto");
-const { getHttpEndpoint } = require("@orbs-network/ton-access");
+const { TonClient, WalletContractV4, internal } = require("@ton/ton");
+const { mnemonicToPrivateKey } = require("@ton/crypto");
 const dotenv = require('dotenv');
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8000; // <-- CAMBIADO A 8000
+const PORT = process.env.PORT || 8000;
 
-// ==========================================
-// CONFIGURACIÓN SUPABASE
-// ==========================================
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_KEY
@@ -25,10 +21,10 @@ const supabase = createClient(
 // ==========================================
 // CONFIGURACIÓN DE LA WALLET DE LA POOL
 // ==========================================
-let poolWallet = null;
-let poolKey = null;
+let poolContract = null;
 let poolAddress = null;
 let tonClient = null;
+let poolKeyPair = null;
 
 async function initPoolWallet() {
     try {
@@ -36,38 +32,48 @@ async function initPoolWallet() {
         
         const mnemonic = process.env.POOL_MNEMONIC;
         if (!mnemonic) {
-            console.log("❌ POOL_MNEMONIC no está definida en variables de entorno");
+            console.log("❌ POOL_MNEMONIC no está definida");
             return false;
         }
         
         const mnemonicArray = mnemonic.split(" ");
-        console.log(`📝 Frase cargada, longitud: ${mnemonicArray.length} palabras`);
+        console.log(`📝 Frase cargada: ${mnemonicArray.length} palabras`);
         
         if (mnemonicArray.length !== 24) {
-            console.log(`❌ La frase debe tener 24 palabras (tiene ${mnemonicArray.length})`);
+            console.log(`❌ Deben ser 24 palabras (tiene ${mnemonicArray.length})`);
             return false;
         }
         
-        console.log("✅ Frase semilla cargada correctamente");
-        
-        poolKey = await mnemonicToPrivateKey(mnemonicArray);
+        // Convertir frase a clave privada (igual que antes)
+        poolKeyPair = await mnemonicToPrivateKey(mnemonicArray);
         console.log("✅ Clave privada generada");
         
-        poolWallet = WalletContractV4.create({
-            publicKey: poolKey.publicKey,
-            workchain: 0
+        // Crear cliente TON
+        tonClient = new TonClient({
+            endpoint: 'https://toncenter.com/api/v2/jsonRPC',
+            apiKey: process.env.TON_API_KEY
+        });
+        console.log("✅ Cliente TON creado");
+        
+        // Crear wallet (contrato)
+        const wallet = WalletContractV4.create({
+            workchain: 0,
+            publicKey: poolKeyPair.publicKey
         });
         
-        poolAddress = poolWallet.address.toString();
+        // ⚠️ PARTE CRÍTICA: Abrir el contrato con el cliente
+        poolContract = tonClient.open(wallet);
+        poolAddress = wallet.address.toString();
+        
         console.log(`✅ Dirección de wallet: ${poolAddress}`);
         
-        const endpoint = await getHttpEndpoint({ network: "mainnet" });
-        console.log(`✅ Endpoint de red: ${endpoint}`);
+        // Obtener balance USANDO EL CONTRATO ABIERTO
+        const balance = await poolContract.getBalance();
+        console.log(`💰 Balance: ${(Number(balance) / 1e9).toFixed(4)} TON`);
         
-        tonClient = new TonClient({ endpoint });
-        
-        const balance = await tonClient.getBalance(poolWallet.address);
-        console.log(`💰 Balance: ${(balance / 1e9).toFixed(4)} TON`);
+        // Obtener seqno USANDO EL CONTRATO ABIERTO
+        const seqno = await poolContract.getSeqno();
+        console.log(`🔢 Seqno actual: ${seqno}`);
         
         return true;
         
@@ -81,74 +87,68 @@ async function initPoolWallet() {
 // MIDDLEWARE
 // ==========================================
 app.use(express.json());
-app.use((req, res, next) => {
-    console.log(`📡 ${req.method} ${req.path} - ${new Date().toISOString()}`);
-    next();
-});
 
 // ==========================================
-// ENDPOINT RAÍZ (DIAGNÓSTICO COMPLETO)
+// ENDPOINTS DE DIAGNÓSTICO
 // ==========================================
 app.get('/', (req, res) => {
     res.json({
         status: 'online',
         service: 'Ton City Game API',
-        version: '3.0.3',
-        port: PORT,
-        timestamp: new Date().toISOString(),
+        version: '4.0.0',
         endpoints: {
             health: '/health',
             debug: '/debug',
-            pool_info: '/pool-info',
-            daily_status: '/daily-status?userId=ID',
-            claim_daily: '/claim-daily (POST)',
-            reward: '/reward?userId=ID&amount=30',
-            can_watch_ad: '/can-watch-ad?userId=ID',
-            withdraw_status: '/withdraw-status?userId=ID',
-            process_withdraw: '/process-withdraw (POST)',
-            update_pool: '/update-pool (POST)'
+            pool_info: '/pool-info'
         }
     });
 });
 
-// ==========================================
-// ENDPOINT DE DIAGNÓSTICO DETALLADO
-// ==========================================
+app.get('/health', (req, res) => {
+    res.json({ status: 'healthy' });
+});
+
 app.get('/debug', async (req, res) => {
-    try {
-        const status = {
-            server: {
-                uptime: process.uptime(),
-                memory: process.memoryUsage(),
-                node_version: process.version,
-                port: PORT
-            },
-            env: {
-                supabase_url_set: !!process.env.SUPABASE_URL,
-                supabase_key_set: !!process.env.SUPABASE_KEY,
-                pool_mnemonic_set: !!process.env.POOL_MNEMONIC,
-                pool_mnemonic_length: process.env.POOL_MNEMONIC ? process.env.POOL_MNEMONIC.split(' ').length : 0,
-                ton_api_key_set: !!process.env.TON_API_KEY
-            },
-            wallet: {
-                initialized: poolWallet !== null,
-                client_initialized: tonClient !== null,
-                address: poolAddress || 'no inicializada'
-            }
-        };
-
-        // Intentar obtener balance si la wallet está inicializada
-        if (poolWallet && tonClient) {
-            try {
-                const balance = await tonClient.getBalance(poolWallet.address);
-                status.wallet.balance = (balance / 1e9).toFixed(4);
-                status.wallet.seqno = await poolWallet.getSeqno();
-            } catch (e) {
-                status.wallet.balance_error = e.message;
-            }
+    const status = {
+        wallet_initialized: !!poolContract,
+        address: poolAddress || 'no inicializada',
+        env_mnemonic_set: !!process.env.POOL_MNEMONIC,
+        env_mnemonic_length: process.env.POOL_MNEMONIC ? 
+            process.env.POOL_MNEMONIC.split(' ').length : 0
+    };
+    
+    if (poolContract) {
+        try {
+            const balance = await poolContract.getBalance();
+            const seqno = await poolContract.getSeqno();
+            status.balance = (Number(balance) / 1e9).toFixed(4);
+            status.seqno = seqno;
+        } catch (e) {
+            status.error = e.message;
         }
+    }
+    
+    res.json(status);
+});
 
-        res.json(status);
+app.get('/pool-info', async (req, res) => {
+    try {
+        if (!poolContract) {
+            return res.status(503).json({ 
+                error: 'Wallet no inicializada',
+                debug: '/debug'
+            });
+        }
+        
+        const balance = await poolContract.getBalance();
+        const seqno = await poolContract.getSeqno();
+        
+        res.json({
+            success: true,
+            address: poolAddress,
+            balance: (Number(balance) / 1e9).toFixed(4),
+            seqno: seqno
+        });
         
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -156,483 +156,101 @@ app.get('/debug', async (req, res) => {
 });
 
 // ==========================================
-// HEALTH CHECK
+// FUNCIÓN PARA PROCESAR RETIROS (usando @ton/ton v16)
 // ==========================================
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'healthy',
-        timestamp: new Date().toISOString()
-    });
-});
-
-// ==========================================
-// ENDPOINT PARA INFO DE LA POOL
-// ==========================================
-app.get('/pool-info', async (req, res) => {
+async function sendTon(toAddress, amountInTon) {
     try {
-        if (!tonClient || !poolWallet) {
-            return res.status(503).json({ 
-                success: false,
-                error: 'Wallet de Pool no inicializada',
-                debug: '/debug para más información'
-            });
+        if (!poolContract) {
+            throw new Error("Wallet no inicializada");
         }
         
-        const balance = await tonClient.getBalance(poolWallet.address);
-        const seqno = await poolWallet.getSeqno();
+        // Obtener seqno actual
+        const seqno = await poolContract.getSeqno();
+        console.log(`📤 Enviando ${amountInTon} TON a ${toAddress} (seqno: ${seqno})`);
         
-        res.json({
-            success: true,
-            address: poolAddress,
-            balance: (balance / 1e9).toFixed(4),
-            balance_nano: balance.toString(),
-            seqno: seqno,
-            network: 'mainnet',
-            wallet_initialized: true
+        // Crear transferencia con la nueva sintaxis
+        const transfer = await poolContract.createTransfer({
+            seqno,
+            secretKey: poolKeyPair.secretKey,
+            messages: [internal({
+                value: amountInTon.toString(),
+                to: toAddress,
+                body: 'Retiro Ton City Game',
+                bounce: true
+            })]
         });
         
-    } catch (error) {
-        console.error("❌ Error en /pool-info:", error);
-        res.status(500).json({ 
-            success: false,
-            error: error.message
-        });
-    }
-});
-
-// ==========================================
-// ENDPOINT PARA RECOMPENSA DIARIA
-// ==========================================
-app.get('/daily-status', async (req, res) => {
-    try {
-        const userId = req.query.userId;
-        if (!userId) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'userId requerido' 
-            });
-        }
-
-        const { data: usuario, error } = await supabase
-            .from('game_data')
-            .select('daily_streak, last_daily_claim')
-            .eq('telegram_id', userId.toString())
-            .single();
-
-        if (error && error.code !== 'PGRST116') throw error;
-
-        let puedeReclamar = true;
-        if (usuario?.last_daily_claim) {
-            const ultimo = new Date(usuario.last_daily_claim);
-            const hoy = new Date();
-            hoy.setHours(0, 0, 0, 0);
-            const ultimoDia = new Date(ultimo.getFullYear(), ultimo.getMonth(), ultimo.getDate());
-            puedeReclamar = hoy > ultimoDia;
-        }
-
-        res.json({
-            success: true,
-            user_id: userId,
-            current_streak: usuario?.daily_streak || 0,
-            can_claim: puedeReclamar,
-            last_claim: usuario?.last_daily_claim || null
-        });
-
-    } catch (error) {
-        console.error("❌ Error en /daily-status:", error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
-    }
-});
-
-app.post('/claim-daily', express.json(), async (req, res) => {
-    try {
-        const { userId } = req.body;
-        if (!userId) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'userId requerido' 
-            });
-        }
-
-        const { data: usuario, error: selectError } = await supabase
-            .from('game_data')
-            .select('diamonds, daily_streak, last_daily_claim')
-            .eq('telegram_id', userId.toString())
-            .single();
-
-        if (selectError && selectError.code !== 'PGRST116') throw selectError;
-
-        if (usuario?.last_daily_claim) {
-            const ultimo = new Date(usuario.last_daily_claim);
-            const hoy = new Date();
-            hoy.setHours(0, 0, 0, 0);
-            const ultimoDia = new Date(ultimo.getFullYear(), ultimo.getMonth(), ultimo.getDate());
-            
-            if (hoy <= ultimoDia) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Ya reclamaste hoy'
-                });
-            }
-        }
-
-        const streak = usuario?.daily_streak || 0;
-        const nuevoStreak = streak >= 30 ? 30 : streak + 1;
-        const recompensa = Math.min(10 + (nuevoStreak - 1) * 10, 300);
-
-        const nuevosDiamantes = (usuario?.diamonds || 0) + recompensa;
-
-        const { error: updateError } = await supabase
-            .from('game_data')
-            .update({
-                diamonds: nuevosDiamantes,
-                daily_streak: nuevoStreak,
-                last_daily_claim: new Date().toISOString(),
-                last_seen: new Date().toISOString()
-            })
-            .eq('telegram_id', userId.toString());
-
-        if (updateError) throw updateError;
-
-        res.json({
-            success: true,
-            message: `+${recompensa} diamantes`,
-            reward: recompensa,
-            new_streak: nuevoStreak,
-            new_diamonds: nuevosDiamantes
-        });
-
-    } catch (error) {
-        console.error("❌ Error en /claim-daily:", error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
-    }
-});
-
-// ==========================================
-// ENDPOINT PARA ADSGRAM
-// ==========================================
-app.get('/reward', async (req, res) => {
-    try {
-        const userId = req.query.userId || req.query.userid;
-        const amount = parseInt(req.query.amount) || 30;
-
-        if (!userId) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'userId requerido' 
-            });
-        }
-
-        const { data: usuario, error: selectError } = await supabase
-            .from('game_data')
-            .select('diamonds')
-            .eq('telegram_id', userId.toString())
-            .single();
-
-        if (selectError && selectError.code === 'PGRST116') {
-            const nuevoUsuario = {
-                telegram_id: userId.toString(),
-                username: `user_${userId.toString().slice(-6)}`,
-                diamonds: amount,
-                lvl_tienda: 0,
-                lvl_casino: 0,
-                lvl_piscina: 0,
-                lvl_parque: 0,
-                lvl_diversion: 0,
-                lvl_escuela: 0,
-                lvl_hospital: 0,
-                referral_code: `REF${userId.toString().slice(-6)}`,
-                last_ad_watch: new Date().toISOString(),
-                last_seen: new Date().toISOString()
-            };
-
-            const { error: insertError } = await supabase
-                .from('game_data')
-                .insert([nuevoUsuario]);
-
-            if (insertError) throw insertError;
-
-            return res.json({
-                success: true,
-                message: `Usuario creado con +${amount} diamantes`,
-                diamonds: amount,
-                user_id: userId,
-                new_user: true
-            });
-        }
-
-        if (selectError) throw selectError;
-
-        const nuevosDiamantes = (usuario?.diamonds || 0) + amount;
-
-        const { error: updateError } = await supabase
-            .from('game_data')
-            .update({
-                diamonds: nuevosDiamantes,
-                last_ad_watch: new Date().toISOString(),
-                last_seen: new Date().toISOString()
-            })
-            .eq('telegram_id', userId.toString());
-
-        if (updateError) throw updateError;
-
-        res.json({
-            success: true,
-            message: `+${amount} diamantes añadidos`,
-            diamonds: nuevosDiamantes,
-            added: amount,
-            user_id: userId
-        });
-
-    } catch (error) {
-        console.error("❌ Error en /reward:", error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
-    }
-});
-
-// ==========================================
-// ENDPOINT PARA VERIFICAR ANUNCIOS
-// ==========================================
-app.get('/can-watch-ad', async (req, res) => {
-    try {
-        const userId = req.query.userId;
+        // Enviar a la red
+        await poolContract.send(transfer);
         
-        if (!userId) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'userId requerido' 
-            });
-        }
-
-        const { data: usuario, error } = await supabase
-            .from('game_data')
-            .select('last_ad_watch')
-            .eq('telegram_id', userId.toString())
-            .single();
-
-        if (error && error.code !== 'PGRST116') throw error;
-
-        let puedeVer = true;
-        let minutosRestantes = 0;
-
-        if (usuario?.last_ad_watch) {
-            const ultimo = new Date(usuario.last_ad_watch);
-            const ahora = new Date();
-            const horasPasadas = (ahora - ultimo) / (1000 * 60 * 60);
-            
-            puedeVer = horasPasadas >= 2;
-            
-            if (!puedeVer) {
-                minutosRestantes = Math.ceil((2 - horasPasadas) * 60);
-            }
-        }
-
-        res.json({
-            success: true,
-            can_watch: puedeVer,
-            minutes_remaining: minutosRestantes,
-            user_id: userId
-        });
-
-    } catch (error) {
-        console.error("❌ Error en /can-watch-ad:", error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
-    }
-});
-
-// ==========================================
-// ENDPOINT PARA ESTADO DE RETIRO
-// ==========================================
-app.get('/withdraw-status', async (req, res) => {
-    try {
-        const userId = req.query.userId;
+        console.log(`✅ Transferencia enviada. Nuevo seqno será ${seqno + 1}`);
+        return { success: true };
         
-        if (!userId) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'userId requerido' 
-            });
-        }
-
-        const { data: usuario, error } = await supabase
-            .from('game_data')
-            .select('last_withdraw_week, diamonds')
-            .eq('telegram_id', userId.toString())
-            .single();
-
-        if (error && error.code !== 'PGRST116') throw error;
-
-        const ahora = new Date();
-        const inicio = new Date(ahora.getFullYear(), 0, 1);
-        const dias = Math.floor((ahora - inicio) / (24 * 60 * 60 * 1000));
-        const semanaActual = Math.ceil(dias / 7);
-
-        const yaRetiro = usuario?.last_withdraw_week === semanaActual;
-
-        res.json({
-            success: true,
-            user_id: userId,
-            current_week: semanaActual,
-            last_withdraw_week: usuario?.last_withdraw_week || null,
-            has_withdrawn_this_week: yaRetiro,
-            current_diamonds: usuario?.diamonds || 0
-        });
-
     } catch (error) {
-        console.error("❌ Error en /withdraw-status:", error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
+        console.error("❌ Error en sendTon:", error);
+        return { success: false, error: error.message };
     }
-});
+}
 
 // ==========================================
-// ENDPOINT PARA PROCESAR RETIRO
+// ENDPOINT PARA PROCESAR RETIRO (DESDE EL JUEGO)
 // ==========================================
 app.post('/process-withdraw', express.json(), async (req, res) => {
     try {
-        const { userId, diamonds, tonAmount } = req.body;
+        const { userId, address, amount } = req.body;
         
-        if (!userId || !diamonds || !tonAmount) {
+        if (!userId || !address || !amount) {
             return res.status(400).json({ 
-                success: false, 
-                error: 'userId, diamonds y tonAmount requeridos' 
+                error: 'userId, address y amount requeridos' 
             });
         }
-
-        const dia = new Date().getDay();
-        if (dia !== 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'Solo disponible los domingos'
-            });
+        
+        // 1. Verificar que sea domingo
+        if (new Date().getDay() !== 0) {
+            return res.status(400).json({ error: 'Solo disponible domingos' });
         }
-
-        const { data: usuario, error: selectError } = await supabase
+        
+        // 2. Obtener datos del usuario
+        const { data: usuario } = await supabase
             .from('game_data')
-            .select('last_withdraw_week, diamonds')
-            .eq('telegram_id', userId.toString())
+            .select('diamonds, last_withdraw_week')
+            .eq('telegram_id', userId)
             .single();
-
-        if (selectError) throw selectError;
-
-        const ahora = new Date();
-        const inicio = new Date(ahora.getFullYear(), 0, 1);
-        const dias = Math.floor((ahora - inicio) / (24 * 60 * 60 * 1000));
-        const semanaActual = Math.ceil(dias / 7);
-
-        if (usuario?.last_withdraw_week === semanaActual) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Ya retiraste esta semana' 
-            });
-        }
-
-        const nuevosDiamantes = (usuario?.diamonds || 0) - diamonds;
         
-        const { error: updateError } = await supabase
+        if (!usuario) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+        
+        // 3. Verificar que no haya retirado esta semana
+        const semanaActual = Math.ceil((new Date() - new Date(new Date().getFullYear(), 0, 1)) / (7 * 24 * 60 * 60 * 1000));
+        if (usuario.last_withdraw_week === semanaActual) {
+            return res.status(400).json({ error: 'Ya retiraste esta semana' });
+        }
+        
+        // 4. ENVIAR LOS TON (usando la función de arriba)
+        const result = await sendTon(address, amount);
+        
+        if (!result.success) {
+            throw new Error(result.error);
+        }
+        
+        // 5. Actualizar base de datos
+        await supabase
             .from('game_data')
             .update({
-                diamonds: nuevosDiamantes,
-                last_withdraw_week: semanaActual,
-                last_seen: new Date().toISOString()
+                diamonds: usuario.diamonds - (amount * 1000), // ajusta según tu fórmula
+                last_withdraw_week: semanaActual
             })
-            .eq('telegram_id', userId.toString());
-
-        if (updateError) throw updateError;
-
-        try {
-            const { data: master, error: masterError } = await supabase
-                .from('game_data')
-                .select('pool_ton')
-                .eq('telegram_id', 'MASTER')
-                .single();
-
-            if (!masterError && master) {
-                const nuevoPool = (master.pool_ton || 100) - tonAmount;
-                
-                await supabase
-                    .from('game_data')
-                    .update({
-                        pool_ton: nuevoPool,
-                        last_seen: new Date().toISOString()
-                    })
-                    .eq('telegram_id', 'MASTER');
-            }
-        } catch (poolError) {
-            console.error("Error actualizando pool:", poolError);
-        }
-
-        res.json({
-            success: true,
-            message: 'Retiro procesado correctamente',
-            new_diamonds: nuevosDiamantes,
-            week: semanaActual
-        });
-
-    } catch (error) {
-        console.error("❌ Error en /process-withdraw:", error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
-    }
-});
-
-// ==========================================
-// ENDPOINT PARA ACTUALIZAR POOL
-// ==========================================
-app.post('/update-pool', express.json(), async (req, res) => {
-    try {
-        const { tonAmount, diamonds } = req.body;
+            .eq('telegram_id', userId);
         
-        const { data: master, error: selectError } = await supabase
-            .from('game_data')
-            .select('pool_ton, total_diamonds')
-            .eq('telegram_id', 'MASTER')
-            .single();
-
-        if (selectError) throw selectError;
-
-        const nuevoPool = (master?.pool_ton || 100) + (tonAmount * 0.8);
-        const nuevosDiamantesTotales = (master?.total_diamonds || 100000) + diamonds;
-
-        const { error: updateError } = await supabase
-            .from('game_data')
-            .update({
-                pool_ton: nuevoPool,
-                total_diamonds: nuevosDiamantesTotales,
-                last_seen: new Date().toISOString()
-            })
-            .eq('telegram_id', 'MASTER');
-
-        if (updateError) throw updateError;
-
-        res.json({
-            success: true,
-            new_pool: nuevoPool,
-            new_total_diamonds: nuevosDiamantesTotales
+        res.json({ 
+            success: true, 
+            message: `Retiro de ${amount} TON procesado` 
         });
-
+        
     } catch (error) {
-        console.error("❌ Error en /update-pool:", error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
+        console.error("Error en retiro:", error);
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -640,44 +258,11 @@ app.post('/update-pool', express.json(), async (req, res) => {
 // INICIAR SERVIDOR
 // ==========================================
 app.listen(PORT, async () => {
-    console.log('\n' + '='.repeat(60));
-    console.log('🚀 TON CITY GAME API - SERVIDOR INICIADO');
-    console.log('='.repeat(60));
-    console.log(`📡 Puerto: ${PORT}`);
-    console.log(`🌐 URL: https://drab-janean-juegaygana-31185170.koyeb.app`);
-    console.log('='.repeat(60));
-    
-    const walletOk = await initPoolWallet();
-    if (!walletOk) {
-        console.warn('\n⚠️  ADVERTENCIA: Wallet de Pool no disponible');
-        console.warn('   Los retiros automáticos NO funcionarán');
-        console.warn('   Visita /debug para más información\n');
+    console.log(`\n🚀 Servidor iniciado en puerto ${PORT}`);
+    const ok = await initPoolWallet();
+    if (ok) {
+        console.log(`✅ Wallet lista. Prueba /pool-info`);
     } else {
-        console.log('\n✅ Sistema listo para procesar retiros\n');
+        console.log(`❌ Wallet no inicializada. Revisa /debug`);
     }
-    
-    console.log('📌 ENDPOINTS DISPONIBLES:');
-    console.log('   ✅ GET  /');
-    console.log('   ✅ GET  /health');
-    console.log('   ✅ GET  /debug');
-    console.log('   ✅ GET  /pool-info');
-    console.log('   ✅ GET  /daily-status?userId=ID');
-    console.log('   ✅ POST /claim-daily');
-    console.log('   ✅ GET  /reward?userId=ID&amount=30');
-    console.log('   ✅ GET  /can-watch-ad?userId=ID');
-    console.log('   ✅ GET  /withdraw-status?userId=ID');
-    console.log('   ✅ POST /process-withdraw');
-    console.log('   ✅ POST /update-pool');
-    console.log('='.repeat(60) + '\n');
-});
-
-// ==========================================
-// MANEJO DE ERRORES
-// ==========================================
-process.on('uncaughtException', (error) => {
-    console.error('❌ Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });
