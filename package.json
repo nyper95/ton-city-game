@@ -1,6 +1,6 @@
 {
   "name": "ton-city-reward-api",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -8,7 +8,7 @@
   "dependencies": {
     "express": "^4.18.2",
     "@supabase/supabase-js": "^2.39.0",
-    "@ton/ton": "^16.2.2",
+    "@ton/ton": "^15.0.0",
     "@ton/crypto": "^3.2.0",
     "@ton/core": "^0.56.0",
     "dotenv": "^16.3.1"
