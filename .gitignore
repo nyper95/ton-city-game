@@ -1,7 +1,2 @@
 node_modules
 .env
-# .env
-POOL_MNEMONIC="pipe faculty ugly increase umbrella loyal wolf rely sea degree replace boring wealth long unaware gown pole auto web uncover labor armor battle drive"
-TON_API_KEY="AG2XICNRZEOJNEQAAAAO737JGJAKU56K43DE4OSQLMHPWHMHONPW2U4LG24XY4DFYUJMLCQ"
-SUPABASE_URL="https://xkkifqxxglcuyruwkbih.supabase.co"
-SUPABASE_KEY="sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE"
