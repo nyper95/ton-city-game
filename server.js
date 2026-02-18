@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - SERVER.JS COMPLETO (CON WALLET Y POOL)
+// TON CITY GAME - SERVER.JS COMPLETO (CON DIAGNÓSTICO)
 // ======================================================
 
 const express = require('express');
@@ -12,7 +12,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 8000; // <-- CAMBIADO A 8000
 
 // ==========================================
 // CONFIGURACIÓN SUPABASE
@@ -36,17 +36,22 @@ async function initPoolWallet() {
         
         const mnemonic = process.env.POOL_MNEMONIC;
         if (!mnemonic) {
-            throw new Error("❌ POOL_MNEMONIC no está definida en variables de entorno");
+            console.log("❌ POOL_MNEMONIC no está definida en variables de entorno");
+            return false;
         }
         
         const mnemonicArray = mnemonic.split(" ");
+        console.log(`📝 Frase cargada, longitud: ${mnemonicArray.length} palabras`);
+        
         if (mnemonicArray.length !== 24) {
-            throw new Error("❌ La frase debe tener 24 palabras");
+            console.log(`❌ La frase debe tener 24 palabras (tiene ${mnemonicArray.length})`);
+            return false;
         }
         
         console.log("✅ Frase semilla cargada correctamente");
         
         poolKey = await mnemonicToPrivateKey(mnemonicArray);
+        console.log("✅ Clave privada generada");
         
         poolWallet = WalletContractV4.create({
             publicKey: poolKey.publicKey,
@@ -54,14 +59,15 @@ async function initPoolWallet() {
         });
         
         poolAddress = poolWallet.address.toString();
+        console.log(`✅ Dirección de wallet: ${poolAddress}`);
         
         const endpoint = await getHttpEndpoint({ network: "mainnet" });
+        console.log(`✅ Endpoint de red: ${endpoint}`);
+        
         tonClient = new TonClient({ endpoint });
         
         const balance = await tonClient.getBalance(poolWallet.address);
-        console.log(`✅ Wallet de Pool inicializada:`);
-        console.log(`   Dirección: ${poolAddress}`);
-        console.log(`   Balance: ${(balance / 1e9).toFixed(4)} TON`);
+        console.log(`💰 Balance: ${(balance / 1e9).toFixed(4)} TON`);
         
         return true;
         
@@ -70,37 +76,6 @@ async function initPoolWallet() {
         return false;
     }
 }
-
-// ==========================================
-// ENDPOINT DE DIAGNÓSTICO (MUESTRA EL ESTADO DE LA WALLET)
-// ==========================================
-app.get('/debug-wallet', async (req, res) => {
-    try {
-        const status = {
-            wallet_initialized: poolWallet !== null,
-            client_initialized: tonClient !== null,
-            address: poolAddress || 'no disponible',
-            env_mnemonic_set: process.env.POOL_MNEMONIC ? '✅ sí' : '❌ no',
-            env_mnemonic_length: process.env.POOL_MNEMONIC ? process.env.POOL_MNEMONIC.split(' ').length : 0,
-            timestamp: new Date().toISOString()
-        };
-        
-        if (poolWallet && tonClient) {
-            try {
-                const balance = await tonClient.getBalance(poolWallet.address);
-                status.balance = (balance / 1e9).toFixed(4);
-                status.seqno = await poolWallet.getSeqno();
-            } catch (e) {
-                status.balance_error = e.message;
-            }
-        }
-        
-        res.json(status);
-        
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // ==========================================
 // MIDDLEWARE
@@ -112,16 +87,18 @@ app.use((req, res, next) => {
 });
 
 // ==========================================
-// ENDPOINT PRINCIPAL (RAÍZ)
+// ENDPOINT RAÍZ (DIAGNÓSTICO COMPLETO)
 // ==========================================
 app.get('/', (req, res) => {
     res.json({
         status: 'online',
         service: 'Ton City Game API',
-        version: '3.0.2',
+        version: '3.0.3',
+        port: PORT,
         timestamp: new Date().toISOString(),
         endpoints: {
             health: '/health',
+            debug: '/debug',
             pool_info: '/pool-info',
             daily_status: '/daily-status?userId=ID',
             claim_daily: '/claim-daily (POST)',
@@ -132,6 +109,50 @@ app.get('/', (req, res) => {
             update_pool: '/update-pool (POST)'
         }
     });
+});
+
+// ==========================================
+// ENDPOINT DE DIAGNÓSTICO DETALLADO
+// ==========================================
+app.get('/debug', async (req, res) => {
+    try {
+        const status = {
+            server: {
+                uptime: process.uptime(),
+                memory: process.memoryUsage(),
+                node_version: process.version,
+                port: PORT
+            },
+            env: {
+                supabase_url_set: !!process.env.SUPABASE_URL,
+                supabase_key_set: !!process.env.SUPABASE_KEY,
+                pool_mnemonic_set: !!process.env.POOL_MNEMONIC,
+                pool_mnemonic_length: process.env.POOL_MNEMONIC ? process.env.POOL_MNEMONIC.split(' ').length : 0,
+                ton_api_key_set: !!process.env.TON_API_KEY
+            },
+            wallet: {
+                initialized: poolWallet !== null,
+                client_initialized: tonClient !== null,
+                address: poolAddress || 'no inicializada'
+            }
+        };
+
+        // Intentar obtener balance si la wallet está inicializada
+        if (poolWallet && tonClient) {
+            try {
+                const balance = await tonClient.getBalance(poolWallet.address);
+                status.wallet.balance = (balance / 1e9).toFixed(4);
+                status.wallet.seqno = await poolWallet.getSeqno();
+            } catch (e) {
+                status.wallet.balance_error = e.message;
+            }
+        }
+
+        res.json(status);
+        
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // ==========================================
@@ -153,7 +174,7 @@ app.get('/pool-info', async (req, res) => {
             return res.status(503).json({ 
                 success: false,
                 error: 'Wallet de Pool no inicializada',
-                details: 'Revisa que POOL_MNEMONIC esté en variables de entorno'
+                debug: '/debug para más información'
             });
         }
         
@@ -174,8 +195,7 @@ app.get('/pool-info', async (req, res) => {
         console.error("❌ Error en /pool-info:", error);
         res.status(500).json({ 
             success: false,
-            error: error.message,
-            stack: error.stack 
+            error: error.message
         });
     }
 });
@@ -245,7 +265,6 @@ app.post('/claim-daily', express.json(), async (req, res) => {
 
         if (selectError && selectError.code !== 'PGRST116') throw selectError;
 
-        // Verificar si ya reclamó hoy
         if (usuario?.last_daily_claim) {
             const ultimo = new Date(usuario.last_daily_claim);
             const hoy = new Date();
@@ -260,7 +279,6 @@ app.post('/claim-daily', express.json(), async (req, res) => {
             }
         }
 
-        // Calcular recompensa (día 1 = 10, día 30 = 300)
         const streak = usuario?.daily_streak || 0;
         const nuevoStreak = streak >= 30 ? 30 : streak + 1;
         const recompensa = Math.min(10 + (nuevoStreak - 1) * 10, 300);
@@ -297,7 +315,7 @@ app.post('/claim-daily', express.json(), async (req, res) => {
 });
 
 // ==========================================
-// ENDPOINT PARA ADSGRAM (RECOMPENSA DE ANUNCIOS)
+// ENDPOINT PARA ADSGRAM
 // ==========================================
 app.get('/reward', async (req, res) => {
     try {
@@ -318,7 +336,6 @@ app.get('/reward', async (req, res) => {
             .single();
 
         if (selectError && selectError.code === 'PGRST116') {
-            // Usuario no existe, crearlo
             const nuevoUsuario = {
                 telegram_id: userId.toString(),
                 username: `user_${userId.toString().slice(-6)}`,
@@ -457,7 +474,6 @@ app.get('/withdraw-status', async (req, res) => {
 
         if (error && error.code !== 'PGRST116') throw error;
 
-        // Calcular semana actual
         const ahora = new Date();
         const inicio = new Date(ahora.getFullYear(), 0, 1);
         const dias = Math.floor((ahora - inicio) / (24 * 60 * 60 * 1000));
@@ -497,7 +513,6 @@ app.post('/process-withdraw', express.json(), async (req, res) => {
             });
         }
 
-        // Verificar que sea domingo
         const dia = new Date().getDay();
         if (dia !== 0) {
             return res.status(400).json({
@@ -539,7 +554,6 @@ app.post('/process-withdraw', express.json(), async (req, res) => {
 
         if (updateError) throw updateError;
 
-        // Actualizar pool en MASTER (simulado por ahora)
         try {
             const { data: master, error: masterError } = await supabase
                 .from('game_data')
@@ -579,7 +593,7 @@ app.post('/process-withdraw', express.json(), async (req, res) => {
 });
 
 // ==========================================
-// ENDPOINT PARA ACTUALIZAR POOL (COMPRAS)
+// ENDPOINT PARA ACTUALIZAR POOL
 // ==========================================
 app.post('/update-pool', express.json(), async (req, res) => {
     try {
@@ -637,7 +651,7 @@ app.listen(PORT, async () => {
     if (!walletOk) {
         console.warn('\n⚠️  ADVERTENCIA: Wallet de Pool no disponible');
         console.warn('   Los retiros automáticos NO funcionarán');
-        console.warn('   Revisa que POOL_MNEMONIC esté en variables de entorno\n');
+        console.warn('   Visita /debug para más información\n');
     } else {
         console.log('\n✅ Sistema listo para procesar retiros\n');
     }
@@ -645,6 +659,7 @@ app.listen(PORT, async () => {
     console.log('📌 ENDPOINTS DISPONIBLES:');
     console.log('   ✅ GET  /');
     console.log('   ✅ GET  /health');
+    console.log('   ✅ GET  /debug');
     console.log('   ✅ GET  /pool-info');
     console.log('   ✅ GET  /daily-status?userId=ID');
     console.log('   ✅ POST /claim-daily');
@@ -657,7 +672,7 @@ app.listen(PORT, async () => {
 });
 
 // ==========================================
-// MANEJO DE ERRORES NO CAPTURADOS
+// MANEJO DE ERRORES
 // ==========================================
 process.on('uncaughtException', (error) => {
     console.error('❌ Uncaught Exception:', error);
