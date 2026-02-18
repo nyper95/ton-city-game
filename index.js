@@ -14,7 +14,7 @@ app.listen(PORT, () => console.log(`✅ Servidor activo en puerto ${PORT}`));
 // ==========================================
 // CONFIGURACIÓN ADSGRAM
 // ==========================================
-const ADSGRAM_BLOCK_ID = '23040';
+const ADSGRAM_BLOCK_ID = '23186';
 const ADSGRAM_REWARD = 30; // Recompensa de 30 diamantes por anuncio
 
 // Solo ejecutamos el resto si estamos en un navegador
@@ -29,8 +29,7 @@ const tg = window.Telegram.WebApp;
 
 // Direcciones de billeteras (80/20)
 const BILLETERA_PROPIETARIO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw";
-const BILLETERA_POOL = "UQDY-D_6F1oyftwpq_AZNBOd3Fh4xKDj2C8sjz6Cx1A_Lvxb";
-
+const BILLETERA_POOL = "UQBuoEgT5DmcoEQ_nl6YwR0Q86fZWY4baACuX80EegWG49h2";
 // TON Connect
 let tonConnectUI = null;
 let currentWallet = null;
