@@ -72,6 +72,37 @@ async function initPoolWallet() {
 }
 
 // ==========================================
+// ENDPOINT DE DIAGNÓSTICO (MUESTRA EL ESTADO DE LA WALLET)
+// ==========================================
+app.get('/debug-wallet', async (req, res) => {
+    try {
+        const status = {
+            wallet_initialized: poolWallet !== null,
+            client_initialized: tonClient !== null,
+            address: poolAddress || 'no disponible',
+            env_mnemonic_set: process.env.POOL_MNEMONIC ? '✅ sí' : '❌ no',
+            env_mnemonic_length: process.env.POOL_MNEMONIC ? process.env.POOL_MNEMONIC.split(' ').length : 0,
+            timestamp: new Date().toISOString()
+        };
+        
+        if (poolWallet && tonClient) {
+            try {
+                const balance = await tonClient.getBalance(poolWallet.address);
+                status.balance = (balance / 1e9).toFixed(4);
+                status.seqno = await poolWallet.getSeqno();
+            } catch (e) {
+                status.balance_error = e.message;
+            }
+        }
+        
+        res.json(status);
+        
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ==========================================
 // MIDDLEWARE
 // ==========================================
 app.use(express.json());
