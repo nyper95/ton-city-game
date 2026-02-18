@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN COMPLETA (ADSGRAM SEGURO)
+// TON CITY GAME - VERSIÓN COMPLETA (ADSGRAM 2026)
 // ======================================================
 
 console.log("✅ Ton City Game - Inicializando...");
@@ -14,13 +14,13 @@ const BILLETERA_POOL = "UQDY-D_6F1oyftwpq_AZNBOd3Fh4xKDj2C8sjz6Cx1A_Lvxb";
 const PRECIO_COMPRA = 0.008;
 
 // ==========================================
-// CONFIGURACIÓN ADSGRAM
+// CONFIGURACIÓN ADSGRAM 2026 (NUEVO BLOCK ID)
 // ==========================================
-const ADSGRAM_BLOCK_ID = '23040';
+const ADSGRAM_BLOCK_ID = '23186'; // ← NUEVO BLOCK ID
 
 // Variables para Adsgram
 let adsReady = false;
-let adsInstance = null;
+let AdController = null;
 
 // ==========================================
 // CONFIGURACIÓN TÉCNICA
@@ -74,7 +74,7 @@ const PROD_VAL = {
 };
 
 // ==========================================
-// ADSGRAM - SISTEMA SEGURO (BLOQUE CORREGIDO)
+// ADSGRAM - SISTEMA ACTUALIZADO 2026
 // ==========================================
 
 function loadAdsgramSafe() {
@@ -107,26 +107,13 @@ async function initAds() {
     try {
         await loadAdsgramSafe();
 
-        adsInstance = new window.Adsgram({
-            blockId: ADSGRAM_BLOCK_ID,
-            onReward: () => {
-                console.log("🎉 Recompensa recibida");
-                giveAdReward();
-            },
-            onError: (e) => {
-                console.error("Adsgram error:", e);
-                if (e.description === 'No ads') {
-                    alert("😔 No hay anuncios disponibles. Intenta más tarde.");
-                } else if (e.description === 'User closed modal') {
-                    console.log("Usuario cerró el anuncio");
-                } else {
-                    alert("❌ Error al cargar anuncio: " + (e.description || "Intenta más tarde"));
-                }
-            }
+        // ✅ INICIALIZACIÓN SEGÚN DOCUMENTACIÓN 2026
+        AdController = window.Adsgram.init({ 
+            blockId: ADSGRAM_BLOCK_ID 
         });
 
         adsReady = true;
-        console.log("✅ Sistema de anuncios listo");
+        console.log("✅ Sistema de anuncios listo con Block ID:", ADSGRAM_BLOCK_ID);
 
     } catch (err) {
         console.warn("❌ Adsgram no disponible:", err);
@@ -146,11 +133,34 @@ setTimeout(() => {
 }, 8000);
 
 function showAd() {
-    if (!adsReady || !adsInstance) {
+    if (!adsReady || !AdController) {
         alert("❌ Sistema de anuncios no disponible. Intenta más tarde.");
         return;
     }
-    adsInstance.show();
+
+    console.log("🎬 Mostrando anuncio...");
+
+    // ✅ SHOW CON PROMESAS SEGÚN DOCUMENTACIÓN 2026
+    AdController.show()
+        .then((result) => {
+            console.log("📦 Resultado del anuncio:", result);
+            
+            // result.done = true cuando ve completo (rewarded)
+            if (result.done) {
+                giveAdReward();
+            } else {
+                alert("⚠️ No completaste el anuncio, no se otorgó la recompensa.");
+            }
+        })
+        .catch((result) => {
+            console.error("❌ Error en anuncio:", result.description);
+            
+            if (result.description === 'No ads') {
+                alert("😔 No hay anuncios disponibles. Intenta más tarde.");
+            } else {
+                alert("❌ Error al cargar el anuncio: " + result.description);
+            }
+        });
 }
 
 function showAdsModal() {
@@ -169,7 +179,9 @@ function giveAdReward() {
     saveUserData();
     actualizarUI();
     actualizarEstadoAnuncio();
+    actualizarBannerAds();
     tg.showAlert(`🎁 +${reward} 💎`);
+    console.log(`💰 Recompensa entregada: +${reward} 💎`);
 }
 
 // ==========================================
@@ -256,7 +268,7 @@ function actualizarEstadoAnuncio() {
         statusElem.innerHTML = '<span style="color: #4ade80;">✅ ¡Anuncio disponible! Gana 30 💎</span>';
         timerElem.innerHTML = '';
         btnElem.disabled = false;
-        btnElem.style.background = "#f59e0b";
+        btnElem.style.background = "#f97316";
         btnElem.onclick = showAd;
     } else if (!adsReady) {
         statusElem.innerHTML = '<span style="color: #f97316;">⏳ Cargando sistema de anuncios...</span>';
@@ -1126,4 +1138,4 @@ window.disconnectWallet = disconnectWallet;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 
-console.log("✅ Ton City Game - Versión ADSGRAM SEGURO");
+console.log("✅ Ton City Game - Versión ADSGRAM 2026 con Block ID 23186");
