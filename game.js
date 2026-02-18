@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN COMPLETA (ADSGRAM 2026)
+// TON CITY GAME - VERSIÓN COMPLETA (CON NUEVA DIRECCIÓN)
 // ======================================================
 
 console.log("✅ Ton City Game - Inicializando...");
@@ -7,16 +7,16 @@ console.log("✅ Ton City Game - Inicializando...");
 const tg = window.Telegram.WebApp;
 
 // ==========================================
-// CONFIGURACIÓN DE BILLETERAS Y PRECIOS
+// CONFIGURACIÓN DE BILLETERAS Y PRECIOS (ACTUALIZADO)
 // ==========================================
 const BILLETERA_PROPIETARIO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw"; 
-const BILLETERA_POOL = "UQBuoEgT5DmcoEQ_nl6YwR0Q86fZWY4baACuX80EegWG49h2";      
+const BILLETERA_POOL = "UQBuoEgT5DmcoEQ_nl6YwR0Q86fZWY4baACuX80EegWG49h2"; // ← NUEVA DIRECCIÓN
 const PRECIO_COMPRA = 0.008;
 
 // ==========================================
-// CONFIGURACIÓN ADSGRAM 2026 (NUEVO BLOCK ID)
+// CONFIGURACIÓN ADSGRAM
 // ==========================================
-const ADSGRAM_BLOCK_ID = '23186'; // ← NUEVO BLOCK ID
+const ADSGRAM_BLOCK_ID = '23186';
 
 // Variables para Adsgram
 let adsReady = false;
@@ -74,6 +74,38 @@ const PROD_VAL = {
 };
 
 // ==========================================
+// SISTEMA DE PRODUCCIÓN OFFLINE
+// ==========================================
+
+function getTotalProductionPerHour() {
+    return (userData.lvl_tienda * PROD_VAL.tienda) +
+           (userData.lvl_casino * PROD_VAL.casino) +
+           (userData.lvl_piscina * PROD_VAL.piscina) +
+           (userData.lvl_parque * PROD_VAL.parque) +
+           (userData.lvl_diversion * PROD_VAL.diversion) +
+           (userData.lvl_escuela * PROD_VAL.escuela) +
+           (userData.lvl_hospital * PROD_VAL.hospital);
+}
+
+async function calculateOfflineProduction() {
+    if (!userData.last_production_update) return 0;
+    
+    const now = new Date();
+    const lastUpdate = new Date(userData.last_production_update);
+    const secondsPassed = Math.floor((now - lastUpdate) / 1000);
+    
+    if (secondsPassed < 1) return 0;
+    
+    const totalPerHour = getTotalProductionPerHour();
+    const earnedDiamonds = (totalPerHour / 3600) * secondsPassed;
+    
+    console.log(`⏱️ Tiempo offline: ${secondsPassed} segundos`);
+    console.log(`💰 Diamantes offline: +${earnedDiamonds.toFixed(2)} 💎`);
+    
+    return earnedDiamonds;
+}
+
+// ==========================================
 // ADSGRAM - SISTEMA ACTUALIZADO 2026
 // ==========================================
 
@@ -107,7 +139,6 @@ async function initAds() {
     try {
         await loadAdsgramSafe();
 
-        // ✅ INICIALIZACIÓN SEGÚN DOCUMENTACIÓN 2026
         AdController = window.Adsgram.init({ 
             blockId: ADSGRAM_BLOCK_ID 
         });
@@ -121,10 +152,8 @@ async function initAds() {
     }
 }
 
-// Espera realista para Telegram móvil
 setTimeout(initAds, 4500);
 
-// Detector anti bloqueo
 setTimeout(() => {
     if (!window.Adsgram) {
         console.warn("🚫 Adsgram bloqueado por red / VPN / AdBlock");
@@ -140,12 +169,10 @@ function showAd() {
 
     console.log("🎬 Mostrando anuncio...");
 
-    // ✅ SHOW CON PROMESAS SEGÚN DOCUMENTACIÓN 2026
     AdController.show()
         .then((result) => {
             console.log("📦 Resultado del anuncio:", result);
             
-            // result.done = true cuando ve completo (rewarded)
             if (result.done) {
                 giveAdReward();
             } else {
@@ -182,38 +209,6 @@ function giveAdReward() {
     actualizarBannerAds();
     tg.showAlert(`🎁 +${reward} 💎`);
     console.log(`💰 Recompensa entregada: +${reward} 💎`);
-}
-
-// ==========================================
-// SISTEMA DE PRODUCCIÓN OFFLINE
-// ==========================================
-
-function getTotalProductionPerHour() {
-    return (userData.lvl_tienda * PROD_VAL.tienda) +
-           (userData.lvl_casino * PROD_VAL.casino) +
-           (userData.lvl_piscina * PROD_VAL.piscina) +
-           (userData.lvl_parque * PROD_VAL.parque) +
-           (userData.lvl_diversion * PROD_VAL.diversion) +
-           (userData.lvl_escuela * PROD_VAL.escuela) +
-           (userData.lvl_hospital * PROD_VAL.hospital);
-}
-
-async function calculateOfflineProduction() {
-    if (!userData.last_production_update) return 0;
-    
-    const now = new Date();
-    const lastUpdate = new Date(userData.last_production_update);
-    const secondsPassed = Math.floor((now - lastUpdate) / 1000);
-    
-    if (secondsPassed < 1) return 0;
-    
-    const totalPerHour = getTotalProductionPerHour();
-    const earnedDiamonds = (totalPerHour / 3600) * secondsPassed;
-    
-    console.log(`⏱️ Tiempo offline: ${secondsPassed} segundos`);
-    console.log(`💰 Diamantes offline: +${earnedDiamonds.toFixed(2)} 💎`);
-    
-    return earnedDiamonds;
 }
 
 // ==========================================
@@ -741,6 +736,45 @@ function renderBank() {
 }
 
 // ==========================================
+// COMPRAR TON (CORREGIDO CON MÍNIMO 100)
+// ==========================================
+async function comprarTON(tonAmount) {
+    if (!tonConnectUI || !tonConnectUI.connected) {
+        return alert("❌ Conecta tu wallet primero");
+    }
+
+    // Calcular diamantes (con mínimo de 100)
+    let comprados = Math.floor(tonAmount / PRECIO_COMPRA);
+    if (comprados < 100) comprados = 100;
+
+    const confirmMsg = 
+        `¿Comprar ${tonAmount.toFixed(2)} TON?\n\n` +
+        `Recibirás: ${comprados} 💎\n` +
+        `Precio: ${PRECIO_COMPRA.toFixed(3)} TON/💎`;
+
+    if (!confirm(confirmMsg)) return;
+
+    const tx = {
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [
+            { address: BILLETERA_POOL, amount: Math.floor(tonAmount * 0.8 * 1e9).toString() },
+            { address: BILLETERA_PROPIETARIO, amount: Math.floor(tonAmount * 0.2 * 1e9).toString() }
+        ]
+    };
+
+    try {
+        await tonConnectUI.sendTransaction(tx);
+        userData.diamonds += comprados;
+        await saveUserData();
+        actualizarUI();
+        alert(`✅ Compra exitosa! Recibiste ${comprados} 💎`);
+    } catch (e) {
+        console.error("❌ Error en transacción:", e);
+        alert("❌ Error en la transacción");
+    }
+}
+
+// ==========================================
 // PRODUCCIÓN
 // ==========================================
 function startProduction() {
@@ -874,32 +908,6 @@ async function disconnectWallet() {
         }
     } catch (error) {
         console.error("❌ Error desconectando:", error);
-    }
-}
-
-async function comprarTON(tonAmount) {
-    if (!tonConnectUI || !tonConnectUI.connected) {
-        return alert("❌ Conecta tu wallet primero");
-    }
-
-    const tx = {
-        validUntil: Math.floor(Date.now() / 1000) + 300,
-        messages: [
-            { address: BILLETERA_POOL, amount: Math.floor(tonAmount * 0.8 * 1e9).toString() },
-            { address: BILLETERA_PROPIETARIO, amount: Math.floor(tonAmount * 0.2 * 1e9).toString() }
-        ]
-    };
-
-    try {
-        await tonConnectUI.sendTransaction(tx);
-        const comprados = Math.floor(tonAmount / PRECIO_COMPRA);
-        userData.diamonds += comprados;
-        await saveUserData();
-        actualizarUI();
-        alert(`✅ Compra exitosa! Recibiste ${comprados} 💎`);
-    } catch (e) {
-        console.error("❌ Error en transacción:", e);
-        alert("❌ Error en la transacción");
     }
 }
 
@@ -1138,4 +1146,4 @@ window.disconnectWallet = disconnectWallet;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 
-console.log("✅ Ton City Game - Versión ADSGRAM 2026 con Block ID 23186");
+console.log("✅ Ton City Game - Versión final con dirección actualizada");
