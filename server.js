@@ -1,12 +1,12 @@
 // ======================================================
-// TON CITY GAME - SERVER.JS PARA KOYEB (CON RECOMPENSAS DIARIAS)
+// TON CITY GAME - SERVER.JS PARA KOYEB
 // ======================================================
 
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 3000;
 
 // ==========================================
 // CONFIGURACIÓN SUPABASE
@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
     res.json({
         status: 'online',
         service: 'Ton City Game API',
-        version: '3.0.0',
+        version: '2.0.0',
         timestamp: new Date().toISOString(),
         endpoints: {
             reward: '/reward?userId=[USER_ID]&amount=[AMOUNT]',
@@ -118,7 +118,6 @@ app.get('/daily-status', async (req, res) => {
 
         if (error) throw error;
 
-        // Calcular si puede reclamar hoy
         let puedeReclamar = true;
         let proximaRecompensa = null;
         
@@ -137,7 +136,6 @@ app.get('/daily-status', async (req, res) => {
             }
         }
 
-        // Verificar si la racha está activa
         let rachaActiva = true;
         if (usuario?.last_daily_claim && usuario?.daily_streak > 0) {
             const ultimo = new Date(usuario.last_daily_claim);
@@ -151,7 +149,6 @@ app.get('/daily-status', async (req, res) => {
             rachaActiva = diffDays <= 1;
         }
 
-        // Calcular recompensa del día
         const streak = usuario?.daily_streak || 0;
         const diaActual = streak + 1;
         let recompensaHoy = 0;
@@ -193,7 +190,6 @@ app.post('/claim-daily', express.json(), async (req, res) => {
             });
         }
 
-        // Obtener usuario
         const { data: usuario, error: selectError } = await supabase
             .from('game_data')
             .select('*')
@@ -202,7 +198,6 @@ app.post('/claim-daily', express.json(), async (req, res) => {
 
         if (selectError) throw selectError;
 
-        // Verificar si puede reclamar
         let puedeReclamar = true;
         let rachaActiva = true;
         
@@ -226,17 +221,14 @@ app.post('/claim-daily', express.json(), async (req, res) => {
             });
         }
 
-        // Calcular nueva racha
         let nuevoStreak = 1;
         if (rachaActiva && usuario?.daily_streak) {
             nuevoStreak = usuario.daily_streak + 1;
             if (nuevoStreak > 30) nuevoStreak = 30;
         }
 
-        // Calcular recompensa
         const recompensa = Math.min(10 + (nuevoStreak - 1) * 10, 300);
 
-        // Actualizar usuario
         const nuevosDiamantes = (usuario?.diamonds || 0) + recompensa;
         
         const { error: updateError } = await supabase
@@ -251,7 +243,6 @@ app.post('/claim-daily', express.json(), async (req, res) => {
 
         if (updateError) throw updateError;
 
-        // Actualizar total_diamonds en MASTER
         await updateMasterTotalDiamonds();
 
         res.json({
@@ -279,7 +270,7 @@ app.get('/reward', async (req, res) => {
     
     try {
         let userId = req.query.userId || req.query.userid || req.query.uid;
-        let amount = parseInt(req.query.amount) || 100;
+        let amount = parseInt(req.query.amount) || 30;
         
         console.log(`🎁 [REWARD] Solicitado - User: ${userId}, Amount: ${amount}`);
 
@@ -291,7 +282,7 @@ app.get('/reward', async (req, res) => {
         }
 
         if (isNaN(amount) || amount <= 0) {
-            amount = 100;
+            amount = 30;
         }
 
         const { data: usuario, error: selectError } = await supabase
