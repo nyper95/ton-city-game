@@ -8,7 +8,7 @@
     "dev": "nodemon server.js"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -20,6 +20,15 @@
   "devDependencies": {
     "nodemon": "^3.0.1"
   },
+  "keywords": [
+    "ton",
+    "telegram",
+    "adsgram",
+    "game",
+    "daily-rewards",
+    "blockchain",
+    "crypto"
+  ],
   "author": "Ton City",
   "license": "MIT"
 }
