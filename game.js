@@ -10,7 +10,7 @@ const tg = window.Telegram.WebApp;
 // CONFIGURACIÓN DE BILLETERAS Y PRECIOS
 // ==========================================
 const BILLETERA_PROPIETARIO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw"; 
-const BILLETERA_POOL = "UQDY-D_6F1oyftwpq_AZNBOd3Fh4xKDj2C8sjz6Cx1A_Lvxb";      
+const BILLETERA_POOL = "UQBuoEgT5DmcoEQ_nl6YwR0Q86fZWY4baACuX80EegWG49h2";      
 const PRECIO_COMPRA = 0.008;
 
 // ==========================================
