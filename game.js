@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN FINAL (SOLO 4 PRODUCTORES)
+// TON CITY GAME - VERSIÓN FINAL (8 EDIFICIOS)
 // ======================================================
 
 console.log("✅ Ton City Game - Inicializando...");
@@ -10,7 +10,7 @@ const tg = window.Telegram.WebApp;
 // CONFIGURACIÓN DE BILLETERAS Y PRECIOS
 // ==========================================
 const BILLETERA_PROPIETARIO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw"; 
-const BILLETERA_POOL = "UQBuoEgT5DmcoEQ_nl6YwR0Q86fZWY4baACuX80EegWG49h2"; // NUEVA DIRECCIÓN
+const BILLETERA_POOL = "UQBuoEgT5DmcoEQ_nl6YwR0Q86fZWY4baACuX80EegWG49h2";
 const PRECIO_COMPRA = 0.008;
 
 // ==========================================
@@ -42,9 +42,9 @@ let userData = {
     id: null,
     username: "Cargando...",
     diamonds: 0,
-    // 🏗️ SOLO EDIFICIOS PRODUCTORES (4)
+    // 🏗️ SOLO 4 EDIFICIOS PRODUCTORES
     lvl_piscina: 0,
-    lvl_diversion: 0,
+    lvl_fabrica: 0,
     lvl_escuela: 0,
     lvl_hospital: 0,
     // 👥 REFERIDOS
@@ -63,7 +63,7 @@ let userData = {
     last_daily_claim: null,
     // 💎 ESTADO DE INVERSOR
     haInvertido: false,
-    // 🎰 LÍMITES DIARIOS (SOLO MEMORIA)
+    // 🎰 LÍMITES DIARIOS
     jugadasHoy: {
         highlow: 0,
         ruleta: 0,
@@ -79,10 +79,10 @@ let globalPoolData = {
     total_diamonds: 0 
 };
 
-// 🏗️ SOLO VALORES DE PRODUCCIÓN (4 edificios)
+// 🏗️ VALORES DE PRODUCCIÓN (4 edificios)
 const PROD_VAL = { 
     piscina: 60,
-    diversion: 120,
+    fabrica: 120,
     escuela: 40,
     hospital: 80
 };
@@ -93,7 +93,7 @@ const PROD_VAL = {
 
 function getTotalProductionPerHour() {
     return (userData.lvl_piscina * 60) +
-           (userData.lvl_diversion * 120) +
+           (userData.lvl_fabrica * 120) +
            (userData.lvl_escuela * 40) +
            (userData.lvl_hospital * 80);
 }
@@ -368,16 +368,7 @@ function actualizarBannerAds() {
     const banner = document.getElementById("ads-banner");
     if (!banner) return;
     
-    if (enVentanaRetiro()) {
-        banner.style.display = "none";
-        return;
-    }
-    
-    if (puedeVerAnuncio() && adsReady) {
-        banner.style.display = "block";
-    } else {
-        banner.style.display = "none";
-    }
+    banner.style.display = (puedeVerAnuncio() && adsReady) ? "block" : "none";
 }
 
 // ==========================================
@@ -537,7 +528,7 @@ function actualizarBannerDiario() {
 }
 
 // ==========================================
-// SISTEMA DE CONTROL DE RETIROS
+// SISTEMA DE CONTROL DE RETIROS (ACTUALIZADO)
 // ==========================================
 
 function enVentanaRetiro() {
@@ -599,15 +590,30 @@ async function initApp() {
         actualizarTimerParque();
         actualizarBannerAds();
         actualizarBannerDiario();
+        actualizarBannerDomingo();
         
         setInterval(actualizarTimerParque, 60000);
         setInterval(() => {
             actualizarBannerDiario();
             actualizarBannerAds();
+            actualizarBannerDomingo();
         }, 60000);
         
     } catch (error) {
         console.error("❌ Error en initApp:", error);
+    }
+}
+
+function actualizarBannerDomingo() {
+    const sundayBanner = document.getElementById("sunday-banner");
+    const centralIndicator = document.getElementById("central-sunday-indicator");
+    
+    if (enVentanaRetiro()) {
+        if (sundayBanner) sundayBanner.style.display = "block";
+        if (centralIndicator) centralIndicator.style.display = "block";
+    } else {
+        if (sundayBanner) sundayBanner.style.display = "none";
+        if (centralIndicator) centralIndicator.style.display = "none";
     }
 }
 
@@ -647,7 +653,7 @@ async function loadUserFromDB(tgId) {
                 diamonds: oldDiamonds,
                 // 🏗️ SOLO 4 PRODUCTORES
                 lvl_piscina: Number(data.lvl_piscina) || 0,
-                lvl_diversion: Number(data.lvl_diversion) || 0,
+                lvl_fabrica: Number(data.lvl_fabrica) || 0,
                 lvl_escuela: Number(data.lvl_escuela) || 0,
                 lvl_hospital: Number(data.lvl_hospital) || 0,
                 referral_earnings: Number(data.referral_earnings) || 0,
@@ -679,7 +685,7 @@ async function loadUserFromDB(tgId) {
                 diamonds: 0,
                 // 🏗️ SOLO 4 PRODUCTORES
                 lvl_piscina: 0,
-                lvl_diversion: 0,
+                lvl_fabrica: 0,
                 lvl_escuela: 0,
                 lvl_hospital: 0,
                 referral_code: userData.referral_code,
@@ -718,8 +724,8 @@ function renderStore() {
     // 🏗️ SOLO 4 EDIFICIOS PRODUCTORES
     const upgrades = [
         { name: "Piscina", field: "piscina", price: 5000, prod: 60, color: "#38bdf8", icon: "fa-water-ladder" },
-        { name: "Diversión", field: "diversion", price: 10000, prod: 120, color: "#f472b6", icon: "fa-gamepad" },
-        { name: "Escuela", field: "escuela", price: 3000, prod: 40, color: "#a78bfa", icon: "fa-school" },
+        { name: "Fábrica", field: "fabrica", price: 10000, prod: 120, color: "#a78bfa", icon: "fa-industry" },
+        { name: "Escuela", field: "escuela", price: 3000, prod: 40, color: "#a16207", icon: "fa-school" },
         { name: "Hospital", field: "hospital", price: 7500, prod: 80, color: "#f87171", icon: "fa-hospital" }
     ];
 
@@ -804,7 +810,7 @@ function renderBank() {
 }
 
 // ==========================================
-// COMPRAR TON (CORREGIDO CON MÍNIMO 100)
+// COMPRAR TON
 // ==========================================
 async function comprarTON(tonAmount) {
     if (!tonConnectUI || !tonConnectUI.connected) {
@@ -856,6 +862,9 @@ function startProduction() {
     setInterval(() => {
         if (!userData.id) return;
         
+        // ⚠️ PRODUCCIÓN PAUSADA EN DOMINGOS
+        if (enVentanaRetiro()) return;
+        
         const totalPerHr = getTotalProductionPerHour();
         userData.diamonds += (totalPerHr / 3600);
         actualizarUI();
@@ -869,15 +878,15 @@ function startProduction() {
 function updateCentralStats() {
     const prod = {
         piscina: (userData.lvl_piscina || 0) * 60,
-        diversion: (userData.lvl_diversion || 0) * 120,
+        fabrica: (userData.lvl_fabrica || 0) * 120,
         escuela: (userData.lvl_escuela || 0) * 40,
         hospital: (userData.lvl_hospital || 0) * 80
     };
-    const total = prod.piscina + prod.diversion + prod.escuela + prod.hospital;
+    const total = prod.piscina + prod.fabrica + prod.escuela + prod.hospital;
 
     const ids = {
         "s_piscina": prod.piscina,
-        "s_diversion": prod.diversion,
+        "s_fabrica": prod.fabrica,
         "s_escuela": prod.escuela,
         "s_hospital": prod.hospital,
         "s_total": total
@@ -1475,18 +1484,18 @@ async function buyUpgrade(name, field, price) {
 }
 
 // ==========================================
-// RETIROS
+// RETIROS SEMANALES (ACTUALIZADO)
 // ==========================================
 async function openWithdraw() {
     try {
         if (!enVentanaRetiro()) {
-            alert("❌ Solo disponible los DOMINGOS");
+            alert("❌ Solo disponible los DOMINGOS (00:00 - 23:59)");
             return;
         }
         
         const semanaActual = getNumeroSemana();
         if (userData.last_withdraw_week === semanaActual) {
-            alert("❌ Ya retiraste esta semana");
+            alert("❌ Ya retiraste esta semana. Vuelve el próximo domingo.");
             return;
         }
         
@@ -1500,19 +1509,24 @@ async function openWithdraw() {
         const totalDiamantes = globalPoolData.total_diamonds;
         const misDiamantes = Math.floor(userData.diamonds || 0);
         
+        // Calcular mínimo de diamantes para 5 TON
+        const minDiamondsFor5TON = Math.ceil(5 / tasa);
+        
         document.getElementById("week-indicator").textContent = `Semana #${semanaActual}`;
         document.getElementById("pool-amount").textContent = `${poolTon.toFixed(4)} TON`;
         document.getElementById("total-diamonds").textContent = `${totalDiamantes.toLocaleString()} 💎`;
         document.getElementById("current-price").textContent = `${tasa.toFixed(6)} TON/💎`;
-        document.getElementById("available-diamonds").textContent = `${misDiamantes} 💎`;
+        document.getElementById("available-diamonds").textContent = `${misDiamantes} 💎 (mín ${minDiamondsFor5TON}💎 para 5 TON)`;
         
         const statusElem = document.getElementById("withdraw-status");
-        statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> Puedes retirar hoy';
+        statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> Puedes retirar hoy (mínimo 5 TON)';
         
         const input = document.getElementById("withdraw-amount");
         if (input) {
             input.value = "";
+            input.min = minDiamondsFor5TON;
             input.max = misDiamantes;
+            input.placeholder = `Mínimo: ${minDiamondsFor5TON} 💎`;
             input.addEventListener('input', updateWithdrawCalculation);
         }
         
@@ -1532,6 +1546,7 @@ function updateWithdrawCalculation() {
     const diamantes = parseInt(input.value) || 0;
     const tasa = calcularTasaRetiro();
     const misDiamantes = Math.floor(userData.diamonds || 0);
+    const minDiamondsFor5TON = Math.ceil(5 / tasa);
     
     if (diamantes <= 0) {
         tonElem.textContent = "0.0000";
@@ -1539,7 +1554,12 @@ function updateWithdrawCalculation() {
     }
     
     if (diamantes > misDiamantes) {
-        tonElem.innerHTML = `<span style="color: #ef4444;">Máx: ${misDiamantes} 💎</span>`;
+        tonElem.innerHTML = `<span style="color: #ef4444;">Solo tienes ${misDiamantes} 💎</span>`;
+        return;
+    }
+    
+    if (diamantes < minDiamondsFor5TON) {
+        tonElem.innerHTML = `<span style="color: #ef4444;">Necesitas mínimo ${minDiamondsFor5TON} 💎 para 5 TON</span>`;
         return;
     }
     
@@ -1558,15 +1578,29 @@ async function processWithdraw() {
     const input = document.getElementById("withdraw-amount");
     const diamantes = parseInt(input?.value || 0);
     const misDiamantes = Math.floor(userData.diamonds || 0);
+    const tasa = calcularTasaRetiro();
+    const minDiamondsFor5TON = Math.ceil(5 / tasa);
     
     if (!diamantes || diamantes <= 0 || diamantes > misDiamantes) {
         return alert("❌ Cantidad inválida");
     }
     
-    const tasa = calcularTasaRetiro();
+    if (diamantes < minDiamondsFor5TON) {
+        return alert(`❌ Mínimo ${minDiamondsFor5TON} 💎 para retirar 5 TON`);
+    }
+    
     const tonRecibido = diamantes * tasa;
     
-    if (!confirm(`¿Retirar ${diamantes.toLocaleString()} 💎 por ${tonRecibido.toFixed(4)} TON?`)) return;
+    if (tonRecibido > globalPoolData.pool_ton) {
+        return alert("❌ No hay suficiente TON en el pool");
+    }
+    
+    const confirmMsg = 
+        `¿Retirar ${diamantes.toLocaleString()} 💎?\n\n` +
+        `Recibirás: ${tonRecibido.toFixed(4)} TON\n` +
+        `⚠️ Los diamantes no retirados se QUEMAN al final del domingo.`;
+    
+    if (!confirm(confirmMsg)) return;
     
     userData.diamonds -= diamantes;
     userData.last_withdraw_week = semanaActual;
@@ -1588,7 +1622,7 @@ function actualizarUI() {
     
     const niveles = {
         "lvl_piscina": userData.lvl_piscina,
-        "lvl_diversion": userData.lvl_diversion,
+        "lvl_fabrica": userData.lvl_fabrica,
         "lvl_escuela": userData.lvl_escuela,
         "lvl_hospital": userData.lvl_hospital
     };
@@ -1602,6 +1636,12 @@ function actualizarUI() {
 function updateReferralUI() {
     const codeElem = document.getElementById("referral-code");
     if (codeElem) codeElem.textContent = userData.referral_code || "NO DISPONIBLE";
+    
+    const countElem = document.getElementById("ref-count");
+    if (countElem) countElem.textContent = userData.referred_users?.length || 0;
+    
+    const totalElem = document.getElementById("ref-total");
+    if (totalElem) totalElem.textContent = `${userData.referral_earnings || 0} 💎`;
 }
 
 function showModal(id) {
@@ -1627,7 +1667,7 @@ async function saveUserData() {
             diamonds: Math.floor(userData.diamonds || 0),
             // 🏗️ SOLO 4 PRODUCTORES
             lvl_piscina: userData.lvl_piscina || 0,
-            lvl_diversion: userData.lvl_diversion || 0,
+            lvl_fabrica: userData.lvl_fabrica || 0,
             lvl_escuela: userData.lvl_escuela || 0,
             lvl_hospital: userData.lvl_hospital || 0,
             referral_earnings: userData.referral_earnings || 0,
@@ -1701,4 +1741,4 @@ window.disconnectWallet = disconnectWallet;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 
-console.log("✅ Ton City Game - Versión final con solo 4 productores");
+console.log("✅ Ton City Game - Versión final con 8 edificios y retiros mínimos de 5 TON");
