@@ -404,6 +404,36 @@
             display: block;
         }
         
+        /* INSTRUCCIONES DE JUEGOS */
+        .game-instructions {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border-left: 4px solid #fbbf24;
+        }
+        
+        .game-instructions h4 {
+            color: #fbbf24;
+            margin: 0 0 10px 0;
+        }
+        
+        .game-instructions p {
+            margin: 5px 0;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        
+        .game-instructions ul {
+            margin: 5px 0;
+            padding-left: 20px;
+            color: #94a3b8;
+        }
+        
+        .game-instructions li {
+            margin: 3px 0;
+        }
+        
         .game-display {
             background: #0f172a;
             border: 2px solid #fbbf24;
@@ -480,6 +510,12 @@
             border-radius: 25px;
             font-size: 24px;
             margin: 0;
+        }
+        
+        .bet-controls span {
+            font-size: 24px;
+            min-width: 60px;
+            text-align: center;
         }
         
         .game-buttons {
@@ -738,6 +774,18 @@
             color: #facc15;
             font-weight: bold;
         }
+        
+        .balance-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #facc15;
+            text-align: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: #0f172a;
+            border-radius: 12px;
+            border: 2px solid #facc15;
+        }
     </style>
 </head>
 <body>
@@ -802,28 +850,28 @@
         </div>
         
         <!-- 🔵 PISCINA -->
-        <div class="card" style="border: 1px solid #38bdf8;" onclick="openStore()">
+        <div class="card" style="border: 1px solid #38bdf8;">
             <i class="fa-solid fa-water-ladder pool"></i>
             <h3>Piscina</h3>
             <small>Lvl: <span id="lvl_piscina" style="color: #38bdf8;">0</span></small>
         </div>
         
         <!-- 🟣 FÁBRICA -->
-        <div class="card" style="border: 1px solid #a78bfa;" onclick="openStore()">
+        <div class="card" style="border: 1px solid #a78bfa;">
             <i class="fa-solid fa-industry factory"></i>
             <h3>Fábrica</h3>
             <small>Lvl: <span id="lvl_fabrica" style="color: #a78bfa;">0</span></small>
         </div>
         
         <!-- 🟤 ESCUELA -->
-        <div class="card" style="border: 1px solid #a16207;" onclick="openStore()">
+        <div class="card" style="border: 1px solid #a16207;">
             <i class="fa-solid fa-school school"></i>
             <h3>Escuela</h3>
             <small>Lvl: <span id="lvl_escuela" style="color: #a16207;">0</span></small>
         </div>
         
         <!-- 🔴 HOSPITAL -->
-        <div class="card" style="border: 1px solid #f87171;" onclick="openStore()">
+        <div class="card" style="border: 1px solid #f87171;">
             <i class="fa-solid fa-hospital hospital"></i>
             <h3>Hospital</h3>
             <small>Lvl: <span id="lvl_hospital" style="color: #f87171;">0</span></small>
@@ -906,6 +954,15 @@
     <!-- MODAL DE HIGH/LOW -->
     <div class="modal" id="modalHighLow">
         <h3>📊 High/Low (4 Dígitos)</h3>
+        
+        <div class="game-instructions">
+            <h4>📋 Cómo jugar:</h4>
+            <p>🎯 Elige <span style="color: #3b82f6;">LOW</span> (0000-4999) o <span style="color: #ef4444;">HIGH</span> (5000-9999)</p>
+            <p>💎 Apuesta la cantidad que desees</p>
+            <p>💰 Si aciertas, recibes el doble de tu apuesta</p>
+            <p>📊 Probabilidad: 48.5% de ganar</p>
+        </div>
+        
         <div class="game-display">
             <div class="number-display" id="hl-number">0000</div>
             <div id="hl-result" class="info-text">Selecciona una opción</div>
@@ -913,7 +970,7 @@
         
         <div class="bet-controls">
             <button onclick="cambiarApuesta('hl', -10)">-10</button>
-            <span style="font-size: 24px;" id="hl-bet">10</span>
+            <span id="hl-bet">10</span>
             <button onclick="cambiarApuesta('hl', 10)">+10</button>
         </div>
         
@@ -932,6 +989,19 @@
     <!-- MODAL DE RULETA -->
     <div class="modal" id="modalRuleta">
         <h3>🎡 Ruleta Clásica</h3>
+        
+        <div class="game-instructions">
+            <h4>📋 Cómo jugar:</h4>
+            <p>🎯 Elige tipo de apuesta:</p>
+            <ul>
+                <li>🔴⚫ Rojo/Negro (x2)</li>
+                <li>🟢 Par/Impar (x2)</li>
+                <li>⬇️⬆️ Bajo/Alto (x2)</li>
+                <li>🎯 Número exacto (x36)</li>
+            </ul>
+            <p>📊 Probabilidad en apuestas x2: 48.6%</p>
+        </div>
+        
         <div class="game-display">
             <div class="number-display" id="ruleta-number">0</div>
             <div id="ruleta-result" class="info-text">Elige una apuesta</div>
@@ -939,7 +1009,7 @@
         
         <div class="bet-controls">
             <button onclick="cambiarApuesta('ruleta', -10)">-10</button>
-            <span style="font-size: 24px;" id="ruleta-bet">10</span>
+            <span id="ruleta-bet">10</span>
             <button onclick="cambiarApuesta('ruleta', 10)">+10</button>
         </div>
         
@@ -963,6 +1033,21 @@
     <!-- MODAL DE TRAGAPERRAS -->
     <div class="modal" id="modalTragaperras">
         <h3>🎰 Tragamonedas Cripto</h3>
+        
+        <div class="game-instructions">
+            <h4>📋 Cómo jugar:</h4>
+            <p>🎰 Gira los 3 rodillos</p>
+            <p>💎 Si los 3 símbolos son iguales, ¡GANAS!</p>
+            <p>💰 Multiplicadores:</p>
+            <ul>
+                <li>💎💎💎 x50 (Jackpot)</li>
+                <li>₿₿₿ x20</li>
+                <li>ΞΞΞ x10</li>
+                <li>🪙🪙🪙 x5</li>
+                <li>📈📈📈 / 📉📉📉 x2</li>
+            </ul>
+        </div>
+        
         <div class="game-display">
             <div class="slot-machine">
                 <div class="slot" id="slot1">💎</div>
@@ -974,7 +1059,7 @@
         
         <div class="bet-controls">
             <button onclick="cambiarApuesta('tragaperras', -5)">-5</button>
-            <span style="font-size: 24px;" id="tragaperras-bet">5</span>
+            <span id="tragaperras-bet">5</span>
             <button onclick="cambiarApuesta('tragaperras', 5)">+5</button>
         </div>
         
@@ -990,6 +1075,22 @@
     <!-- MODAL DE DADOS -->
     <div class="modal" id="modalDados">
         <h3>🎲 Dados Mayor/Menor</h3>
+        
+        <div class="game-instructions">
+            <h4>📋 Cómo jugar:</h4>
+            <p>🎯 Apuesta por el resultado de la suma de 2 dados:</p>
+            <ul>
+                <li>⬇️ MENOR (2-6) → x2</li>
+                <li>⬆️ MAYOR (8-12) → x2</li>
+                <li>🎯 EXACTO (7) → x5</li>
+            </ul>
+            <p>📊 Probabilidades:</p>
+            <ul>
+                <li>MENOR/MAYOR: 40%</li>
+                <li>EXACTO: 15%</li>
+            </ul>
+        </div>
+        
         <div class="game-display">
             <div class="dice-display">
                 <div class="dice" id="dado1">⚀</div>
@@ -1001,7 +1102,7 @@
         
         <div class="bet-controls">
             <button onclick="cambiarApuesta('dados', -10)">-10</button>
-            <span style="font-size: 24px;" id="dados-bet">10</span>
+            <span id="dados-bet">10</span>
             <button onclick="cambiarApuesta('dados', 10)">+10</button>
         </div>
         
@@ -1021,6 +1122,20 @@
     <!-- MODAL DE LOTERÍA -->
     <div class="modal" id="modalLoteria">
         <h3>🎟️ Lotería Digital</h3>
+        
+        <div class="game-instructions">
+            <h4>📋 Cómo jugar:</h4>
+            <p>🎫 Compra boletos de 4 dígitos</p>
+            <p>🎯 El sistema sortea un número ganador</p>
+            <p>💰 Premios por coincidencias exactas:</p>
+            <ul>
+                <li>4 cifras: x500</li>
+                <li>3 cifras: x50</li>
+                <li>2 cifras: x5</li>
+                <li>1 cifra: recuperas tu boleto</li>
+            </ul>
+        </div>
+        
         <div class="game-display">
             <div class="number-display" id="loteria-number">0000</div>
             <div id="loteria-boletos"></div>
@@ -1029,7 +1144,7 @@
         
         <div class="bet-controls">
             <button onclick="cambiarApuesta('loteria', -1)">-1</button>
-            <span style="font-size: 24px;" id="loteria-bet">1</span>
+            <span id="loteria-bet">1</span>
             <button onclick="cambiarApuesta('loteria', 1)">+1</button>
         </div>
         
@@ -1143,6 +1258,10 @@
             ⚠️ SOLO DOMINGOS 00:00 - 23:59 ⚠️
         </div>
         
+        <div class="balance-display">
+            <span id="available-diamonds" style="font-size: 36px;">0</span> 💎
+        </div>
+        
         <div class="stat">
             <span>Pool disponible</span>
             <span id="pool-amount" style="color: #10b981;">0 TON</span>
@@ -1154,13 +1273,13 @@
         </div>
         
         <div class="stat" style="background: #1e293b;">
-            <span>Tasa actual</span>
-            <span id="current-price" style="color: #facc15; font-weight: bold;">0 TON/💎</span>
+            <span>Valor de 1 TON</span>
+            <span id="current-price" style="color: #facc15; font-weight: bold;">0 💎</span>
         </div>
         
         <div class="stat">
-            <span>Tus diamantes</span>
-            <span id="available-diamonds" style="color: #4ade80;">0 💎</span>
+            <span>Mínimo para retirar</span>
+            <span id="min-withdraw" style="color: #ef4444;">5 TON</span>
         </div>
         
         <div id="withdraw-status" class="withdraw-info-sunday">
@@ -1169,12 +1288,12 @@
         
         <div class="input-group">
             <label>💎 Diamantes a retirar:</label>
-            <input type="number" id="withdraw-amount" placeholder="Ej: 625" min="1">
+            <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1">
             <p class="info-text" id="withdraw-info">Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
         </div>
         
         <div class="withdraw-limit-info">
-            <i class="fa-solid fa-clock"></i> <strong>Mínimo 5 TON</strong> - Solo domingos 00:00 a 23:59
+            <i class="fa-solid fa-clock"></i> <strong>Mínimo 5 TON</strong> - Solo domingos
         </div>
         
         <div class="withdraw-limit-info" style="border-color: #ef4444;">
