@@ -22,11 +22,16 @@
             --pink: #f472b6;
             --sunday-bg: #7b341e;
             --sunday-border: #f97316;
-            --school: #a78bfa;
+            --school: #a16207;
             --hospital: #f87171;
+            --factory: #a78bfa;
             --daily: #f59e0b;
             --ads: #f97316;
-            --casino: #fbbf24;
+            --casino: #f97316;
+            --bank: #facc15;
+            --store: #3b82f6;
+            --park: #10b981;
+            --pool: #38bdf8;
             --win: #4ade80;
             --lose: #ef4444;
         }
@@ -191,16 +196,15 @@
             margin: 4px 0;
         }
         
-        .green { color: var(--green); }
-        .blue { color: var(--accent); }
-        .orange { color: var(--orange); }
-        .pink { color: var(--pink); }
-        .yellow { color: var(--primary); }
-        .purple { color: var(--school); }
-        .red { color: var(--hospital); }
-        .daily { color: var(--daily); }
-        .ads { color: var(--ads); }
+        /* 🏢 COLORES POR EDIFICIO */
+        .bank { color: var(--bank); }
+        .store { color: var(--store); }
         .casino { color: var(--casino); }
+        .park { color: var(--park); }
+        .pool { color: var(--pool); }
+        .factory { color: var(--factory); }
+        .school { color: var(--school); }
+        .hospital { color: var(--hospital); }
         
         .overlay, .modal {
             position: fixed;
@@ -344,7 +348,7 @@
             display: block !important;
         }
         
-        /* TIENDA - SOLO MEJORAS DE EDIFICIOS */
+        /* TIENDA - SOLO MEJORAS DE 4 PRODUCTORES */
         .store-item {
             background: #0f172a;
             padding: 15px;
@@ -714,6 +718,16 @@
             border: 1px dashed #f97316;
         }
         
+        .withdraw-important {
+            background: #f97316;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
         .week-indicator {
             background: #0f172a;
             padding: 8px 12px;
@@ -751,74 +765,88 @@
     <div class="central" onclick="openCentral()">
         <i class="fa-solid fa-city"></i>
         <h2>Edificio Central</h2>
-        <small>Estadísticas generales</small>
+        <small>Estadísticas de producción</small>
         <div id="central-sunday-indicator" style="display: none; margin-top: 8px; font-size: 12px; background: #f97316; color: white; padding: 4px; border-radius: 20px;">
             ⏸️ Producción pausada (Domingo)
         </div>
     </div>
 
     <div class="grid">
-        <div class="card yellow" onclick="openBank()">
-            <i class="fa-solid fa-building-columns"></i>
+        <!-- 🟡 BANCO -->
+        <div class="card" style="border: 1px solid #facc15;" onclick="openBank()">
+            <i class="fa-solid fa-building-columns bank"></i>
             <h3>Banco</h3>
-            <small>Comprar TON → 💎</small>
+            <small style="color: #facc15;">Comprar TON → 💎</small>
         </div>
-        <div class="card casino" onclick="openCasino()">
-            <i class="fa-solid fa-dice"></i>
+        
+        <!-- 🔵 TIENDA -->
+        <div class="card" style="border: 1px solid #3b82f6;" onclick="openStore()">
+            <i class="fa-solid fa-cart-shopping store"></i>
+            <h3>Tienda</h3>
+            <small style="color: #3b82f6;">Mejorar edificios</small>
+        </div>
+        
+        <!-- 🟠 CASINO -->
+        <div class="card" style="border: 1px solid #f97316;" onclick="openCasino()">
+            <i class="fa-solid fa-dice casino"></i>
             <h3>Casino</h3>
-            <small>5 juegos de azar</small>
+            <small style="color: #f97316;">5 juegos de azar</small>
         </div>
-        <div class="card orange">
-            <i class="fa-solid fa-dice"></i>
-            <h3>Casino</h3>
-            <small>Lvl: <span id="lvl_casino">0</span></small>
-        </div>
-        <div class="card blue">
-            <i class="fa-solid fa-water-ladder"></i>
-            <h3>Piscina</h3>
-            <small>Lvl: <span id="lvl_piscina">0</span></small>
-        </div>
-        <div class="card purple" onclick="showAdsModal()">
-            <i class="fa-solid fa-tree"></i>
+        
+        <!-- 🟢 PARQUE -->
+        <div class="card" style="border: 1px solid #10b981;" onclick="showAdsModal()">
+            <i class="fa-solid fa-tree park"></i>
             <h3>Parque</h3>
-            <small>Ver anuncio → 30 💎</small>
+            <small style="color: #10b981;">Ver anuncio → 30 💎</small>
             <div id="park-timer" style="font-size: 10px; color: #f97316; margin-top: 5px;"></div>
         </div>
-        <div class="card pink">
-            <i class="fa-solid fa-gamepad"></i>
-            <h3>Diversión</h3>
-            <small>Lvl: <span id="lvl_diversion">0</span></small>
+        
+        <!-- 🔵 PISCINA -->
+        <div class="card" style="border: 1px solid #38bdf8;" onclick="openStore()">
+            <i class="fa-solid fa-water-ladder pool"></i>
+            <h3>Piscina</h3>
+            <small>Lvl: <span id="lvl_piscina" style="color: #38bdf8;">0</span></small>
         </div>
-        <div class="card purple">
-            <i class="fa-solid fa-school"></i>
+        
+        <!-- 🟣 FÁBRICA -->
+        <div class="card" style="border: 1px solid #a78bfa;" onclick="openStore()">
+            <i class="fa-solid fa-industry factory"></i>
+            <h3>Fábrica</h3>
+            <small>Lvl: <span id="lvl_fabrica" style="color: #a78bfa;">0</span></small>
+        </div>
+        
+        <!-- 🟤 ESCUELA -->
+        <div class="card" style="border: 1px solid #a16207;" onclick="openStore()">
+            <i class="fa-solid fa-school school"></i>
             <h3>Escuela</h3>
-            <small>Lvl: <span id="lvl_escuela">0</span></small>
+            <small>Lvl: <span id="lvl_escuela" style="color: #a16207;">0</span></small>
         </div>
-        <div class="card red">
-            <i class="fa-solid fa-hospital"></i>
+        
+        <!-- 🔴 HOSPITAL -->
+        <div class="card" style="border: 1px solid #f87171;" onclick="openStore()">
+            <i class="fa-solid fa-hospital hospital"></i>
             <h3>Hospital</h3>
-            <small>Lvl: <span id="lvl_hospital">0</span></small>
+            <small>Lvl: <span id="lvl_hospital" style="color: #f87171;">0</span></small>
         </div>
     </div>
 
     <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
+    <!-- 🏛️ EDIFICIO CENTRAL (SOLO PRODUCTORES) -->
     <div class="modal" id="centralModal">
         <h3>🏛 Edificio Central</h3>
-        <div class="stat"><span>Tienda</span><span id="s_tienda">0</span></div>
-        <div class="stat"><span>Casino</span><span id="s_casino">0</span></div>
-        <div class="stat"><span>Piscina</span><span id="s_piscina">0</span></div>
-        <div class="stat"><span>Parque</span><span id="s_parque">0</span></div>
-        <div class="stat"><span>Diversión</span><span id="s_diversion">0</span></div>
-        <div class="stat"><span>Escuela</span><span id="s_escuela">0</span></div>
-        <div class="stat"><span>Hospital</span><span id="s_hospital">0</span></div>
+        <div class="stat"><span style="color: #38bdf8;">Piscina</span><span id="s_piscina">0</span></div>
+        <div class="stat"><span style="color: #a78bfa;">Fábrica</span><span id="s_fabrica">0</span></div>
+        <div class="stat"><span style="color: #a16207;">Escuela</span><span id="s_escuela">0</span></div>
+        <div class="stat"><span style="color: #f87171;">Hospital</span><span id="s_hospital">0</span></div>
         <div class="stat" style="background:#022c22"><b>Total / hr</b><b id="s_total">0</b></div>
         <div id="production-status-modal" style="margin-top: 10px;"></div>
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
+    <!-- 🟡 BANCO -->
     <div class="modal" id="modalBank">
-        <h3>🏦 Banco TON</h3>
+        <h3 style="color: #facc15;">🏦 Banco TON</h3>
         <div id="ton-connect-button"></div>
         <div id="wallet-info" class="hidden">
             <p><i class="fa-solid fa-wallet" style="color: #10b981;"></i> <b>Wallet conectada</b> <span class="wallet-badge">✓</span></p>
@@ -828,15 +856,16 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
+    <!-- 🔵 TIENDA (SOLO MEJORAS DE 4 PRODUCTORES) -->
     <div class="modal" id="modalStore">
-        <h3>🏪 Tienda de Mejoras</h3>
+        <h3 style="color: #3b82f6;">🏪 Tienda de Mejoras</h3>
         <div id="storeList"></div>
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL DEL CASINO (MENÚ PRINCIPAL) -->
+    <!-- 🟠 CASINO -->
     <div class="modal" id="modalCasino">
-        <h3>🎰 Casino - 5 Juegos</h3>
+        <h3 style="color: #f97316;">🎰 Casino - 5 Juegos</h3>
         <p class="info-text">Elige un juego para comenzar</p>
         
         <div class="casino-menu">
@@ -1057,9 +1086,9 @@
 
     <!-- MODAL DE ANUNCIOS DEL PARQUE -->
     <div class="modal" id="modalAds">
-        <h3>🌳 Parque - Anuncios</h3>
+        <h3 style="color: #10b981;">🌳 Parque - Anuncios</h3>
         <div style="text-align: center; margin-bottom: 15px;">
-            <i class="fa-solid fa-tree" style="font-size: 48px; color: #f97316;"></i>
+            <i class="fa-solid fa-tree" style="font-size: 48px; color: #10b981;"></i>
         </div>
         
         <div class="stat">
@@ -1089,6 +1118,7 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
+    <!-- MODAL DE AMIGOS -->
     <div class="modal" id="modalFriends">
         <h3>👥 Sistema de Amigos</h3>
         <div class="referral-code">
@@ -1101,12 +1131,16 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL DE RETIRO SEMANAL -->
+    <!-- MODAL DE RETIRO SEMANAL (ACTUALIZADO) -->
     <div class="modal" id="modalWithdraw">
         <h3>💰 Retiro Semanal <span class="withdraw-sunday-badge">DOMINGOS</span></h3>
         
         <div style="text-align: center; margin-bottom: 10px;">
             <span class="week-indicator" id="week-indicator">Semana #0</span>
+        </div>
+        
+        <div class="withdraw-important">
+            ⚠️ SOLO DOMINGOS 00:00 - 23:59 ⚠️
         </div>
         
         <div class="stat">
@@ -1135,16 +1169,20 @@
         
         <div class="input-group">
             <label>💎 Diamantes a retirar:</label>
-            <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1">
+            <input type="number" id="withdraw-amount" placeholder="Ej: 625" min="1">
             <p class="info-text" id="withdraw-info">Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
         </div>
         
         <div class="withdraw-limit-info">
-            <i class="fa-solid fa-clock"></i> <strong>1 retiro por semana</strong> - Solo domingos 00:00 a 23:59
+            <i class="fa-solid fa-clock"></i> <strong>Mínimo 5 TON</strong> - Solo domingos 00:00 a 23:59
+        </div>
+        
+        <div class="withdraw-limit-info" style="border-color: #ef4444;">
+            <i class="fa-solid fa-fire"></i> <strong>🔥 Los diamantes no retirados se QUEMAN al final del domingo</strong>
         </div>
         
         <button onclick="processWithdraw()" id="withdraw-btn" style="background: #10b981; font-size: 16px;">
-            <i class="fa-solid fa-money-bill-transfer"></i> RETIRAR (1 vez/semana)
+            <i class="fa-solid fa-money-bill-transfer"></i> RETIRAR (Mín. 5 TON)
         </button>
         
         <button class="close" onclick="closeAll()">Cancelar</button>
