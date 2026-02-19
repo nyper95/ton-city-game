@@ -8,6 +8,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://sdk.adsgram.ai/js/sdk.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
     <style>
@@ -25,6 +26,9 @@
             --hospital: #f87171;
             --daily: #f59e0b;
             --ads: #f97316;
+            --casino: #fbbf24;
+            --win: #4ade80;
+            --lose: #ef4444;
         }
         
         body {
@@ -196,6 +200,7 @@
         .red { color: var(--hospital); }
         .daily { color: var(--daily); }
         .ads { color: var(--ads); }
+        .casino { color: var(--casino); }
         
         .overlay, .modal {
             position: fixed;
@@ -339,7 +344,7 @@
             display: block !important;
         }
         
-        /* TIENDA */
+        /* TIENDA - SOLO MEJORAS DE EDIFICIOS */
         .store-item {
             background: #0f172a;
             padding: 15px;
@@ -359,6 +364,148 @@
             color: #facc15;
             font-weight: bold;
             font-size: 18px;
+        }
+        
+        /* CASINO - JUEGOS */
+        .casino-menu {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .casino-game-card {
+            background: #0f172a;
+            border: 1px solid #fbbf24;
+            border-radius: 12px;
+            padding: 15px 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .casino-game-card:hover {
+            background: #1e293b;
+            transform: scale(1.02);
+        }
+        
+        .casino-game-card i {
+            font-size: 24px;
+            color: #fbbf24;
+            margin-bottom: 5px;
+        }
+        
+        .casino-game-card span {
+            font-size: 12px;
+            display: block;
+        }
+        
+        .game-display {
+            background: #0f172a;
+            border: 2px solid #fbbf24;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .number-display {
+            font-size: 48px;
+            font-weight: bold;
+            font-family: monospace;
+            background: #020617;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 10px 0;
+            letter-spacing: 5px;
+        }
+        
+        .dice-display {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .dice {
+            width: 60px;
+            height: 60px;
+            background: white;
+            color: black;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+        
+        .slot-machine {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .slot {
+            width: 60px;
+            height: 80px;
+            background: white;
+            color: black;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: bold;
+            border: 2px solid #fbbf24;
+        }
+        
+        .bet-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .bet-controls button {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            font-size: 24px;
+            margin: 0;
+        }
+        
+        .game-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .win-message {
+            color: #4ade80;
+            font-weight: bold;
+            font-size: 20px;
+            animation: pulse 1s;
+        }
+        
+        .lose-message {
+            color: #ef4444;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .limit-info {
+            background: #0f172a;
+            padding: 8px;
+            border-radius: 6px;
+            margin: 5px 0;
+            font-size: 0.8rem;
+            color: #f59e0b;
+            border: 1px dashed #f59e0b;
         }
         
         /* RECOMPENSA DIARIA */
@@ -408,7 +555,7 @@
             margin: 10px 0;
         }
         
-        /* ANUNCIOS - ESTILOS ESPECÍFICOS */
+        /* ANUNCIOS */
         .ads-item {
             background: linear-gradient(135deg, #f97316, #c2410c);
             padding: 15px;
@@ -590,7 +737,7 @@
         <i class="fa-solid fa-calendar-day"></i> ¡RECOMPENSA DIARIA DISPONIBLE! Reclama tus diamantes <i class="fa-solid fa-arrow-right"></i>
     </div>
 
-    <!-- BANNER DE ANUNCIOS DISPONIBLES (30💎) -->
+    <!-- BANNER DE ANUNCIOS DISPONIBLES -->
     <div id="ads-banner" class="ads-available" onclick="showAdsModal()" style="display: none;">
         <i class="fa-solid fa-circle-play"></i> ¡PARQUE DISPONIBLE! Gana 30 💎 viendo un anuncio <i class="fa-solid fa-circle-play"></i>
     </div>
@@ -616,10 +763,10 @@
             <h3>Banco</h3>
             <small>Comprar TON → 💎</small>
         </div>
-        <div class="card green" onclick="openStore()">
-            <i class="fa-solid fa-cart-shopping"></i>
-            <h3>Tienda</h3>
-            <small>Mejoras</small>
+        <div class="card casino" onclick="openCasino()">
+            <i class="fa-solid fa-dice"></i>
+            <h3>Casino</h3>
+            <small>5 juegos de azar</small>
         </div>
         <div class="card orange">
             <i class="fa-solid fa-dice"></i>
@@ -682,9 +829,189 @@
     </div>
 
     <div class="modal" id="modalStore">
-        <h3>🛒 Tienda de Mejoras</h3>
+        <h3>🏪 Tienda de Mejoras</h3>
         <div id="storeList"></div>
         <button class="close" onclick="closeAll()">Cerrar</button>
+    </div>
+
+    <!-- MODAL DEL CASINO (MENÚ PRINCIPAL) -->
+    <div class="modal" id="modalCasino">
+        <h3>🎰 Casino - 5 Juegos</h3>
+        <p class="info-text">Elige un juego para comenzar</p>
+        
+        <div class="casino-menu">
+            <div class="casino-game-card" onclick="abrirJuego('highlow')">
+                <i class="fa-solid fa-chart-simple"></i>
+                <span>High/Low</span>
+                <small style="font-size: 10px;">4 dígitos</small>
+            </div>
+            <div class="casino-game-card" onclick="abrirJuego('ruleta')">
+                <i class="fa-solid fa-circle"></i>
+                <span>Ruleta</span>
+                <small style="font-size: 10px;">Clásica</small>
+            </div>
+            <div class="casino-game-card" onclick="abrirJuego('tragaperras')">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Tragaperras</span>
+                <small style="font-size: 10px;">Cripto</small>
+            </div>
+            <div class="casino-game-card" onclick="abrirJuego('dados')">
+                <i class="fa-solid fa-dice"></i>
+                <span>Dados</span>
+                <small style="font-size: 10px;">Mayor/Menor</small>
+            </div>
+            <div class="casino-game-card" onclick="abrirJuego('loteria')">
+                <i class="fa-solid fa-ticket"></i>
+                <span>Lotería</span>
+                <small style="font-size: 10px;">4 dígitos</small>
+            </div>
+        </div>
+        
+        <div class="limit-info" id="casino-limit-info">
+            🎲 Jugadores sin inversión: límite diario por juego
+        </div>
+        
+        <button class="close" onclick="closeAll()">Cerrar</button>
+    </div>
+
+    <!-- MODAL DE HIGH/LOW -->
+    <div class="modal" id="modalHighLow">
+        <h3>📊 High/Low (4 Dígitos)</h3>
+        <div class="game-display">
+            <div class="number-display" id="hl-number">0000</div>
+            <div id="hl-result" class="info-text">Selecciona una opción</div>
+        </div>
+        
+        <div class="bet-controls">
+            <button onclick="cambiarApuesta('hl', -10)">-10</button>
+            <span style="font-size: 24px;" id="hl-bet">10</span>
+            <button onclick="cambiarApuesta('hl', 10)">+10</button>
+        </div>
+        
+        <div class="game-buttons">
+            <button onclick="jugarHighLow('low')" style="background: #3b82f6;">LOW (0000-4999)</button>
+            <button onclick="jugarHighLow('high')" style="background: #ef4444;">HIGH (5000-9999)</button>
+        </div>
+        
+        <div class="limit-info" id="hl-limit">
+            Jugadas hoy: 0/20
+        </div>
+        
+        <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
+    </div>
+
+    <!-- MODAL DE RULETA -->
+    <div class="modal" id="modalRuleta">
+        <h3>🎡 Ruleta Clásica</h3>
+        <div class="game-display">
+            <div class="number-display" id="ruleta-number">0</div>
+            <div id="ruleta-result" class="info-text">Elige una apuesta</div>
+        </div>
+        
+        <div class="bet-controls">
+            <button onclick="cambiarApuesta('ruleta', -10)">-10</button>
+            <span style="font-size: 24px;" id="ruleta-bet">10</span>
+            <button onclick="cambiarApuesta('ruleta', 10)">+10</button>
+        </div>
+        
+        <div class="game-buttons">
+            <button onclick="jugarRuleta('rojo')" style="background: #ef4444;">🔴 Rojo (x2)</button>
+            <button onclick="jugarRuleta('negro')" style="background: #000; border: 1px solid white;">⚫ Negro (x2)</button>
+            <button onclick="jugarRuleta('par')">🟢 Par (x2)</button>
+            <button onclick="jugarRuleta('impar')">🟢 Impar (x2)</button>
+            <button onclick="jugarRuleta('bajo')" style="background: #3b82f6;">⬇️ Bajo 1-18 (x2)</button>
+            <button onclick="jugarRuleta('alto')" style="background: #f97316;">⬆️ Alto 19-36 (x2)</button>
+            <button onclick="jugarRuleta('numero')" style="background: #facc15; color: black; grid-column: span 2;">🎯 Número exacto (x36)</button>
+        </div>
+        
+        <div class="limit-info" id="ruleta-limit">
+            Jugadas hoy: 0/15
+        </div>
+        
+        <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
+    </div>
+
+    <!-- MODAL DE TRAGAPERRAS -->
+    <div class="modal" id="modalTragaperras">
+        <h3>🎰 Tragamonedas Cripto</h3>
+        <div class="game-display">
+            <div class="slot-machine">
+                <div class="slot" id="slot1">💎</div>
+                <div class="slot" id="slot2">💎</div>
+                <div class="slot" id="slot3">💎</div>
+            </div>
+            <div id="tragaperras-result" class="info-text">¡Gira y gana!</div>
+        </div>
+        
+        <div class="bet-controls">
+            <button onclick="cambiarApuesta('tragaperras', -5)">-5</button>
+            <span style="font-size: 24px;" id="tragaperras-bet">5</span>
+            <button onclick="cambiarApuesta('tragaperras', 5)">+5</button>
+        </div>
+        
+        <button onclick="jugarTragaperras()" style="background: #fbbf24; color: black;">🎲 GIRAR</button>
+        
+        <div class="limit-info" id="tragaperras-limit">
+            Jugadas hoy: 0/30
+        </div>
+        
+        <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
+    </div>
+
+    <!-- MODAL DE DADOS -->
+    <div class="modal" id="modalDados">
+        <h3>🎲 Dados Mayor/Menor</h3>
+        <div class="game-display">
+            <div class="dice-display">
+                <div class="dice" id="dado1">⚀</div>
+                <div class="dice" id="dado2">⚀</div>
+            </div>
+            <div style="font-size: 24px;" id="dados-suma">Suma: 2</div>
+            <div id="dados-result" class="info-text">Elige una opción</div>
+        </div>
+        
+        <div class="bet-controls">
+            <button onclick="cambiarApuesta('dados', -10)">-10</button>
+            <span style="font-size: 24px;" id="dados-bet">10</span>
+            <button onclick="cambiarApuesta('dados', 10)">+10</button>
+        </div>
+        
+        <div class="game-buttons">
+            <button onclick="jugarDados('menor')" style="background: #3b82f6;">⬇️ MENOR (2-6) x2</button>
+            <button onclick="jugarDados('mayor')" style="background: #f97316;">⬆️ MAYOR (8-12) x2</button>
+            <button onclick="jugarDados('exacto')" style="background: #facc15; color: black; grid-column: span 2;">🎯 EXACTO (7) x5</button>
+        </div>
+        
+        <div class="limit-info" id="dados-limit">
+            Jugadas hoy: 0/20
+        </div>
+        
+        <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
+    </div>
+
+    <!-- MODAL DE LOTERÍA -->
+    <div class="modal" id="modalLoteria">
+        <h3>🎟️ Lotería Digital</h3>
+        <div class="game-display">
+            <div class="number-display" id="loteria-number">0000</div>
+            <div id="loteria-boletos"></div>
+            <div id="loteria-result" class="info-text">Compra boletos y juega</div>
+        </div>
+        
+        <div class="bet-controls">
+            <button onclick="cambiarApuesta('loteria', -1)">-1</button>
+            <span style="font-size: 24px;" id="loteria-bet">1</span>
+            <button onclick="cambiarApuesta('loteria', 1)">+1</button>
+        </div>
+        
+        <button onclick="comprarBoletos()" style="background: #10b981;">🎫 Comprar Boletos</button>
+        <button onclick="jugarLoteria()" style="background: #fbbf24; color: black;">🎲 INICIAR SORTEO</button>
+        
+        <div class="limit-info" id="loteria-limit">
+            Boletos hoy: 0/5
+        </div>
+        
+        <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
     </div>
 
     <!-- MODAL DE RECOMPENSA DIARIA -->
@@ -728,7 +1055,7 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL DE ANUNCIOS DEL PARQUE (30💎) -->
+    <!-- MODAL DE ANUNCIOS DEL PARQUE -->
     <div class="modal" id="modalAds">
         <h3>🌳 Parque - Anuncios</h3>
         <div style="text-align: center; margin-bottom: 15px;">
