@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN COMPLETA (CON NUEVA DIRECCIÓN)
+// TON CITY GAME - VERSIÓN FINAL (SOLO 4 PRODUCTORES)
 // ======================================================
 
 console.log("✅ Ton City Game - Inicializando...");
@@ -7,10 +7,10 @@ console.log("✅ Ton City Game - Inicializando...");
 const tg = window.Telegram.WebApp;
 
 // ==========================================
-// CONFIGURACIÓN DE BILLETERAS Y PRECIOS (ACTUALIZADO)
+// CONFIGURACIÓN DE BILLETERAS Y PRECIOS
 // ==========================================
 const BILLETERA_PROPIETARIO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw"; 
-const BILLETERA_POOL = "UQBuoEgT5DmcoEQ_nl6YwR0Q86fZWY4baACuX80EegWG49h2"; // ← NUEVA DIRECCIÓN
+const BILLETERA_POOL = "UQBuoEgT5DmcoEQ_nl6YwR0Q86fZWY4baACuX80EegWG49h2"; // NUEVA DIRECCIÓN
 const PRECIO_COMPRA = 0.008;
 
 // ==========================================
@@ -42,20 +42,36 @@ let userData = {
     id: null,
     username: "Cargando...",
     diamonds: 0,
-    lvl_tienda: 0, 
-    lvl_casino: 0, 
-    lvl_piscina: 0, 
-    lvl_parque: 0, 
+    // 🏗️ SOLO EDIFICIOS PRODUCTORES (4)
+    lvl_piscina: 0,
     lvl_diversion: 0,
     lvl_escuela: 0,
     lvl_hospital: 0,
+    // 👥 REFERIDOS
     referral_code: null,
+    referral_earnings: 0,
+    referred_users: [],
+    // ⏱️ CONTROL DE TIEMPO
     last_online: null,
     last_production_update: null,
+    // 💰 RETIROS SEMANALES
     last_withdraw_week: null,
+    // 📺 ANUNCIOS
     last_ad_watch: null,
+    // 📅 RECOMPENSA DIARIA
     daily_streak: 0,
-    last_daily_claim: null
+    last_daily_claim: null,
+    // 💎 ESTADO DE INVERSOR
+    haInvertido: false,
+    // 🎰 LÍMITES DIARIOS (SOLO MEMORIA)
+    jugadasHoy: {
+        highlow: 0,
+        ruleta: 0,
+        tragaperras: 0,
+        dados: 0,
+        loteria: 0,
+        fecha: new Date().toDateString()
+    }
 };
 
 let globalPoolData = { 
@@ -63,11 +79,9 @@ let globalPoolData = {
     total_diamonds: 0 
 };
 
+// 🏗️ SOLO VALORES DE PRODUCCIÓN (4 edificios)
 const PROD_VAL = { 
-    tienda: 10, 
-    casino: 25, 
-    piscina: 60, 
-    parque: 15, 
+    piscina: 60,
     diversion: 120,
     escuela: 40,
     hospital: 80
@@ -78,13 +92,10 @@ const PROD_VAL = {
 // ==========================================
 
 function getTotalProductionPerHour() {
-    return (userData.lvl_tienda * PROD_VAL.tienda) +
-           (userData.lvl_casino * PROD_VAL.casino) +
-           (userData.lvl_piscina * PROD_VAL.piscina) +
-           (userData.lvl_parque * PROD_VAL.parque) +
-           (userData.lvl_diversion * PROD_VAL.diversion) +
-           (userData.lvl_escuela * PROD_VAL.escuela) +
-           (userData.lvl_hospital * PROD_VAL.hospital);
+    return (userData.lvl_piscina * 60) +
+           (userData.lvl_diversion * 120) +
+           (userData.lvl_escuela * 40) +
+           (userData.lvl_hospital * 80);
 }
 
 async function calculateOfflineProduction() {
@@ -106,7 +117,82 @@ async function calculateOfflineProduction() {
 }
 
 // ==========================================
-// ADSGRAM - SISTEMA ACTUALIZADO 2026
+// SISTEMA DE LÍMITES PARA JUEGOS
+// ==========================================
+
+function puedeJugar(juegoId, cantidad = 1) {
+    if (userData.haInvertido) return true;
+    
+    const hoy = new Date().toDateString();
+    if (userData.jugadasHoy.fecha !== hoy) {
+        userData.jugadasHoy = {
+            highlow: 0,
+            ruleta: 0,
+            tragaperras: 0,
+            dados: 0,
+            loteria: 0,
+            fecha: hoy
+        };
+    }
+    
+    const limites = {
+        highlow: 20,
+        ruleta: 15,
+        tragaperras: 30,
+        dados: 20,
+        loteria: 5
+    };
+    
+    return (userData.jugadasHoy[juegoId] + cantidad) <= limites[juegoId];
+}
+
+function registrarJugada(juegoId, cantidad = 1) {
+    if (!userData.haInvertido) {
+        userData.jugadasHoy[juegoId] += cantidad;
+        actualizarLimitesUI();
+    }
+}
+
+function actualizarLimitesUI() {
+    const hoy = new Date().toDateString();
+    if (userData.jugadasHoy.fecha !== hoy) {
+        userData.jugadasHoy = {
+            highlow: 0,
+            ruleta: 0,
+            tragaperras: 0,
+            dados: 0,
+            loteria: 0,
+            fecha: hoy
+        };
+    }
+    
+    const limites = {
+        highlow: 20,
+        ruleta: 15,
+        tragaperras: 30,
+        dados: 20,
+        loteria: 5
+    };
+    
+    if (document.getElementById('hl-limit')) {
+        document.getElementById('hl-limit').innerHTML = `Jugadas hoy: ${userData.jugadasHoy.highlow}/${limites.highlow}`;
+    }
+    if (document.getElementById('ruleta-limit')) {
+        document.getElementById('ruleta-limit').innerHTML = `Jugadas hoy: ${userData.jugadasHoy.ruleta}/${limites.ruleta}`;
+    }
+    if (document.getElementById('tragaperras-limit')) {
+        document.getElementById('tragaperras-limit').innerHTML = `Jugadas hoy: ${userData.jugadasHoy.tragaperras}/${limites.tragaperras}`;
+    }
+    if (document.getElementById('dados-limit')) {
+        document.getElementById('dados-limit').innerHTML = `Jugadas hoy: ${userData.jugadasHoy.dados}/${limites.dados}`;
+    }
+    if (document.getElementById('loteria-limit')) {
+        document.getElementById('loteria-limit').innerHTML = `Boletos hoy: ${userData.jugadasHoy.loteria}/${limites.loteria}`;
+    }
+}
+
+// ==========================================
+// ADSGRAM - SISTEMA DE ANUNCIOS
 // ==========================================
 
 function loadAdsgramSafe() {
@@ -153,7 +239,6 @@ async function initAds() {
 }
 
 setTimeout(initAds, 4500);
-
 setTimeout(() => {
     if (!window.Adsgram) {
         console.warn("🚫 Adsgram bloqueado por red / VPN / AdBlock");
@@ -452,15 +537,11 @@ function actualizarBannerDiario() {
 }
 
 // ==========================================
-// SISTEMA DE CONTROL DE PRODUCCIÓN Y RETIROS
+// SISTEMA DE CONTROL DE RETIROS
 // ==========================================
 
 function enVentanaRetiro() {
     return new Date().getDay() === 0;
-}
-
-function produccionActiva() {
-    return !enVentanaRetiro();
 }
 
 function getNumeroSemana() {
@@ -515,7 +596,6 @@ async function initApp() {
             saveUserData();
         });
         
-        actualizarBannerDomingo();
         actualizarTimerParque();
         actualizarBannerAds();
         actualizarBannerDiario();
@@ -528,19 +608,6 @@ async function initApp() {
         
     } catch (error) {
         console.error("❌ Error en initApp:", error);
-    }
-}
-
-function actualizarBannerDomingo() {
-    const sundayBanner = document.getElementById("sunday-banner");
-    const centralIndicator = document.getElementById("central-sunday-indicator");
-    
-    if (enVentanaRetiro()) {
-        if (sundayBanner) sundayBanner.style.display = "block";
-        if (centralIndicator) centralIndicator.style.display = "block";
-    } else {
-        if (sundayBanner) sundayBanner.style.display = "none";
-        if (centralIndicator) centralIndicator.style.display = "none";
     }
 }
 
@@ -578,18 +645,19 @@ async function loadUserFromDB(tgId) {
                 ...data, 
                 id: tgId.toString(),
                 diamonds: oldDiamonds,
-                lvl_tienda: Number(data.lvl_tienda) || 0,
-                lvl_casino: Number(data.lvl_casino) || 0,
+                // 🏗️ SOLO 4 PRODUCTORES
                 lvl_piscina: Number(data.lvl_piscina) || 0,
-                lvl_parque: Number(data.lvl_parque) || 0,
                 lvl_diversion: Number(data.lvl_diversion) || 0,
                 lvl_escuela: Number(data.lvl_escuela) || 0,
                 lvl_hospital: Number(data.lvl_hospital) || 0,
+                referral_earnings: Number(data.referral_earnings) || 0,
+                referred_users: data.referred_users || [],
                 last_production_update: data.last_production_update || data.last_online || new Date().toISOString(),
                 last_withdraw_week: data.last_withdraw_week || null,
                 last_ad_watch: data.last_ad_watch || null,
                 daily_streak: Number(data.daily_streak) || 0,
-                last_daily_claim: data.last_daily_claim || null
+                last_daily_claim: data.last_daily_claim || null,
+                haInvertido: data.haInvertido || false
             };
             
             const offlineEarnings = await calculateOfflineProduction();
@@ -609,20 +677,21 @@ async function loadUserFromDB(tgId) {
                 telegram_id: tgId.toString(),
                 username: userData.username,
                 diamonds: 0,
-                lvl_tienda: 0,
-                lvl_casino: 0,
+                // 🏗️ SOLO 4 PRODUCTORES
                 lvl_piscina: 0,
-                lvl_parque: 0,
                 lvl_diversion: 0,
                 lvl_escuela: 0,
                 lvl_hospital: 0,
                 referral_code: userData.referral_code,
+                referral_earnings: 0,
+                referred_users: [],
                 last_online: new Date().toISOString(),
                 last_production_update: new Date().toISOString(),
                 last_withdraw_week: null,
                 last_ad_watch: null,
                 daily_streak: 0,
-                last_daily_claim: null
+                last_daily_claim: null,
+                haInvertido: false
             }]);
         }
         
@@ -632,6 +701,7 @@ async function loadUserFromDB(tgId) {
         updateReferralUI();
         actualizarTimerParque();
         actualizarDailyUI();
+        actualizarLimitesUI();
         
     } catch (error) {
         console.error("❌ Error cargando usuario:", error);
@@ -639,20 +709,18 @@ async function loadUserFromDB(tgId) {
 }
 
 // ==========================================
-// TIENDA
+// TIENDA (SOLO MEJORAS DE 4 PRODUCTORES)
 // ==========================================
 function renderStore() {
     const storeContainer = document.getElementById("storeList");
     if (!storeContainer) return;
 
+    // 🏗️ SOLO 4 EDIFICIOS PRODUCTORES
     const upgrades = [
-        { name: "Tienda", field: "tienda", price: 1000, prod: PROD_VAL.tienda, color: "#3b82f6", icon: "fa-store" },
-        { name: "Casino", field: "casino", price: 2500, prod: PROD_VAL.casino, color: "#ef4444", icon: "fa-dice" },
-        { name: "Piscina", field: "piscina", price: 5000, prod: PROD_VAL.piscina, color: "#38bdf8", icon: "fa-water-ladder" },
-        { name: "Parque", field: "parque", price: 1500, prod: PROD_VAL.parque, color: "#10b981", icon: "fa-tree" },
-        { name: "Diversión", field: "diversion", price: 10000, prod: PROD_VAL.diversion, color: "#f472b6", icon: "fa-gamepad" },
-        { name: "Escuela", field: "escuela", price: 3000, prod: PROD_VAL.escuela, color: "#a78bfa", icon: "fa-school" },
-        { name: "Hospital", field: "hospital", price: 7500, prod: PROD_VAL.hospital, color: "#f87171", icon: "fa-hospital" }
+        { name: "Piscina", field: "piscina", price: 5000, prod: 60, color: "#38bdf8", icon: "fa-water-ladder" },
+        { name: "Diversión", field: "diversion", price: 10000, prod: 120, color: "#f472b6", icon: "fa-gamepad" },
+        { name: "Escuela", field: "escuela", price: 3000, prod: 40, color: "#a78bfa", icon: "fa-school" },
+        { name: "Hospital", field: "hospital", price: 7500, prod: 80, color: "#f87171", icon: "fa-hospital" }
     ];
 
     let html = `<div class="stat" style="background:#0f172a; margin-bottom: 15px;">
@@ -743,7 +811,6 @@ async function comprarTON(tonAmount) {
         return alert("❌ Conecta tu wallet primero");
     }
 
-    // Calcular diamantes (con mínimo de 100)
     let comprados = Math.floor(tonAmount / PRECIO_COMPRA);
     if (comprados < 100) comprados = 100;
 
@@ -765,6 +832,12 @@ async function comprarTON(tonAmount) {
     try {
         await tonConnectUI.sendTransaction(tx);
         userData.diamonds += comprados;
+        
+        if (!userData.haInvertido) {
+            userData.haInvertido = true;
+            tg.showAlert("🎉 ¡Felicidades! Ahora eres inversor. Sin límites en el casino.");
+        }
+        
         await saveUserData();
         actualizarUI();
         alert(`✅ Compra exitosa! Recibiste ${comprados} 💎`);
@@ -782,7 +855,6 @@ function startProduction() {
     
     setInterval(() => {
         if (!userData.id) return;
-        if (!produccionActiva()) return;
         
         const totalPerHr = getTotalProductionPerHour();
         userData.diamonds += (totalPerHr / 3600);
@@ -796,21 +868,15 @@ function startProduction() {
 
 function updateCentralStats() {
     const prod = {
-        tienda: (userData.lvl_tienda || 0) * PROD_VAL.tienda,
-        casino: (userData.lvl_casino || 0) * PROD_VAL.casino,
-        piscina: (userData.lvl_piscina || 0) * PROD_VAL.piscina,
-        parque: (userData.lvl_parque || 0) * PROD_VAL.parque,
-        diversion: (userData.lvl_diversion || 0) * PROD_VAL.diversion,
-        escuela: (userData.lvl_escuela || 0) * PROD_VAL.escuela,
-        hospital: (userData.lvl_hospital || 0) * PROD_VAL.hospital
+        piscina: (userData.lvl_piscina || 0) * 60,
+        diversion: (userData.lvl_diversion || 0) * 120,
+        escuela: (userData.lvl_escuela || 0) * 40,
+        hospital: (userData.lvl_hospital || 0) * 80
     };
-    const total = Object.values(prod).reduce((a, b) => a + b, 0);
+    const total = prod.piscina + prod.diversion + prod.escuela + prod.hospital;
 
     const ids = {
-        "s_tienda": prod.tienda,
-        "s_casino": prod.casino,
         "s_piscina": prod.piscina,
-        "s_parque": prod.parque,
         "s_diversion": prod.diversion,
         "s_escuela": prod.escuela,
         "s_hospital": prod.hospital,
@@ -826,6 +892,486 @@ function updateCentralStats() {
 function openCentral() {
     updateCentralStats();
     showModal("centralModal");
+}
+
+// ==========================================
+// CASINO - JUEGOS (5 juegos completos)
+// ==========================================
+
+let apuestaActual = {
+    highlow: 10,
+    ruleta: 10,
+    tragaperras: 5,
+    dados: 10,
+    loteria: 1
+};
+
+let boletosComprados = [];
+
+function openCasino() {
+    showModal("modalCasino");
+}
+
+function abrirJuego(juego) {
+    closeAll();
+    switch(juego) {
+        case 'highlow':
+            document.getElementById('hl-number').textContent = '0000';
+            document.getElementById('hl-result').textContent = 'Selecciona una opción';
+            document.getElementById('hl-bet').textContent = apuestaActual.highlow;
+            showModal('modalHighLow');
+            break;
+        case 'ruleta':
+            document.getElementById('ruleta-number').textContent = '0';
+            document.getElementById('ruleta-result').textContent = 'Elige una apuesta';
+            document.getElementById('ruleta-bet').textContent = apuestaActual.ruleta;
+            showModal('modalRuleta');
+            break;
+        case 'tragaperras':
+            document.getElementById('slot1').textContent = '💎';
+            document.getElementById('slot2').textContent = '💎';
+            document.getElementById('slot3').textContent = '💎';
+            document.getElementById('tragaperras-result').textContent = '¡Gira y gana!';
+            document.getElementById('tragaperras-bet').textContent = apuestaActual.tragaperras;
+            showModal('modalTragaperras');
+            break;
+        case 'dados':
+            document.getElementById('dado1').textContent = '⚀';
+            document.getElementById('dado2').textContent = '⚀';
+            document.getElementById('dados-suma').textContent = 'Suma: 2';
+            document.getElementById('dados-result').textContent = 'Elige una opción';
+            document.getElementById('dados-bet').textContent = apuestaActual.dados;
+            showModal('modalDados');
+            break;
+        case 'loteria':
+            document.getElementById('loteria-number').textContent = '0000';
+            document.getElementById('loteria-boletos').innerHTML = '';
+            document.getElementById('loteria-result').textContent = 'Compra boletos y juega';
+            document.getElementById('loteria-bet').textContent = apuestaActual.loteria;
+            boletosComprados = [];
+            showModal('modalLoteria');
+            break;
+    }
+    actualizarLimitesUI();
+}
+
+function cerrarJuego() {
+    closeAll();
+    openCasino();
+}
+
+function cambiarApuesta(juego, delta) {
+    let nueva = apuestaActual[juego] + delta;
+    if (nueva < 1) nueva = 1;
+    
+    const maximos = {
+        highlow: 1000,
+        ruleta: 1000,
+        tragaperras: 500,
+        dados: 1000,
+        loteria: 10
+    };
+    
+    if (nueva > maximos[juego]) nueva = maximos[juego];
+    
+    apuestaActual[juego] = nueva;
+    document.getElementById(`${juego}-bet`).textContent = nueva;
+}
+
+// JUEGO 1: HIGH/LOW
+function jugarHighLow(eleccion) {
+    const apuesta = apuestaActual.highlow;
+    
+    if (userData.diamonds < apuesta) {
+        alert("❌ No tienes suficientes diamantes");
+        return;
+    }
+    
+    if (!puedeJugar('highlow')) {
+        alert("❌ Límite diario alcanzado. Conviértete en inversor comprando TON para jugar sin límites.");
+        return;
+    }
+    
+    userData.diamonds -= apuesta;
+    
+    const gana = Math.random() < 0.485;
+    
+    let numero;
+    if (gana) {
+        numero = eleccion === "high" 
+            ? Math.floor(Math.random() * 5000) + 5000
+            : Math.floor(Math.random() * 5000);
+    } else {
+        numero = eleccion === "high"
+            ? Math.floor(Math.random() * 5000)
+            : Math.floor(Math.random() * 5000) + 5000;
+    }
+    
+    const numeroStr = numero.toString().padStart(4, '0');
+    document.getElementById('hl-number').textContent = numeroStr;
+    
+    const resultado = document.getElementById('hl-result');
+    
+    if (gana) {
+        userData.diamonds += apuesta * 2;
+        resultado.innerHTML = '<span class="win-message">🎉 ¡GANASTE!</span>';
+    } else {
+        resultado.innerHTML = '<span class="lose-message">😞 Has perdido</span>';
+    }
+    
+    registrarJugada('highlow');
+    actualizarUI();
+    saveUserData();
+}
+
+// JUEGO 2: RULETA
+function jugarRuleta(tipo) {
+    const apuesta = apuestaActual.ruleta;
+    
+    if (userData.diamonds < apuesta) {
+        alert("❌ No tienes suficientes diamantes");
+        return;
+    }
+    
+    if (!puedeJugar('ruleta')) {
+        alert("❌ Límite diario alcanzado. Conviértete en inversor comprando TON para jugar sin límites.");
+        return;
+    }
+    
+    userData.diamonds -= apuesta;
+    
+    let numero;
+    if (Math.random() < 0.03) {
+        numero = 0;
+    } else {
+        numero = Math.floor(Math.random() * 37);
+    }
+    
+    document.getElementById('ruleta-number').textContent = numero;
+    
+    let gana = false;
+    
+    switch(tipo) {
+        case 'rojo':
+            gana = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(numero);
+            break;
+        case 'negro':
+            gana = [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35].includes(numero);
+            break;
+        case 'par':
+            gana = numero !== 0 && numero % 2 === 0;
+            break;
+        case 'impar':
+            gana = numero % 2 === 1;
+            break;
+        case 'bajo':
+            gana = numero >= 1 && numero <= 18;
+            break;
+        case 'alto':
+            gana = numero >= 19 && numero <= 36;
+            break;
+        case 'numero':
+            const numeroElegido = prompt("Elige un número del 0 al 36:", "7");
+            if (numeroElegido !== null) {
+                const num = parseInt(numeroElegido);
+                if (num >= 0 && num <= 36) {
+                    gana = numero === num;
+                    if (gana) {
+                        userData.diamonds += apuesta * 36;
+                    }
+                } else {
+                    alert("Número inválido");
+                    userData.diamonds += apuesta;
+                    actualizarUI();
+                    return;
+                }
+            } else {
+                userData.diamonds += apuesta;
+                actualizarUI();
+                return;
+            }
+            break;
+    }
+    
+    const resultado = document.getElementById('ruleta-result');
+    
+    if (tipo !== 'numero' && gana) {
+        userData.diamonds += apuesta * 2;
+        resultado.innerHTML = '<span class="win-message">🎉 ¡GANASTE!</span>';
+    } else if (tipo === 'numero' && gana) {
+        resultado.innerHTML = '<span class="win-message">🎉 ¡NÚMERO EXACTO!</span>';
+    } else {
+        resultado.innerHTML = '<span class="lose-message">😞 Has perdido</span>';
+    }
+    
+    registrarJugada('ruleta');
+    actualizarUI();
+    saveUserData();
+}
+
+// JUEGO 3: TRAGAPERRAS
+function jugarTragaperras() {
+    const apuesta = apuestaActual.tragaperras;
+    
+    if (userData.diamonds < apuesta) {
+        alert("❌ No tienes suficientes diamantes");
+        return;
+    }
+    
+    if (!puedeJugar('tragaperras')) {
+        alert("❌ Límite diario alcanzado. Conviértete en inversor comprando TON para jugar sin límites.");
+        return;
+    }
+    
+    userData.diamonds -= apuesta;
+    
+    const simbolos = [
+        { nombre: "💎", rareza: 1, mult: 50 },
+        { nombre: "₿", rareza: 3, mult: 20 },
+        { nombre: "Ξ", rareza: 6, mult: 10 },
+        { nombre: "🪙", rareza: 15, mult: 5 },
+        { nombre: "📈", rareza: 37.5, mult: 2 },
+        { nombre: "📉", rareza: 37.5, mult: 2 }
+    ];
+    
+    const rodillos = [];
+    for (let i = 0; i < 3; i++) {
+        const rand = Math.random() * 100;
+        let acumulado = 0;
+        for (const s of simbolos) {
+            acumulado += s.rareza;
+            if (rand < acumulado) {
+                rodillos.push(s);
+                break;
+            }
+        }
+    }
+    
+    document.getElementById('slot1').textContent = rodillos[0].nombre;
+    document.getElementById('slot2').textContent = rodillos[1].nombre;
+    document.getElementById('slot3').textContent = rodillos[2].nombre;
+    
+    const resultado = document.getElementById('tragaperras-result');
+    
+    if (rodillos[0].nombre === rodillos[1].nombre && rodillos[1].nombre === rodillos[2].nombre) {
+        const mult = rodillos[0].mult;
+        userData.diamonds += apuesta * mult;
+        resultado.innerHTML = `<span class="win-message">🎉 ¡GANASTE! x${mult}</span>`;
+        
+        if (rodillos[0].nombre === "💎") {
+            resultado.innerHTML = '<span class="win-message">💎 ¡JACKPOT! x50 💎</span>';
+        }
+    } else {
+        resultado.innerHTML = '<span class="lose-message">😞 No hay premio</span>';
+    }
+    
+    registrarJugada('tragaperras');
+    actualizarUI();
+    saveUserData();
+}
+
+// JUEGO 4: DADOS
+function jugarDados(eleccion) {
+    const apuesta = apuestaActual.dados;
+    
+    if (userData.diamonds < apuesta) {
+        alert("❌ No tienes suficientes diamantes");
+        return;
+    }
+    
+    if (!puedeJugar('dados')) {
+        alert("❌ Límite diario alcanzado. Conviértete en inversor comprando TON para jugar sin límites.");
+        return;
+    }
+    
+    userData.diamonds -= apuesta;
+    
+    let dado1, dado2;
+    
+    if (eleccion === 'exacto' && Math.random() > 0.15) {
+        do {
+            dado1 = Math.floor(Math.random() * 6) + 1;
+            dado2 = Math.floor(Math.random() * 6) + 1;
+        } while (dado1 + dado2 === 7);
+    } else if (eleccion === 'menor' && Math.random() > 0.40) {
+        do {
+            dado1 = Math.floor(Math.random() * 6) + 1;
+            dado2 = Math.floor(Math.random() * 6) + 1;
+        } while (dado1 + dado2 >= 2 && dado1 + dado2 <= 6);
+    } else if (eleccion === 'mayor' && Math.random() > 0.40) {
+        do {
+            dado1 = Math.floor(Math.random() * 6) + 1;
+            dado2 = Math.floor(Math.random() * 6) + 1;
+        } while (dado1 + dado2 >= 8 && dado1 + dado2 <= 12);
+    } else {
+        dado1 = Math.floor(Math.random() * 6) + 1;
+        dado2 = Math.floor(Math.random() * 6) + 1;
+    }
+    
+    const caras = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+    document.getElementById('dado1').textContent = caras[dado1 - 1];
+    document.getElementById('dado2').textContent = caras[dado2 - 1];
+    
+    const suma = dado1 + dado2;
+    document.getElementById('dados-suma').textContent = `Suma: ${suma}`;
+    
+    const resultado = document.getElementById('dados-result');
+    
+    let gana = false;
+    if (eleccion === 'menor' && suma >= 2 && suma <= 6) gana = true;
+    if (eleccion === 'mayor' && suma >= 8 && suma <= 12) gana = true;
+    if (eleccion === 'exacto' && suma === 7) gana = true;
+    
+    if (gana) {
+        if (eleccion === 'exacto') {
+            userData.diamonds += apuesta * 5;
+            resultado.innerHTML = '<span class="win-message">🎉 ¡EXACTO! x5</span>';
+        } else {
+            userData.diamonds += apuesta * 2;
+            resultado.innerHTML = '<span class="win-message">🎉 ¡GANASTE!</span>';
+        }
+    } else {
+        resultado.innerHTML = '<span class="lose-message">😞 Has perdido</span>';
+    }
+    
+    registrarJugada('dados');
+    actualizarUI();
+    saveUserData();
+}
+
+// JUEGO 5: LOTERÍA
+function comprarBoletos() {
+    const cantidad = apuestaActual.loteria;
+    const costoTotal = cantidad * 5;
+    
+    if (userData.diamonds < costoTotal) {
+        alert("❌ No tienes suficientes diamantes");
+        return;
+    }
+    
+    if (!puedeJugar('loteria', cantidad)) {
+        alert("❌ Límite diario de boletos alcanzado. Conviértete en inversor comprando TON para jugar sin límites.");
+        return;
+    }
+    
+    userData.diamonds -= costoTotal;
+    
+    boletosComprados = [];
+    for (let i = 0; i < cantidad; i++) {
+        const boleto = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        boletosComprados.push(boleto);
+    }
+    
+    let html = '<p style="color: #94a3b8;">Tus boletos:</p><div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">';
+    boletosComprados.forEach(b => {
+        html += `<span style="background: #0f172a; padding: 5px 10px; border-radius: 5px; border: 1px solid #fbbf24;">${b}</span>`;
+    });
+    html += '</div>';
+    document.getElementById('loteria-boletos').innerHTML = html;
+    
+    registrarJugada('loteria', cantidad);
+    actualizarUI();
+    saveUserData();
+}
+
+function jugarLoteria() {
+    if (boletosComprados.length === 0) {
+        alert("❌ Primero compra boletos");
+        return;
+    }
+    
+    const rand = Math.random();
+    let numeroGanador;
+    
+    const prob = [
+        { coinc: 4, prob: 0.00005 },
+        { coinc: 3, prob: 0.0005 },
+        { coinc: 2, prob: 0.005 },
+        { coinc: 1, prob: 0.05 },
+        { coinc: 0, prob: 0.94445 }
+    ];
+    
+    let acum = 0;
+    let nivelCoincidencia = 0;
+    for (const p of prob) {
+        acum += p.prob;
+        if (rand < acum) {
+            nivelCoincidencia = p.coinc;
+            break;
+        }
+    }
+    
+    if (nivelCoincidencia === 0) {
+        do {
+            numeroGanador = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        } while (boletosComprados.some(b => coincidencias(b, numeroGanador) > 0));
+    } else {
+        const boletoBase = boletosComprados[Math.floor(Math.random() * boletosComprados.length)];
+        const digitos = boletoBase.split('');
+        
+        const posicionesMantener = [];
+        while (posicionesMantener.length < nivelCoincidencia) {
+            const pos = Math.floor(Math.random() * 4);
+            if (!posicionesMantener.includes(pos)) posicionesMantener.push(pos);
+        }
+        
+        for (let i = 0; i < 4; i++) {
+            if (!posicionesMantener.includes(i)) {
+                digitos[i] = Math.floor(Math.random() * 10).toString();
+            }
+        }
+        
+        numeroGanador = digitos.join('');
+    }
+    
+    document.getElementById('loteria-number').textContent = numeroGanador;
+    
+    let premioTotal = 0;
+    const resultados = [];
+    
+    boletosComprados.forEach(boleto => {
+        const coinc = coincidencias(boleto, numeroGanador);
+        let premio = 0;
+        
+        switch(coinc) {
+            case 4: premio = 5 * 500; break;
+            case 3: premio = 5 * 50; break;
+            case 2: premio = 5 * 5; break;
+            case 1: premio = 5; break;
+            default: premio = 0;
+        }
+        
+        premioTotal += premio;
+        if (premio > 0) {
+            resultados.push(`<span style="color: #4ade80;">${boleto} → +${premio}💎 (${coinc} coincidencias)</span>`);
+        }
+    });
+    
+    if (premioTotal > 0) {
+        userData.diamonds += premioTotal;
+    }
+    
+    let html = '<p style="color: #94a3b8;">Resultados:</p>';
+    if (resultados.length > 0) {
+        html += resultados.join('<br>');
+        html += `<br><span style="color: #facc15; font-weight: bold;">Total ganado: +${premioTotal}💎</span>`;
+    } else {
+        html += '<span class="lose-message">😞 No ganaste con ningún boleto</span>';
+    }
+    
+    document.getElementById('loteria-result').innerHTML = html;
+    
+    boletosComprados = [];
+    actualizarUI();
+    saveUserData();
+}
+
+function coincidencias(boleto, ganador) {
+    let cont = 0;
+    for (let i = 0; i < 4; i++) {
+        if (boleto[i] === ganador[i]) cont++;
+    }
+    return cont;
 }
 
 // ==========================================
@@ -1041,9 +1587,7 @@ function actualizarUI() {
     if (rElem) rElem.textContent = Math.floor(getTotalProductionPerHour()).toLocaleString();
     
     const niveles = {
-        "lvl_casino": userData.lvl_casino,
         "lvl_piscina": userData.lvl_piscina,
-        "lvl_parque": userData.lvl_parque,
         "lvl_diversion": userData.lvl_diversion,
         "lvl_escuela": userData.lvl_escuela,
         "lvl_hospital": userData.lvl_hospital
@@ -1067,7 +1611,7 @@ function showModal(id) {
 
 function closeAll() {
     document.getElementById("overlay").style.display = "none";
-    ["centralModal", "modalBank", "modalStore", "modalFriends", "modalWithdraw", "modalAds", "modalDailyReward"].forEach(id => {
+    ["centralModal", "modalBank", "modalStore", "modalFriends", "modalWithdraw", "modalAds", "modalDailyReward", "modalCasino", "modalHighLow", "modalRuleta", "modalTragaperras", "modalDados", "modalLoteria"].forEach(id => {
         const m = document.getElementById(id);
         if (m) m.style.display = "none";
     });
@@ -1081,19 +1625,20 @@ async function saveUserData() {
         
         await _supabase.from('game_data').update({
             diamonds: Math.floor(userData.diamonds || 0),
-            lvl_tienda: userData.lvl_tienda || 0,
-            lvl_casino: userData.lvl_casino || 0,
+            // 🏗️ SOLO 4 PRODUCTORES
             lvl_piscina: userData.lvl_piscina || 0,
-            lvl_parque: userData.lvl_parque || 0,
             lvl_diversion: userData.lvl_diversion || 0,
             lvl_escuela: userData.lvl_escuela || 0,
             lvl_hospital: userData.lvl_hospital || 0,
+            referral_earnings: userData.referral_earnings || 0,
+            referred_users: userData.referred_users || [],
             last_online: new Date().toISOString(),
             last_production_update: userData.last_production_update,
             last_withdraw_week: userData.last_withdraw_week,
             last_ad_watch: userData.last_ad_watch,
             daily_streak: userData.daily_streak || 0,
-            last_daily_claim: userData.last_daily_claim
+            last_daily_claim: userData.last_daily_claim,
+            haInvertido: userData.haInvertido || false
         }).eq('telegram_id', userData.id);
         
         console.log("💾 Datos guardados");
@@ -1135,6 +1680,16 @@ window.openBank = () => { renderBank(); showModal("modalBank"); };
 window.openFriends = openFriends;
 window.openWithdraw = openWithdraw;
 window.openDailyReward = openDailyReward;
+window.openCasino = openCasino;
+window.abrirJuego = abrirJuego;
+window.cerrarJuego = cerrarJuego;
+window.cambiarApuesta = cambiarApuesta;
+window.jugarHighLow = jugarHighLow;
+window.jugarRuleta = jugarRuleta;
+window.jugarTragaperras = jugarTragaperras;
+window.jugarDados = jugarDados;
+window.comprarBoletos = comprarBoletos;
+window.jugarLoteria = jugarLoteria;
 window.claimDailyReward = claimDailyReward;
 window.showAdsModal = showAdsModal;
 window.showAd = showAd;
@@ -1146,4 +1701,4 @@ window.disconnectWallet = disconnectWallet;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 
-console.log("✅ Ton City Game - Versión final con dirección actualizada");
+console.log("✅ Ton City Game - Versión final con solo 4 productores");
