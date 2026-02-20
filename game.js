@@ -885,7 +885,7 @@ async function comprarTON(tonAmount) {
         await tonConnectUI.sendTransaction(tx);
         userData.diamonds += comprados;
         
-        if (!userData.haInvertido) {
+        if (!userData.haInvertido && comprados >= 100) {
             userData.haInvertido = true;
             tg.showAlert("🎉 ¡Felicidades! Ahora eres inversor. Sin límites en el casino.");
         }
@@ -1004,9 +1004,6 @@ function cerrarJuego() {
     openCasino();
 }
 
-// ==========================================
-// FUNCIÓN CORREGIDA PARA CAMBIAR APUESTA
-// ==========================================
 function cambiarApuesta(juego, delta) {
     console.log(`🎰 Cambiando apuesta para ${juego}, delta: ${delta}`);
     
@@ -1521,7 +1518,7 @@ async function disconnectWallet() {
 }
 
 // ==========================================
-// COMPRAR MEJORAS (VERSIÓN CORREGIDA CON GUARDADO)
+// COMPRAR MEJORAS (VERSIÓN CORREGIDA)
 // ==========================================
 async function buyUpgrade(name, field, price) {
     try {
@@ -1537,12 +1534,14 @@ async function buyUpgrade(name, field, price) {
         const oldValue = userData[`lvl_${field}`] || 0;
         const oldDiamonds = userData.diamonds;
         
+        // Actualizar temporalmente
         userData[`lvl_${field}`] = oldValue + 1;
         userData.diamonds -= price;
         
         console.log(`📊 NUEVO nivel: ${userData[`lvl_${field}`]}`);
         console.log(`💎 Diamantes después de compra: ${userData.diamonds}`);
         
+        // Intentar guardar en Supabase
         const saveResult = await saveUserData();
         
         if (saveResult) {
@@ -1554,6 +1553,7 @@ async function buyUpgrade(name, field, price) {
             console.error("❌ Error al guardar, revirtiendo cambios");
             userData[`lvl_${field}`] = oldValue;
             userData.diamonds = oldDiamonds;
+            actualizarUI();
             alert("❌ Error al guardar la mejora. Intenta de nuevo.");
         }
         
@@ -1564,7 +1564,7 @@ async function buyUpgrade(name, field, price) {
 }
 
 // ==========================================
-// GUARDAR DATOS EN SUPABASE (VERSIÓN CORREGIDA)
+// GUARDAR DATOS EN SUPABASE (VERSIÓN ULTRA CORREGIDA)
 // ==========================================
 async function saveUserData() {
     if (!userData.id) {
@@ -1575,33 +1575,55 @@ async function saveUserData() {
     try {
         userData.last_production_update = new Date().toISOString();
         
+        // SOLO LAS COLUMNAS QUE EXISTEN EN TU BASE DE DATOS
         const datosAGuardar = {
+            // SOLO columnas que existen
             diamonds: Math.floor(userData.diamonds || 0),
+            
+            // 🏗️ EDIFICIOS PRODUCTORES
             lvl_piscina: Number(userData.lvl_piscina) || 0,
             lvl_fabrica: Number(userData.lvl_fabrica) || 0,
             lvl_escuela: Number(userData.lvl_escuela) || 0,
             lvl_hospital: Number(userData.lvl_hospital) || 0,
+            
+            // 👥 REFERIDOS
             referral_earnings: Number(userData.referral_earnings) || 0,
             referred_users: userData.referred_users || [],
+            
+            // ⏱️ CONTROL DE TIEMPO
             last_online: new Date().toISOString(),
             last_production_update: userData.last_production_update,
+            
+            // 💰 RETIROS SEMANALES
             last_withdraw_week: userData.last_withdraw_week ? Number(userData.last_withdraw_week) : null,
+            
+            // 📺 ANUNCIOS
             last_ad_watch: userData.last_ad_watch,
+            
+            // 📅 RECOMPENSA DIARIA
             daily_streak: Number(userData.daily_streak) || 0,
             last_daily_claim: userData.last_daily_claim,
+            
+            // 💎 ESTADO DE INVERSOR
             haInvertido: userData.haInvertido || false
         };
         
-        console.log("💾 Guardando en Supabase:", datosAGuardar);
+        console.log("💾 Intentando guardar en Supabase:", datosAGuardar);
+        console.log("👤 Para usuario ID:", userData.id);
         
+        // Intentar actualizar
         const { error } = await _supabase
             .from('game_data')
             .update(datosAGuardar)
             .eq('telegram_id', userData.id);
         
         if (error) {
-            console.error("❌ Error de Supabase:", error);
+            console.error("❌ Error de Supabase DETALLADO:", error);
+            console.error("❌ Código:", error.code);
+            console.error("❌ Mensaje:", error.message);
+            console.error("❌ Detalles:", error.details);
             
+            // Si el error es que el registro no existe, insertar
             if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
                 console.log("🔄 Registro no existe, intentando insertar...");
                 
@@ -1609,8 +1631,7 @@ async function saveUserData() {
                     ...datosAGuardar,
                     telegram_id: userData.id,
                     username: userData.username,
-                    referral_code: userData.referral_code,
-                    created_at: new Date().toISOString()
+                    referral_code: userData.referral_code || ('REF' + userData.id.slice(-6))
                 };
                 
                 const { error: insertError } = await _supabase
