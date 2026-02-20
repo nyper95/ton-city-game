@@ -561,7 +561,6 @@ function getNumeroSemana() {
     return Math.ceil(dias / 7);
 }
 
-// FÓRMULA: 1 TON = (pool_ton * K * R) / total_diamonds
 function calcularTasaRetiro() {
     if (!globalPoolData || globalPoolData.pool_ton <= 0 || globalPoolData.total_diamonds <= 0) {
         return 0.001;
@@ -667,12 +666,15 @@ async function loadUserFromDB(tgId) {
             .from('game_data')
             .select('*')
             .eq('telegram_id', tgId.toString())
-            .single();
+            .maybeSingle();
 
-        if (error && error.code === 'PGRST116') {
+        if (error) {
+            console.error("❌ Error cargando usuario:", error);
+            return;
+        }
+
+        if (!data) {
             console.log("🆕 Usuario no encontrado, creando nuevo...");
-            
-            userData.referral_code = 'REF' + tgId.toString().slice(-6);
             
             const nuevoUsuario = {
                 telegram_id: tgId.toString(),
@@ -682,7 +684,7 @@ async function loadUserFromDB(tgId) {
                 lvl_fabrica: 0,
                 lvl_escuela: 0,
                 lvl_hospital: 0,
-                referral_code: userData.referral_code,
+                referral_code: 'REF' + tgId.toString().slice(-6),
                 referral_earnings: 0,
                 referred_users: [],
                 last_online: new Date().toISOString(),
@@ -694,6 +696,8 @@ async function loadUserFromDB(tgId) {
                 haInvertido: false
             };
             
+            console.log("📦 Insertando nuevo usuario:", nuevoUsuario);
+            
             const { error: insertError } = await _supabase
                 .from('game_data')
                 .insert([nuevoUsuario]);
@@ -704,31 +708,26 @@ async function loadUserFromDB(tgId) {
             }
             
             console.log("✅ Usuario creado en Supabase");
+            userData = { ...userData, ...nuevoUsuario, id: tgId.toString() };
             
-        } else if (error) {
-            console.error("❌ Error cargando usuario:", error);
-            return;
-            
-        } else if (data) {
+        } else {
             console.log("📁 Usuario encontrado en DB:", data);
-            
-            const oldDiamonds = Number(data.diamonds) || 0;
             
             userData = { 
                 ...userData, 
                 ...data, 
                 id: tgId.toString(),
-                diamonds: oldDiamonds,
-                lvl_piscina: parseInt(data.lvl_piscina) || 0,
-                lvl_fabrica: parseInt(data.lvl_fabrica) || 0,
-                lvl_escuela: parseInt(data.lvl_escuela) || 0,
-                lvl_hospital: parseInt(data.lvl_hospital) || 0,
-                referral_earnings: parseInt(data.referral_earnings) || 0,
+                diamonds: Number(data.diamonds) || 0,
+                lvl_piscina: Number(data.lvl_piscina) || 0,
+                lvl_fabrica: Number(data.lvl_fabrica) || 0,
+                lvl_escuela: Number(data.lvl_escuela) || 0,
+                lvl_hospital: Number(data.lvl_hospital) || 0,
+                referral_earnings: Number(data.referral_earnings) || 0,
                 referred_users: data.referred_users || [],
                 last_production_update: data.last_production_update || data.last_online || new Date().toISOString(),
-                last_withdraw_week: data.last_withdraw_week ? parseInt(data.last_withdraw_week) : null,
+                last_withdraw_week: data.last_withdraw_week ? Number(data.last_withdraw_week) : null,
                 last_ad_watch: data.last_ad_watch || null,
-                daily_streak: parseInt(data.daily_streak) || 0,
+                daily_streak: Number(data.daily_streak) || 0,
                 last_daily_claim: data.last_daily_claim || null,
                 haInvertido: data.haInvertido || false
             };
@@ -745,10 +744,7 @@ async function loadUserFromDB(tgId) {
             if (offlineEarnings > 0) {
                 userData.diamonds += offlineEarnings;
                 console.log(`💰 Producción offline: +${offlineEarnings.toFixed(2)} 💎`);
-            }
-            
-            if (!userData.referral_code) {
-                userData.referral_code = 'REF' + userData.id.slice(-6);
+                await saveUserData();
             }
         }
         
@@ -761,7 +757,7 @@ async function loadUserFromDB(tgId) {
         actualizarLimitesUI();
         
     } catch (error) {
-        console.error("❌ Error crítico en loadUserFromDB:", error);
+        console.error("❌ Error CRÍTICO en loadUserFromDB:", error);
     }
 }
 
@@ -1009,12 +1005,11 @@ function cerrarJuego() {
 }
 
 // ==========================================
-// FUNCIÓN CORREGIDA PARA CAMBIAR APUESTA (SOLUCIÓN NAN)
+// FUNCIÓN CORREGIDA PARA CAMBIAR APUESTA
 // ==========================================
 function cambiarApuesta(juego, delta) {
     console.log(`🎰 Cambiando apuesta para ${juego}, delta: ${delta}`);
     
-    // Asegurar que la apuesta actual es un número
     if (isNaN(apuestaActual[juego])) {
         apuestaActual[juego] = juego === 'tragaperras' ? 5 : (juego === 'loteria' ? 1 : 10);
     }
@@ -1034,7 +1029,6 @@ function cambiarApuesta(juego, delta) {
     
     apuestaActual[juego] = nueva;
     
-    // Actualizar el span correspondiente
     const elemId = juego === 'highlow' ? 'hl-bet' : 
                    juego === 'ruleta' ? 'ruleta-bet' :
                    juego === 'tragaperras' ? 'tragaperras-bet' :
@@ -1044,8 +1038,6 @@ function cambiarApuesta(juego, delta) {
     if (elem) {
         elem.textContent = nueva;
         console.log(`✅ Apuesta actualizada a ${nueva}`);
-    } else {
-        console.error(`❌ No se encontró elemento con ID: ${elemId}`);
     }
 }
 
@@ -1529,11 +1521,13 @@ async function disconnectWallet() {
 }
 
 // ==========================================
-// COMPRAR MEJORAS (CORREGIDO)
+// COMPRAR MEJORAS (VERSIÓN CORREGIDA CON GUARDADO)
 // ==========================================
 async function buyUpgrade(name, field, price) {
     try {
         console.log(`🛒 Comprando mejora: ${name}, campo: ${field}, precio: ${price}`);
+        console.log(`💎 Diamantes actuales: ${userData.diamonds}`);
+        console.log(`📊 Nivel actual de ${field}: ${userData[`lvl_${field}`]}`);
         
         if ((userData.diamonds || 0) < price) {
             alert("❌ No tienes suficientes diamantes");
@@ -1541,12 +1535,13 @@ async function buyUpgrade(name, field, price) {
         }
         
         const oldValue = userData[`lvl_${field}`] || 0;
+        const oldDiamonds = userData.diamonds;
         
         userData[`lvl_${field}`] = oldValue + 1;
         userData.diamonds -= price;
         
-        console.log(`📊 Nivel anterior: ${oldValue}, Nuevo nivel: ${userData[`lvl_${field}`]}`);
-        console.log(`💎 Diamantes restantes: ${userData.diamonds}`);
+        console.log(`📊 NUEVO nivel: ${userData[`lvl_${field}`]}`);
+        console.log(`💎 Diamantes después de compra: ${userData.diamonds}`);
         
         const saveResult = await saveUserData();
         
@@ -1556,19 +1551,20 @@ async function buyUpgrade(name, field, price) {
             renderStore();
             alert(`✅ ¡${name} nivel ${userData[`lvl_${field}`]}!`);
         } else {
+            console.error("❌ Error al guardar, revirtiendo cambios");
             userData[`lvl_${field}`] = oldValue;
-            userData.diamonds += price;
+            userData.diamonds = oldDiamonds;
             alert("❌ Error al guardar la mejora. Intenta de nuevo.");
         }
         
     } catch (error) {
-        console.error("❌ Error en buyUpgrade:", error);
-        alert("Error al comprar mejora");
+        console.error("❌ Error CRÍTICO en buyUpgrade:", error);
+        alert("Error al comprar mejora: " + error.message);
     }
 }
 
 // ==========================================
-// GUARDAR DATOS EN SUPABASE (CORREGIDO)
+// GUARDAR DATOS EN SUPABASE (VERSIÓN CORREGIDA)
 // ==========================================
 async function saveUserData() {
     if (!userData.id) {
@@ -1581,31 +1577,55 @@ async function saveUserData() {
         
         const datosAGuardar = {
             diamonds: Math.floor(userData.diamonds || 0),
-            lvl_piscina: parseInt(userData.lvl_piscina) || 0,
-            lvl_fabrica: parseInt(userData.lvl_fabrica) || 0,
-            lvl_escuela: parseInt(userData.lvl_escuela) || 0,
-            lvl_hospital: parseInt(userData.lvl_hospital) || 0,
-            referral_earnings: parseInt(userData.referral_earnings) || 0,
+            lvl_piscina: Number(userData.lvl_piscina) || 0,
+            lvl_fabrica: Number(userData.lvl_fabrica) || 0,
+            lvl_escuela: Number(userData.lvl_escuela) || 0,
+            lvl_hospital: Number(userData.lvl_hospital) || 0,
+            referral_earnings: Number(userData.referral_earnings) || 0,
             referred_users: userData.referred_users || [],
             last_online: new Date().toISOString(),
             last_production_update: userData.last_production_update,
-            last_withdraw_week: userData.last_withdraw_week ? parseInt(userData.last_withdraw_week) : null,
+            last_withdraw_week: userData.last_withdraw_week ? Number(userData.last_withdraw_week) : null,
             last_ad_watch: userData.last_ad_watch,
-            daily_streak: parseInt(userData.daily_streak) || 0,
+            daily_streak: Number(userData.daily_streak) || 0,
             last_daily_claim: userData.last_daily_claim,
             haInvertido: userData.haInvertido || false
         };
         
         console.log("💾 Guardando en Supabase:", datosAGuardar);
         
-        const { data, error } = await _supabase
+        const { error } = await _supabase
             .from('game_data')
             .update(datosAGuardar)
-            .eq('telegram_id', userData.id)
-            .select();
+            .eq('telegram_id', userData.id);
         
         if (error) {
-            console.error("❌ Error en Supabase:", error);
+            console.error("❌ Error de Supabase:", error);
+            
+            if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+                console.log("🔄 Registro no existe, intentando insertar...");
+                
+                const datosInsertar = {
+                    ...datosAGuardar,
+                    telegram_id: userData.id,
+                    username: userData.username,
+                    referral_code: userData.referral_code,
+                    created_at: new Date().toISOString()
+                };
+                
+                const { error: insertError } = await _supabase
+                    .from('game_data')
+                    .insert([datosInsertar]);
+                
+                if (insertError) {
+                    console.error("❌ Error al insertar:", insertError);
+                    return false;
+                }
+                
+                console.log("✅ Usuario insertado correctamente");
+                return true;
+            }
+            
             return false;
         }
         
@@ -1613,7 +1633,7 @@ async function saveUserData() {
         return true;
         
     } catch (error) {
-        console.error("❌ Error en saveUserData:", error);
+        console.error("❌ Error EXCEPCIÓN en saveUserData:", error);
         return false;
     }
 }
