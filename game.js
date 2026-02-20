@@ -94,6 +94,19 @@ const PROD_VAL = {
 };
 
 // ==========================================
+// APUESTAS ACTUALES POR JUEGO
+// ==========================================
+let apuestaActual = {
+    highlow: 10,
+    ruleta: 10,
+    tragaperras: 5,
+    dados: 10,
+    loteria: 1
+};
+
+let boletosComprados = [];
+
+// ==========================================
 // SISTEMA DE PRODUCCIÓN OFFLINE
 // ==========================================
 
@@ -534,7 +547,7 @@ function actualizarBannerDiario() {
 }
 
 // ==========================================
-// SISTEMA DE CONTROL DE RETIROS (ACTUALIZADO)
+// SISTEMA DE CONTROL DE RETIROS
 // ==========================================
 
 function enVentanaRetiro() {
@@ -553,7 +566,6 @@ function calcularTasaRetiro() {
     if (!globalPoolData || globalPoolData.pool_ton <= 0 || globalPoolData.total_diamonds <= 0) {
         return 0.001;
     }
-    // pool_ton * K * R = TON disponible para retiros (descontando comisiones y respaldo)
     const tonDisponible = globalPoolData.pool_ton * K * R;
     return tonDisponible / globalPoolData.total_diamonds;
 }
@@ -649,55 +661,23 @@ async function loadTotalDiamondsFromDB() {
 
 async function loadUserFromDB(tgId) {
     try {
+        console.log("👤 Cargando usuario desde DB:", tgId);
+        
         const { data, error } = await _supabase
             .from('game_data')
             .select('*')
             .eq('telegram_id', tgId.toString())
             .single();
 
-        if (data) {
-            console.log("📁 Usuario encontrado en DB");
+        if (error && error.code === 'PGRST116') {
+            console.log("🆕 Usuario no encontrado, creando nuevo...");
             
-            const oldDiamonds = Number(data.diamonds) || 0;
-            
-            userData = { 
-                ...userData, 
-                ...data, 
-                id: tgId.toString(),
-                diamonds: oldDiamonds,
-                // 🏗️ SOLO 4 PRODUCTORES
-                lvl_piscina: Number(data.lvl_piscina) || 0,
-                lvl_fabrica: Number(data.lvl_fabrica) || 0,
-                lvl_escuela: Number(data.lvl_escuela) || 0,
-                lvl_hospital: Number(data.lvl_hospital) || 0,
-                referral_earnings: Number(data.referral_earnings) || 0,
-                referred_users: data.referred_users || [],
-                last_production_update: data.last_production_update || data.last_online || new Date().toISOString(),
-                last_withdraw_week: data.last_withdraw_week || null,
-                last_ad_watch: data.last_ad_watch || null,
-                daily_streak: Number(data.daily_streak) || 0,
-                last_daily_claim: data.last_daily_claim || null,
-                haInvertido: data.haInvertido || false
-            };
-            
-            const offlineEarnings = await calculateOfflineProduction();
-            if (offlineEarnings > 0) {
-                userData.diamonds += offlineEarnings;
-                console.log(`💰 Producción offline: +${offlineEarnings.toFixed(2)} 💎`);
-            }
-            
-            if (!userData.referral_code) {
-                userData.referral_code = 'REF' + userData.id.slice(-6);
-            }
-        } else {
-            console.log("🆕 Creando nuevo usuario...");
             userData.referral_code = 'REF' + tgId.toString().slice(-6);
             
-            await _supabase.from('game_data').insert([{
+            const nuevoUsuario = {
                 telegram_id: tgId.toString(),
                 username: userData.username,
                 diamonds: 0,
-                // 🏗️ SOLO 4 PRODUCTORES
                 lvl_piscina: 0,
                 lvl_fabrica: 0,
                 lvl_escuela: 0,
@@ -712,7 +692,64 @@ async function loadUserFromDB(tgId) {
                 daily_streak: 0,
                 last_daily_claim: null,
                 haInvertido: false
-            }]);
+            };
+            
+            const { error: insertError } = await _supabase
+                .from('game_data')
+                .insert([nuevoUsuario]);
+            
+            if (insertError) {
+                console.error("❌ Error creando usuario:", insertError);
+                return;
+            }
+            
+            console.log("✅ Usuario creado en Supabase");
+            
+        } else if (error) {
+            console.error("❌ Error cargando usuario:", error);
+            return;
+            
+        } else if (data) {
+            console.log("📁 Usuario encontrado en DB:", data);
+            
+            const oldDiamonds = Number(data.diamonds) || 0;
+            
+            userData = { 
+                ...userData, 
+                ...data, 
+                id: tgId.toString(),
+                diamonds: oldDiamonds,
+                lvl_piscina: parseInt(data.lvl_piscina) || 0,
+                lvl_fabrica: parseInt(data.lvl_fabrica) || 0,
+                lvl_escuela: parseInt(data.lvl_escuela) || 0,
+                lvl_hospital: parseInt(data.lvl_hospital) || 0,
+                referral_earnings: parseInt(data.referral_earnings) || 0,
+                referred_users: data.referred_users || [],
+                last_production_update: data.last_production_update || data.last_online || new Date().toISOString(),
+                last_withdraw_week: data.last_withdraw_week ? parseInt(data.last_withdraw_week) : null,
+                last_ad_watch: data.last_ad_watch || null,
+                daily_streak: parseInt(data.daily_streak) || 0,
+                last_daily_claim: data.last_daily_claim || null,
+                haInvertido: data.haInvertido || false
+            };
+            
+            console.log("📊 Datos cargados:", {
+                piscina: userData.lvl_piscina,
+                fabrica: userData.lvl_fabrica,
+                escuela: userData.lvl_escuela,
+                hospital: userData.lvl_hospital,
+                diamantes: userData.diamonds
+            });
+            
+            const offlineEarnings = await calculateOfflineProduction();
+            if (offlineEarnings > 0) {
+                userData.diamonds += offlineEarnings;
+                console.log(`💰 Producción offline: +${offlineEarnings.toFixed(2)} 💎`);
+            }
+            
+            if (!userData.referral_code) {
+                userData.referral_code = 'REF' + userData.id.slice(-6);
+            }
         }
         
         userData.last_production_update = new Date().toISOString();
@@ -724,7 +761,7 @@ async function loadUserFromDB(tgId) {
         actualizarLimitesUI();
         
     } catch (error) {
-        console.error("❌ Error cargando usuario:", error);
+        console.error("❌ Error crítico en loadUserFromDB:", error);
     }
 }
 
@@ -735,7 +772,6 @@ function renderStore() {
     const storeContainer = document.getElementById("storeList");
     if (!storeContainer) return;
 
-    // 🏗️ SOLO 4 EDIFICIOS PRODUCTORES
     const upgrades = [
         { name: "Piscina", field: "piscina", price: 5000, prod: 60, color: "#38bdf8", icon: "fa-water-ladder" },
         { name: "Fábrica", field: "fabrica", price: 10000, prod: 120, color: "#a78bfa", icon: "fa-industry" },
@@ -876,7 +912,6 @@ function startProduction() {
     setInterval(() => {
         if (!userData.id) return;
         
-        // ⚠️ PRODUCCIÓN PAUSADA EN DOMINGOS
         if (enVentanaRetiro()) return;
         
         const totalPerHr = getTotalProductionPerHour();
@@ -918,18 +953,8 @@ function openCentral() {
 }
 
 // ==========================================
-// CASINO - JUEGOS
+// CASINO - FUNCIONES DE APERTURA
 // ==========================================
-
-let apuestaActual = {
-    highlow: 10,
-    ruleta: 10,
-    tragaperras: 5,
-    dados: 10,
-    loteria: 1
-};
-
-let boletosComprados = [];
 
 function openCasino() {
     showModal("modalCasino");
@@ -983,7 +1008,17 @@ function cerrarJuego() {
     openCasino();
 }
 
+// ==========================================
+// FUNCIÓN CORREGIDA PARA CAMBIAR APUESTA (SOLUCIÓN NAN)
+// ==========================================
 function cambiarApuesta(juego, delta) {
+    console.log(`🎰 Cambiando apuesta para ${juego}, delta: ${delta}`);
+    
+    // Asegurar que la apuesta actual es un número
+    if (isNaN(apuestaActual[juego])) {
+        apuestaActual[juego] = juego === 'tragaperras' ? 5 : (juego === 'loteria' ? 1 : 10);
+    }
+    
     let nueva = apuestaActual[juego] + delta;
     if (nueva < 1) nueva = 1;
     
@@ -998,8 +1033,20 @@ function cambiarApuesta(juego, delta) {
     if (nueva > maximos[juego]) nueva = maximos[juego];
     
     apuestaActual[juego] = nueva;
-    const elem = document.getElementById(`${juego}-bet`);
-    if (elem) elem.textContent = nueva;
+    
+    // Actualizar el span correspondiente
+    const elemId = juego === 'highlow' ? 'hl-bet' : 
+                   juego === 'ruleta' ? 'ruleta-bet' :
+                   juego === 'tragaperras' ? 'tragaperras-bet' :
+                   juego === 'dados' ? 'dados-bet' : 'loteria-bet';
+    
+    const elem = document.getElementById(elemId);
+    if (elem) {
+        elem.textContent = nueva;
+        console.log(`✅ Apuesta actualizada a ${nueva}`);
+    } else {
+        console.error(`❌ No se encontró elemento con ID: ${elemId}`);
+    }
 }
 
 // JUEGO 1: HIGH/LOW
@@ -1482,28 +1529,100 @@ async function disconnectWallet() {
 }
 
 // ==========================================
-// COMPRAR MEJORAS
+// COMPRAR MEJORAS (CORREGIDO)
 // ==========================================
 async function buyUpgrade(name, field, price) {
-    if ((userData.diamonds || 0) < price) {
-        return alert("❌ No tienes suficientes diamantes");
+    try {
+        console.log(`🛒 Comprando mejora: ${name}, campo: ${field}, precio: ${price}`);
+        
+        if ((userData.diamonds || 0) < price) {
+            alert("❌ No tienes suficientes diamantes");
+            return;
+        }
+        
+        const oldValue = userData[`lvl_${field}`] || 0;
+        
+        userData[`lvl_${field}`] = oldValue + 1;
+        userData.diamonds -= price;
+        
+        console.log(`📊 Nivel anterior: ${oldValue}, Nuevo nivel: ${userData[`lvl_${field}`]}`);
+        console.log(`💎 Diamantes restantes: ${userData.diamonds}`);
+        
+        const saveResult = await saveUserData();
+        
+        if (saveResult) {
+            console.log("✅ Mejora guardada en Supabase");
+            actualizarUI();
+            renderStore();
+            alert(`✅ ¡${name} nivel ${userData[`lvl_${field}`]}!`);
+        } else {
+            userData[`lvl_${field}`] = oldValue;
+            userData.diamonds += price;
+            alert("❌ Error al guardar la mejora. Intenta de nuevo.");
+        }
+        
+    } catch (error) {
+        console.error("❌ Error en buyUpgrade:", error);
+        alert("Error al comprar mejora");
     }
-    
-    userData[`lvl_${field}`] = (userData[`lvl_${field}`] || 0) + 1;
-    userData.diamonds -= price;
-    
-    await saveUserData();
-    actualizarUI();
-    renderStore();
-    alert(`✅ ¡${name} nivel ${userData[`lvl_${field}`]}!`);
 }
 
 // ==========================================
-// RETIROS SEMANALES (ACTUALIZADO)
+// GUARDAR DATOS EN SUPABASE (CORREGIDO)
+// ==========================================
+async function saveUserData() {
+    if (!userData.id) {
+        console.warn("⚠️ No hay userData.id para guardar");
+        return false;
+    }
+    
+    try {
+        userData.last_production_update = new Date().toISOString();
+        
+        const datosAGuardar = {
+            diamonds: Math.floor(userData.diamonds || 0),
+            lvl_piscina: parseInt(userData.lvl_piscina) || 0,
+            lvl_fabrica: parseInt(userData.lvl_fabrica) || 0,
+            lvl_escuela: parseInt(userData.lvl_escuela) || 0,
+            lvl_hospital: parseInt(userData.lvl_hospital) || 0,
+            referral_earnings: parseInt(userData.referral_earnings) || 0,
+            referred_users: userData.referred_users || [],
+            last_online: new Date().toISOString(),
+            last_production_update: userData.last_production_update,
+            last_withdraw_week: userData.last_withdraw_week ? parseInt(userData.last_withdraw_week) : null,
+            last_ad_watch: userData.last_ad_watch,
+            daily_streak: parseInt(userData.daily_streak) || 0,
+            last_daily_claim: userData.last_daily_claim,
+            haInvertido: userData.haInvertido || false
+        };
+        
+        console.log("💾 Guardando en Supabase:", datosAGuardar);
+        
+        const { data, error } = await _supabase
+            .from('game_data')
+            .update(datosAGuardar)
+            .eq('telegram_id', userData.id)
+            .select();
+        
+        if (error) {
+            console.error("❌ Error en Supabase:", error);
+            return false;
+        }
+        
+        console.log("✅ Datos guardados correctamente en Supabase");
+        return true;
+        
+    } catch (error) {
+        console.error("❌ Error en saveUserData:", error);
+        return false;
+    }
+}
+
+// ==========================================
+// RETIROS SEMANALES
 // ==========================================
 async function openWithdraw() {
     try {
-        // Siempre mostrar el modal, pero con restricciones
         showModal("modalWithdraw");
         
         await updateGlobalPoolStats();
@@ -1606,7 +1725,7 @@ async function processWithdraw() {
     const tonRecibido = diamantes * tasa;
     
     if (tonRecibido > (globalPoolData.pool_ton * K * R)) {
-        return alert("❌ No hay suficiente TON disponible en el pool (descontando comisiones)");
+        return alert("❌ No hay suficiente TON disponible en el pool");
     }
     
     const confirmMsg = 
@@ -1620,9 +1739,7 @@ async function processWithdraw() {
     userData.last_withdraw_week = semanaActual;
     await saveUserData();
     
-    // Aquí iría la lógica real de envío de TON
     alert(`✅ Retiro procesado! Recibirás ${tonRecibido.toFixed(4)} TON en las próximas 24h`);
-    
     closeAll();
 }
 
@@ -1671,37 +1788,6 @@ function closeAll() {
         const m = document.getElementById(id);
         if (m) m.style.display = "none";
     });
-}
-
-async function saveUserData() {
-    if (!userData.id) return;
-    
-    try {
-        userData.last_production_update = new Date().toISOString();
-        
-        await _supabase.from('game_data').update({
-            diamonds: Math.floor(userData.diamonds || 0),
-            // 🏗️ SOLO 4 PRODUCTORES
-            lvl_piscina: userData.lvl_piscina || 0,
-            lvl_fabrica: userData.lvl_fabrica || 0,
-            lvl_escuela: userData.lvl_escuela || 0,
-            lvl_hospital: userData.lvl_hospital || 0,
-            referral_earnings: userData.referral_earnings || 0,
-            referred_users: userData.referred_users || [],
-            last_online: new Date().toISOString(),
-            last_production_update: userData.last_production_update,
-            last_withdraw_week: userData.last_withdraw_week,
-            last_ad_watch: userData.last_ad_watch,
-            daily_streak: userData.daily_streak || 0,
-            last_daily_claim: userData.last_daily_claim,
-            haInvertido: userData.haInvertido || false
-        }).eq('telegram_id', userData.id);
-        
-        console.log("💾 Datos guardados");
-        
-    } catch (error) {
-        console.error("❌ Error guardando:", error);
-    }
 }
 
 async function updateGlobalPoolStats() {
