@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN COMPLETA CON TODAS LAS FUNCIONES
+// TON CITY GAME - VERSIÓN FINAL CORREGIDA
 // ======================================================
 
 console.log("✅ Ton City Game - Inicializando...");
@@ -82,7 +82,8 @@ let userData = {
 
 let globalPoolData = { 
     pool_ton: 0, 
-    total_diamonds: 0 
+    total_diamonds: 0,
+    last_updated: null
 };
 
 // 🏗️ VALORES DE PRODUCCIÓN (4 edificios)
@@ -105,6 +106,102 @@ let apuestaActual = {
 };
 
 let boletosComprados = [];
+
+// ==========================================
+// FUNCIÓN PARA OBTENER POOL REAL DESDE TONAPI
+// ==========================================
+async function updateRealPoolBalance() {
+    try {
+        console.log("💰 Consultando balance REAL del pool...");
+        
+        const response = await fetch(`${TON_API_URL}/v2/accounts/${BILLETERA_POOL}`, {
+            headers: {
+                'Authorization': `Bearer ${TON_API_KEY}`,
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // El balance viene en nanoton (1 TON = 1,000,000,000 nanoton)
+        const balanceNanoton = data.balance || 0;
+        const balanceTon = balanceNanoton / 1000000000;
+        
+        console.log(`✅ Balance REAL del pool: ${balanceTon.toFixed(4)} TON`);
+        
+        // Actualizar datos globales
+        globalPoolData.pool_ton = balanceTon;
+        globalPoolData.last_updated = new Date().toISOString();
+        
+        // También actualizar en Supabase (MASTER)
+        await _supabase
+            .from('game_data')
+            .update({
+                pool_ton: balanceTon,
+                last_seen: new Date().toISOString()
+            })
+            .eq('telegram_id', 'MASTER');
+        
+        return balanceTon;
+        
+    } catch (error) {
+        console.error("❌ Error obteniendo balance REAL:", error);
+        
+        // Fallback: usar el valor de Supabase
+        const { data } = await _supabase
+            .from('game_data')
+            .select('pool_ton')
+            .eq('telegram_id', 'MASTER')
+            .single();
+        
+        globalPoolData.pool_ton = data?.pool_ton || 100;
+        return globalPoolData.pool_ton;
+    }
+}
+
+// ==========================================
+// FUNCIÓN PARA OBTENER TOTAL DE DIAMANTES REAL
+// ==========================================
+async function updateTotalDiamonds() {
+    try {
+        console.log("💎 Calculando total de diamantes de todos los usuarios...");
+        
+        const { data, error } = await _supabase
+            .from("game_data")
+            .select("diamonds")
+            .neq("telegram_id", "MASTER");
+            
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+            const total = data.reduce((sum, user) => sum + (Number(user.diamonds) || 0), 0);
+            globalPoolData.total_diamonds = total;
+            
+            console.log(`✅ Total diamantes REAL: ${total.toLocaleString()} 💎`);
+            
+            // Actualizar en MASTER
+            await _supabase
+                .from('game_data')
+                .update({
+                    total_diamonds: total,
+                    last_seen: new Date().toISOString()
+                })
+                .eq('telegram_id', 'MASTER');
+            
+            return total;
+        }
+        
+        return 0;
+        
+    } catch (error) {
+        console.error("❌ Error calculando total diamantes:", error);
+        return globalPoolData.total_diamonds || 0;
+    }
+}
 
 // ==========================================
 // SISTEMA DE PRODUCCIÓN OFFLINE
@@ -391,7 +488,7 @@ function actualizarBannerAds() {
 }
 
 // ==========================================
-// SISTEMA DE RECOMPENSA DIARIA
+// SISTEMA DE RECOMPENSA DIARIA (SIN PROBABILIDADES)
 // ==========================================
 
 function getDailyRewardAmount(day) {
@@ -547,7 +644,7 @@ function actualizarBannerDiario() {
 }
 
 // ==========================================
-// SISTEMA DE CONTROL DE RETIROS
+// SISTEMA DE CONTROL DE RETIROS (CON DATOS REALES)
 // ==========================================
 
 function enVentanaRetiro() {
@@ -598,8 +695,10 @@ async function initApp() {
         }
 
         await initTONConnect();
-        await updateGlobalPoolStats();
-        await loadTotalDiamondsFromDB();
+        
+        // Cargar datos del pool REAL
+        await updateRealPoolBalance();
+        await updateTotalDiamonds();
         
         renderStore();
         renderBank();
@@ -639,22 +738,6 @@ function actualizarBannerDomingo() {
     } else {
         if (sundayBanner) sundayBanner.style.display = "none";
         if (centralIndicator) centralIndicator.style.display = "none";
-    }
-}
-
-async function loadTotalDiamondsFromDB() {
-    try {
-        const { data, error } = await _supabase
-            .from("game_data")
-            .select("diamonds")
-            .neq("telegram_id", "MASTER");
-            
-        if (!error && data) {
-            globalPoolData.total_diamonds = data.reduce((sum, user) => sum + (Number(user.diamonds) || 0), 0);
-            console.log(`💎 Total diamantes: ${globalPoolData.total_diamonds.toLocaleString()}`);
-        }
-    } catch (error) {
-        console.error("❌ Error cargando total_diamonds:", error);
     }
 }
 
@@ -762,7 +845,7 @@ async function loadUserFromDB(tgId) {
 }
 
 // ==========================================
-// TIENDA (SOLO MEJORAS DE 4 PRODUCTORES)
+// TIENDA (VERSIÓN CORREGIDA)
 // ==========================================
 function renderStore() {
     const storeContainer = document.getElementById("storeList");
@@ -949,7 +1032,7 @@ function openCentral() {
 }
 
 // ==========================================
-// CASINO - FUNCIONES DE APERTURA
+// CASINO - FUNCIONES DE APERTURA (SIN PROBABILIDADES)
 // ==========================================
 
 function openCasino() {
@@ -1004,9 +1087,6 @@ function cerrarJuego() {
     openCasino();
 }
 
-// ==========================================
-// FUNCIÓN PARA CAMBIAR APUESTA
-// ==========================================
 function cambiarApuesta(juego, delta) {
     console.log(`🎰 Cambiando apuesta para ${juego}, delta: ${delta}`);
     
@@ -1041,7 +1121,7 @@ function cambiarApuesta(juego, delta) {
     }
 }
 
-// JUEGO 1: HIGH/LOW
+// JUEGO 1: HIGH/LOW (SOLO REGLAS)
 function jugarHighLow(eleccion) {
     const apuesta = apuestaActual.highlow;
     
@@ -1087,7 +1167,7 @@ function jugarHighLow(eleccion) {
     saveUserData();
 }
 
-// JUEGO 2: RULETA
+// JUEGO 2: RULETA (SOLO REGLAS)
 function jugarRuleta(tipo) {
     const apuesta = apuestaActual.ruleta;
     
@@ -1172,7 +1252,7 @@ function jugarRuleta(tipo) {
     saveUserData();
 }
 
-// JUEGO 3: TRAGAPERRAS
+// JUEGO 3: TRAGAPERRAS (SOLO REGLAS)
 function jugarTragaperras() {
     const apuesta = apuestaActual.tragaperras;
     
@@ -1233,7 +1313,7 @@ function jugarTragaperras() {
     saveUserData();
 }
 
-// JUEGO 4: DADOS
+// JUEGO 4: DADOS (SOLO REGLAS)
 function jugarDados(eleccion) {
     const apuesta = apuestaActual.dados;
     
@@ -1302,7 +1382,7 @@ function jugarDados(eleccion) {
     saveUserData();
 }
 
-// JUEGO 5: LOTERÍA
+// JUEGO 5: LOTERÍA (SOLO REGLAS)
 function comprarBoletos() {
     const cantidad = apuestaActual.loteria;
     const costoTotal = cantidad * 5;
@@ -1674,14 +1754,15 @@ async function saveUserData() {
 }
 
 // ==========================================
-// RETIROS SEMANALES
+// RETIROS SEMANALES (CON DATOS REALES)
 // ==========================================
 async function openWithdraw() {
     try {
         showModal("modalWithdraw");
         
-        await updateGlobalPoolStats();
-        await loadTotalDiamondsFromDB();
+        // Actualizar datos REALES antes de mostrar
+        await updateRealPoolBalance();
+        await updateTotalDiamonds();
         
         const tasa = calcularTasaRetiro();
         const poolTon = globalPoolData.pool_ton;
@@ -1832,19 +1913,6 @@ function closeAll() {
         const m = document.getElementById(id);
         if (m) m.style.display = "none";
     });
-}
-
-async function updateGlobalPoolStats() {
-    try {
-        const res = await fetch(`${TON_API_URL}/v2/accounts/${BILLETERA_POOL}`, {
-            headers: { 'Authorization': `Bearer ${TON_API_KEY}` }
-        });
-        const data = await res.json();
-        globalPoolData.pool_ton = (data.balance || 0) / 1e9;
-        console.log(`💰 Pool: ${globalPoolData.pool_ton.toFixed(4)} TON`);
-    } catch (e) { 
-        console.error("Error obteniendo pool stats:", e); 
-    }
 }
 
 // ==========================================
