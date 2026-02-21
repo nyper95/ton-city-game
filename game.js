@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN FINAL CORREGIDA
+// TON CITY GAME - VERSIÓN COMPLETA CON TODAS LAS FUNCIONES
 // ======================================================
 
 console.log("✅ Ton City Game - Inicializando...");
@@ -1004,6 +1004,9 @@ function cerrarJuego() {
     openCasino();
 }
 
+// ==========================================
+// FUNCIÓN PARA CAMBIAR APUESTA
+// ==========================================
 function cambiarApuesta(juego, delta) {
     console.log(`🎰 Cambiando apuesta para ${juego}, delta: ${delta}`);
     
@@ -1449,6 +1452,17 @@ function copyReferralCode() {
     navigator.clipboard.writeText(link).then(() => alert("✅ Enlace copiado!"));
 }
 
+function updateReferralUI() {
+    const codeElem = document.getElementById("referral-code");
+    if (codeElem) codeElem.textContent = userData.referral_code || "NO DISPONIBLE";
+    
+    const countElem = document.getElementById("ref-count");
+    if (countElem) countElem.textContent = userData.referred_users?.length || 0;
+    
+    const totalElem = document.getElementById("ref-total");
+    if (totalElem) totalElem.textContent = `${userData.referral_earnings || 0} 💎`;
+}
+
 // ==========================================
 // TON CONNECT
 // ==========================================
@@ -1807,17 +1821,6 @@ function actualizarUI() {
     });
 }
 
-function updateReferralUI() {
-    const codeElem = document.getElementById("referral-code");
-    if (codeElem) codeElem.textContent = userData.referral_code || "NO DISPONIBLE";
-    
-    const countElem = document.getElementById("ref-count");
-    if (countElem) countElem.textContent = userData.referred_users?.length || 0;
-    
-    const totalElem = document.getElementById("ref-total");
-    if (totalElem) totalElem.textContent = `${userData.referral_earnings || 0} 💎`;
-}
-
 function showModal(id) {
     document.getElementById("overlay").style.display = "block";
     document.getElementById(id).style.display = "block";
@@ -1884,4 +1887,4 @@ window.disconnectWallet = disconnectWallet;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 
-console.log("✅ Ton City Game - Versión final con todos los errores corregidos");
+console.log("✅ Ton City Game - Versión completa con todas las funciones corregidas");
