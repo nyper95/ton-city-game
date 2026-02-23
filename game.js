@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN FINAL CORREGIDA
+// TON CITY GAME - VERSIÓN COMPLETA CON TODAS LAS FUNCIONES
 // ======================================================
 
 console.log("✅ Ton City Game - Inicializando...");
@@ -48,7 +48,7 @@ let userData = {
     id: null,
     username: "Cargando...",
     diamonds: 0,
-    // 🏗️ SOLO 4 EDIFICIOS PRODUCTORES
+    // 🏗️ EDIFICIOS PRODUCTORES (4)
     lvl_piscina: 0,
     lvl_fabrica: 0,
     lvl_escuela: 0,
@@ -69,7 +69,7 @@ let userData = {
     last_daily_claim: null,
     // 💎 ESTADO DE INVERSOR
     haInvertido: false,
-    // 🎰 LÍMITES DIARIOS
+    // 🎰 LÍMITES DIARIOS PARA CASINO
     jugadasHoy: {
         highlow: 0,
         ruleta: 0,
@@ -126,7 +126,6 @@ async function updateRealPoolBalance() {
         }
         
         const data = await response.json();
-        
         const balanceNanoton = data.balance || 0;
         const balanceTon = balanceNanoton / 1000000000;
         
@@ -482,7 +481,7 @@ function actualizarBannerAds() {
 }
 
 // ==========================================
-// SISTEMA DE RECOMPENSA DIARIA (CORREGIDO)
+// SISTEMA DE RECOMPENSA DIARIA
 // ==========================================
 
 function getDailyRewardAmount(day) {
@@ -588,11 +587,6 @@ function actualizarDailyUI() {
 async function claimDailyReward() {
     try {
         console.log("🎁 Intentando reclamar recompensa diaria...");
-        console.log("📊 Estado actual:", {
-            streak: userData.daily_streak,
-            last_claim: userData.last_daily_claim,
-            fecha_hoy: new Date().toISOString()
-        });
         
         if (!puedeReclamarDiaria()) {
             const ultimo = new Date(userData.last_daily_claim);
@@ -616,32 +610,20 @@ async function claimDailyReward() {
             
             if (diffHoras < 48 && rachaActual > 0) {
                 nuevoDia = rachaActual + 1;
-            } else {
-                nuevoDia = 1;
             }
         }
         
         if (nuevoDia > 30) nuevoDia = 30;
         
-        const recompensa = Math.min(10 + (nuevoDia - 1) * 10, 300);
+        const recompensa = getDailyRewardAmount(nuevoDia);
         
         console.log(`📅 Día calculado: ${nuevoDia}, Recompensa: ${recompensa}💎`);
         
         if (!confirm(`¿Reclamar recompensa del Día ${nuevoDia} por ${recompensa} 💎?`)) return;
         
-        const oldDiamonds = userData.diamonds;
-        const oldStreak = userData.daily_streak;
-        const oldLastClaim = userData.last_daily_claim;
-        
         userData.diamonds += recompensa;
         userData.daily_streak = nuevoDia;
         userData.last_daily_claim = new Date().toISOString();
-        
-        console.log("💰 Datos actualizados localmente:", {
-            nuevos_diamantes: userData.diamonds,
-            nuevo_streak: userData.daily_streak,
-            new_last_claim: userData.last_daily_claim
-        });
         
         actualizarUI();
         actualizarDailyUI();
@@ -653,13 +635,7 @@ async function claimDailyReward() {
             console.log("✅ Recompensa guardada en Supabase");
             alert(`✅ ¡+${recompensa} diamantes! Día ${nuevoDia}/30`);
         } else {
-            console.error("❌ Error al guardar, revirtiendo cambios");
-            userData.diamonds = oldDiamonds;
-            userData.daily_streak = oldStreak;
-            userData.last_daily_claim = oldLastClaim;
-            actualizarUI();
-            actualizarDailyUI();
-            actualizarBannerDiario();
+            console.error("❌ Error al guardar");
             alert("❌ Error al guardar la recompensa. Intenta de nuevo.");
         }
         
@@ -1675,18 +1651,20 @@ async function buyUpgrade(name, field, price) {
         console.log(`📊 NUEVO nivel: ${userData[`lvl_${field}`]}`);
         console.log(`💎 Diamantes después de compra: ${userData.diamonds}`);
         
+        actualizarUI();
+        renderStore();
+        
         const saveResult = await saveUserData();
         
         if (saveResult) {
             console.log("✅ Mejora guardada en Supabase");
-            actualizarUI();
-            renderStore();
             alert(`✅ ¡${name} nivel ${userData[`lvl_${field}`]}!`);
         } else {
             console.error("❌ Error al guardar, revirtiendo cambios");
             userData[`lvl_${field}`] = oldValue;
             userData.diamonds = oldDiamonds;
             actualizarUI();
+            renderStore();
             alert("❌ Error al guardar la mejora. Intenta de nuevo.");
         }
         
@@ -1980,4 +1958,4 @@ window.disconnectWallet = disconnectWallet;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 
-console.log("✅ Ton City Game - Versión completa con recompensas diarias corregidas");
+console.log("✅ Ton City Game - Versión completa con todas las funciones");
