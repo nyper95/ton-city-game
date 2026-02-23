@@ -45,7 +45,6 @@
             padding-bottom: 70px;
         }
         
-        /* BANNER DE PRODUCCIÓN PAUSADA (DOMINGOS) */
         .sunday-banner {
             background: linear-gradient(135deg, #f97316, #c2410c);
             color: white;
@@ -63,7 +62,6 @@
             animation: spin 3s linear infinite;
         }
         
-        /* BANNER DE RECOMPENSA DIARIA */
         .daily-banner {
             background: linear-gradient(135deg, #f59e0b, #b45309);
             color: white;
@@ -82,7 +80,6 @@
             color: #facc15;
         }
         
-        /* BANNER DE ANUNCIOS DISPONIBLES */
         .ads-available {
             background: linear-gradient(135deg, #f97316, #c2410c);
             color: white;
@@ -196,7 +193,6 @@
             margin: 4px 0;
         }
         
-        /* 🏢 COLORES POR EDIFICIO */
         .bank { color: var(--bank); }
         .store { color: var(--store); }
         .casino { color: var(--casino); }
@@ -324,7 +320,6 @@
             font-size: 20px;
         }
         
-        /* TON CONNECT */
         #ton-connect-button {
             margin: 15px 0;
             display: flex;
@@ -348,7 +343,6 @@
             display: block !important;
         }
         
-        /* TIENDA - SOLO MEJORAS DE 4 PRODUCTORES */
         .store-item {
             background: #0f172a;
             padding: 15px;
@@ -370,7 +364,6 @@
             font-size: 18px;
         }
         
-        /* CASINO - JUEGOS */
         .casino-menu {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -404,7 +397,6 @@
             display: block;
         }
         
-        /* INSTRUCCIONES DE JUEGOS */
         .game-instructions {
             background: linear-gradient(135deg, #1e293b, #0f172a);
             padding: 15px;
@@ -428,10 +420,6 @@
             margin: 5px 0;
             padding-left: 20px;
             color: #94a3b8;
-        }
-        
-        .game-instructions li {
-            margin: 3px 0;
         }
         
         .game-display {
@@ -529,7 +517,6 @@
             color: #4ade80;
             font-weight: bold;
             font-size: 20px;
-            animation: pulse 1s;
         }
         
         .lose-message {
@@ -548,7 +535,6 @@
             border: 1px dashed #f59e0b;
         }
         
-        /* RECOMPENSA DIARIA */
         .daily-calendar {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -595,7 +581,6 @@
             margin: 10px 0;
         }
         
-        /* ANUNCIOS */
         .ads-item {
             background: linear-gradient(135deg, #f97316, #c2410c);
             padding: 15px;
@@ -637,7 +622,6 @@
             margin-right: 8px;
         }
         
-        /* REFERIDOS */
         .referral-code {
             background: #0f172a;
             padding: 15px;
@@ -719,7 +703,6 @@
             margin-left: 5px;
         }
         
-        /* ESTILOS PARA RETIROS SEMANALES */
         .withdraw-sunday-badge {
             background: #f97316;
             color: white;
@@ -729,11 +712,6 @@
             font-weight: bold;
             display: inline-block;
             margin-left: 5px;
-        }
-        
-        .withdraw-disabled {
-            background: #334155 !important;
-            cursor: not-allowed !important;
         }
         
         .withdraw-info-sunday {
@@ -789,27 +767,27 @@
     </style>
 </head>
 <body>
-    <!-- BANNER DE PRODUCCIÓN PAUSADA (SE MUESTRA SOLO EN DOMINGOS) -->
+    <!-- BANNERS -->
     <div id="sunday-banner" style="display: none;" class="sunday-banner">
-        <i class="fa-solid fa-circle-pause"></i> PRODUCCIÓN PAUSADA - EVENTO DE RETIRO (DOMINGO) <i class="fa-solid fa-circle-pause"></i>
+        <i class="fa-solid fa-circle-pause"></i> PRODUCCIÓN PAUSADA - EVENTO DE RETIRO (DOMINGO)
     </div>
 
-    <!-- BANNER DE RECOMPENSA DIARIA -->
-    <div id="daily-banner" class="daily-banner" onclick="openDailyReward()" style="display: block;">
-        <i class="fa-solid fa-calendar-day"></i> ¡RECOMPENSA DIARIA DISPONIBLE! Reclama tus diamantes <i class="fa-solid fa-arrow-right"></i>
+    <div id="daily-banner" class="daily-banner" onclick="openDailyReward()">
+        <i class="fa-solid fa-calendar-day"></i> ¡RECOMPENSA DIARIA DISPONIBLE!
     </div>
 
-    <!-- BANNER DE ANUNCIOS DISPONIBLES -->
     <div id="ads-banner" class="ads-available" onclick="showAdsModal()" style="display: none;">
-        <i class="fa-solid fa-circle-play"></i> ¡PARQUE DISPONIBLE! Gana 30 💎 viendo un anuncio <i class="fa-solid fa-circle-play"></i>
+        <i class="fa-solid fa-circle-play"></i> ¡PARQUE DISPONIBLE! Gana 30 💎
     </div>
 
+    <!-- HEADER -->
     <div class="header">
         <div>@<span id="user-display">Cargando...</span></div>
         <div class="balance"><span id="diamonds">0</span> 💎</div>
         <div class="rate">+ <span id="rate">0</span> / hr</div>
     </div>
 
+    <!-- EDIFICIO CENTRAL -->
     <div class="central" onclick="openCentral()">
         <i class="fa-solid fa-city"></i>
         <h2>Edificio Central</h2>
@@ -819,29 +797,26 @@
         </div>
     </div>
 
+    <!-- GRID DE EDIFICIOS -->
     <div class="grid">
-        <!-- 🟡 BANCO -->
         <div class="card" style="border: 1px solid #facc15;" onclick="openBank()">
             <i class="fa-solid fa-building-columns bank"></i>
             <h3>Banco</h3>
             <small style="color: #facc15;">Comprar TON → 💎</small>
         </div>
         
-        <!-- 🔵 TIENDA -->
         <div class="card" style="border: 1px solid #3b82f6;" onclick="openStore()">
             <i class="fa-solid fa-cart-shopping store"></i>
             <h3>Tienda</h3>
             <small style="color: #3b82f6;">Mejorar edificios</small>
         </div>
         
-        <!-- 🟠 CASINO -->
         <div class="card" style="border: 1px solid #f97316;" onclick="openCasino()">
             <i class="fa-solid fa-dice casino"></i>
             <h3>Casino</h3>
             <small style="color: #f97316;">5 juegos de azar</small>
         </div>
         
-        <!-- 🟢 PARQUE -->
         <div class="card" style="border: 1px solid #10b981;" onclick="showAdsModal()">
             <i class="fa-solid fa-tree park"></i>
             <h3>Parque</h3>
@@ -849,28 +824,24 @@
             <div id="park-timer" style="font-size: 10px; color: #f97316; margin-top: 5px;"></div>
         </div>
         
-        <!-- 🔵 PISCINA -->
         <div class="card" style="border: 1px solid #38bdf8;">
             <i class="fa-solid fa-water-ladder pool"></i>
             <h3>Piscina</h3>
             <small>Lvl: <span id="lvl_piscina" style="color: #38bdf8;">0</span></small>
         </div>
         
-        <!-- 🟣 FÁBRICA -->
         <div class="card" style="border: 1px solid #a78bfa;">
             <i class="fa-solid fa-industry factory"></i>
             <h3>Fábrica</h3>
             <small>Lvl: <span id="lvl_fabrica" style="color: #a78bfa;">0</span></small>
         </div>
         
-        <!-- 🟤 ESCUELA -->
         <div class="card" style="border: 1px solid #a16207;">
             <i class="fa-solid fa-school school"></i>
             <h3>Escuela</h3>
             <small>Lvl: <span id="lvl_escuela" style="color: #a16207;">0</span></small>
         </div>
         
-        <!-- 🔴 HOSPITAL -->
         <div class="card" style="border: 1px solid #f87171;">
             <i class="fa-solid fa-hospital hospital"></i>
             <h3>Hospital</h3>
@@ -878,9 +849,10 @@
         </div>
     </div>
 
+    <!-- OVERLAY -->
     <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
-    <!-- 🏛️ EDIFICIO CENTRAL (SOLO PRODUCTORES) -->
+    <!-- MODAL CENTRAL -->
     <div class="modal" id="centralModal">
         <h3>🏛 Edificio Central</h3>
         <div class="stat"><span style="color: #38bdf8;">Piscina</span><span id="s_piscina">0</span></div>
@@ -888,11 +860,10 @@
         <div class="stat"><span style="color: #a16207;">Escuela</span><span id="s_escuela">0</span></div>
         <div class="stat"><span style="color: #f87171;">Hospital</span><span id="s_hospital">0</span></div>
         <div class="stat" style="background:#022c22"><b>Total / hr</b><b id="s_total">0</b></div>
-        <div id="production-status-modal" style="margin-top: 10px;"></div>
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- 🟡 BANCO -->
+    <!-- MODAL BANCO -->
     <div class="modal" id="modalBank">
         <h3 style="color: #facc15;">🏦 Banco TON</h3>
         <div id="ton-connect-button"></div>
@@ -904,14 +875,14 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- 🔵 TIENDA (SOLO MEJORAS DE 4 PRODUCTORES) -->
+    <!-- MODAL TIENDA -->
     <div class="modal" id="modalStore">
         <h3 style="color: #3b82f6;">🏪 Tienda de Mejoras</h3>
         <div id="storeList"></div>
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- 🟠 CASINO -->
+    <!-- MODAL CASINO -->
     <div class="modal" id="modalCasino">
         <h3 style="color: #f97316;">🎰 Casino - 5 Juegos</h3>
         <p class="info-text">Elige un juego para comenzar</p>
@@ -920,38 +891,34 @@
             <div class="casino-game-card" onclick="abrirJuego('highlow')">
                 <i class="fa-solid fa-chart-simple"></i>
                 <span>High/Low</span>
-                <small style="font-size: 10px;">4 dígitos</small>
+                <small>4 dígitos</small>
             </div>
             <div class="casino-game-card" onclick="abrirJuego('ruleta')">
                 <i class="fa-solid fa-circle"></i>
                 <span>Ruleta</span>
-                <small style="font-size: 10px;">Clásica</small>
+                <small>Clásica</small>
             </div>
             <div class="casino-game-card" onclick="abrirJuego('tragaperras')">
                 <i class="fa-solid fa-sliders"></i>
                 <span>Tragaperras</span>
-                <small style="font-size: 10px;">Cripto</small>
+                <small>Cripto</small>
             </div>
             <div class="casino-game-card" onclick="abrirJuego('dados')">
                 <i class="fa-solid fa-dice"></i>
                 <span>Dados</span>
-                <small style="font-size: 10px;">Mayor/Menor</small>
+                <small>Mayor/Menor</small>
             </div>
             <div class="casino-game-card" onclick="abrirJuego('loteria')">
                 <i class="fa-solid fa-ticket"></i>
                 <span>Lotería</span>
-                <small style="font-size: 10px;">4 dígitos</small>
+                <small>4 dígitos</small>
             </div>
-        </div>
-        
-        <div class="limit-info" id="casino-limit-info">
-            🎲 Jugadores sin inversión: límite diario por juego
         </div>
         
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL DE HIGH/LOW -->
+    <!-- MODAL HIGH/LOW -->
     <div class="modal" id="modalHighLow">
         <h3>📊 High/Low (4 Dígitos)</h3>
         
@@ -959,8 +926,7 @@
             <h4>📋 Cómo jugar:</h4>
             <p>🎯 Elige <span style="color: #3b82f6;">LOW</span> (0000-4999) o <span style="color: #ef4444;">HIGH</span> (5000-9999)</p>
             <p>💎 Apuesta la cantidad que desees</p>
-            <p>💰 Si aciertas, recibes el doble de tu apuesta</p>
-            <p>📊 Probabilidad: 48.5% de ganar</p>
+            <p>💰 Si aciertas, recibes el doble</p>
         </div>
         
         <div class="game-display">
@@ -986,7 +952,7 @@
         <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
     </div>
 
-    <!-- MODAL DE RULETA -->
+    <!-- MODAL RULETA -->
     <div class="modal" id="modalRuleta">
         <h3>🎡 Ruleta Clásica</h3>
         
@@ -994,12 +960,11 @@
             <h4>📋 Cómo jugar:</h4>
             <p>🎯 Elige tipo de apuesta:</p>
             <ul>
-                <li>🔴⚫ Rojo/Negro (x2)</li>
-                <li>🟢 Par/Impar (x2)</li>
-                <li>⬇️⬆️ Bajo/Alto (x2)</li>
+                <li>🔴 Rojo / ⚫ Negro (x2)</li>
+                <li>🟢 Par / Impar (x2)</li>
+                <li>⬇️ Bajo 1-18 / ⬆️ Alto 19-36 (x2)</li>
                 <li>🎯 Número exacto (x36)</li>
             </ul>
-            <p>📊 Probabilidad en apuestas x2: 48.6%</p>
         </div>
         
         <div class="game-display">
@@ -1014,13 +979,13 @@
         </div>
         
         <div class="game-buttons">
-            <button onclick="jugarRuleta('rojo')" style="background: #ef4444;">🔴 Rojo (x2)</button>
-            <button onclick="jugarRuleta('negro')" style="background: #000; border: 1px solid white;">⚫ Negro (x2)</button>
-            <button onclick="jugarRuleta('par')">🟢 Par (x2)</button>
-            <button onclick="jugarRuleta('impar')">🟢 Impar (x2)</button>
-            <button onclick="jugarRuleta('bajo')" style="background: #3b82f6;">⬇️ Bajo 1-18 (x2)</button>
-            <button onclick="jugarRuleta('alto')" style="background: #f97316;">⬆️ Alto 19-36 (x2)</button>
-            <button onclick="jugarRuleta('numero')" style="background: #facc15; color: black; grid-column: span 2;">🎯 Número exacto (x36)</button>
+            <button onclick="jugarRuleta('rojo')" style="background: #ef4444;">🔴 Rojo</button>
+            <button onclick="jugarRuleta('negro')" style="background: #000; border: 1px solid white;">⚫ Negro</button>
+            <button onclick="jugarRuleta('par')">🟢 Par</button>
+            <button onclick="jugarRuleta('impar')">🟢 Impar</button>
+            <button onclick="jugarRuleta('bajo')" style="background: #3b82f6;">⬇️ Bajo</button>
+            <button onclick="jugarRuleta('alto')" style="background: #f97316;">⬆️ Alto</button>
+            <button onclick="jugarRuleta('numero')" style="background: #facc15; color: black; grid-column: span 2;">🎯 Número exacto</button>
         </div>
         
         <div class="limit-info" id="ruleta-limit">
@@ -1030,7 +995,7 @@
         <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
     </div>
 
-    <!-- MODAL DE TRAGAPERRAS -->
+    <!-- MODAL TRAGAPERRAS -->
     <div class="modal" id="modalTragaperras">
         <h3>🎰 Tragamonedas Cripto</h3>
         
@@ -1072,22 +1037,17 @@
         <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
     </div>
 
-    <!-- MODAL DE DADOS -->
+    <!-- MODAL DADOS -->
     <div class="modal" id="modalDados">
         <h3>🎲 Dados Mayor/Menor</h3>
         
         <div class="game-instructions">
             <h4>📋 Cómo jugar:</h4>
-            <p>🎯 Apuesta por el resultado de la suma de 2 dados:</p>
+            <p>🎯 Apuesta por el resultado de 2 dados:</p>
             <ul>
                 <li>⬇️ MENOR (2-6) → x2</li>
                 <li>⬆️ MAYOR (8-12) → x2</li>
                 <li>🎯 EXACTO (7) → x5</li>
-            </ul>
-            <p>📊 Probabilidades:</p>
-            <ul>
-                <li>MENOR/MAYOR: 40%</li>
-                <li>EXACTO: 15%</li>
             </ul>
         </div>
         
@@ -1107,9 +1067,9 @@
         </div>
         
         <div class="game-buttons">
-            <button onclick="jugarDados('menor')" style="background: #3b82f6;">⬇️ MENOR (2-6) x2</button>
-            <button onclick="jugarDados('mayor')" style="background: #f97316;">⬆️ MAYOR (8-12) x2</button>
-            <button onclick="jugarDados('exacto')" style="background: #facc15; color: black; grid-column: span 2;">🎯 EXACTO (7) x5</button>
+            <button onclick="jugarDados('menor')" style="background: #3b82f6;">⬇️ MENOR</button>
+            <button onclick="jugarDados('mayor')" style="background: #f97316;">⬆️ MAYOR</button>
+            <button onclick="jugarDados('exacto')" style="background: #facc15; color: black; grid-column: span 2;">🎯 EXACTO</button>
         </div>
         
         <div class="limit-info" id="dados-limit">
@@ -1119,7 +1079,7 @@
         <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
     </div>
 
-    <!-- MODAL DE LOTERÍA -->
+    <!-- MODAL LOTERÍA -->
     <div class="modal" id="modalLoteria">
         <h3>🎟️ Lotería Digital</h3>
         
@@ -1127,12 +1087,12 @@
             <h4>📋 Cómo jugar:</h4>
             <p>🎫 Compra boletos de 4 dígitos</p>
             <p>🎯 El sistema sortea un número ganador</p>
-            <p>💰 Premios por coincidencias exactas:</p>
+            <p>💰 Premios por coincidencias:</p>
             <ul>
                 <li>4 cifras: x500</li>
                 <li>3 cifras: x50</li>
                 <li>2 cifras: x5</li>
-                <li>1 cifra: recuperas tu boleto</li>
+                <li>1 cifra: recuperas</li>
             </ul>
         </div>
         
@@ -1158,7 +1118,7 @@
         <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
     </div>
 
-    <!-- MODAL DE RECOMPENSA DIARIA -->
+    <!-- MODAL RECOMPENSA DIARIA -->
     <div class="modal" id="modalDailyReward">
         <h3>📅 Recompensa Diaria <span class="withdraw-sunday-badge">30 DÍAS</span></h3>
         
@@ -1193,13 +1153,13 @@
         </div>
         
         <button onclick="claimDailyReward()" id="claim-daily-btn" style="background: #f59e0b;">
-            <i class="fa-solid fa-gift"></i> RECLAMAR RECOMPENSA DIARIA
+            <i class="fa-solid fa-gift"></i> RECLAMAR
         </button>
         
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL DE ANUNCIOS DEL PARQUE -->
+    <!-- MODAL ANUNCIOS -->
     <div class="modal" id="modalAds">
         <h3 style="color: #10b981;">🌳 Parque - Anuncios</h3>
         <div style="text-align: center; margin-bottom: 15px;">
@@ -1216,24 +1176,20 @@
             <span style="color: #facc15; font-weight: bold;">30 💎</span>
         </div>
         
-        <div id="ads-status" class="info-text" style="margin: 15px 0; padding: 15px; background: #0f172a; border-radius: 12px; text-align: center;">
-            <div class="ads-loading"></div> Cargando sistema de anuncios...
+        <div id="ads-status" class="info-text" style="margin: 15px 0; padding: 15px; background: #0f172a; border-radius: 12px;">
+            <div class="ads-loading"></div> Cargando...
         </div>
         
-        <div id="ads-timer-display" style="text-align: center; font-size: 1.2rem; margin: 15px 0; color: #f97316; font-weight: bold;"></div>
+        <div id="ads-timer-display" style="text-align: center; font-size: 1.2rem; margin: 15px 0; color: #f97316;"></div>
         
-        <button onclick="showAd()" id="watch-ad-btn" style="background: #f97316; font-size: 16px;" disabled>
+        <button onclick="showAd()" id="watch-ad-btn" style="background: #f97316;" disabled>
             <i class="fa-solid fa-circle-play"></i> VER ANUNCIO +30 💎
         </button>
-        
-        <p class="info-text" style="margin-top: 10px;">
-            <i class="fa-solid fa-info-circle"></i> Los anuncios ayudan a mantener el juego gratis
-        </p>
         
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL DE AMIGOS -->
+    <!-- MODAL AMIGOS -->
     <div class="modal" id="modalFriends">
         <h3>👥 Sistema de Amigos</h3>
         <div class="referral-code">
@@ -1246,7 +1202,7 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL DE RETIRO SEMANAL (ACTUALIZADO) -->
+    <!-- MODAL RETIRO -->
     <div class="modal" id="modalWithdraw">
         <h3>💰 Retiro Semanal <span class="withdraw-sunday-badge">DOMINGOS</span></h3>
         
@@ -1255,7 +1211,7 @@
         </div>
         
         <div class="withdraw-important">
-            ⚠️ SOLO DOMINGOS 00:00 - 23:59 ⚠️
+            ⚠️ SOLO DOMINGOS
         </div>
         
         <div class="balance-display">
@@ -1273,40 +1229,36 @@
         </div>
         
         <div class="stat" style="background: #1e293b;">
-            <span>Valor de 1 TON</span>
-            <span id="current-price" style="color: #facc15; font-weight: bold;">0 💎</span>
-        </div>
-        
-        <div class="stat">
-            <span>Mínimo para retirar</span>
-            <span id="min-withdraw" style="color: #ef4444;">5 TON</span>
+            <span>1 TON =</span>
+            <span id="current-price" style="color: #facc15;">0 💎</span>
         </div>
         
         <div id="withdraw-status" class="withdraw-info-sunday">
-            <i class="fa-solid fa-circle-info"></i> Verificando disponibilidad...
+            <i class="fa-solid fa-circle-info"></i> Verificando...
         </div>
         
         <div class="input-group">
             <label>💎 Diamantes a retirar:</label>
             <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1">
-            <p class="info-text" id="withdraw-info">Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
+            <p class="info-text">Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
         </div>
         
         <div class="withdraw-limit-info">
-            <i class="fa-solid fa-clock"></i> <strong>Mínimo 5 TON</strong> - Solo domingos
+            <i class="fa-solid fa-clock"></i> <strong>Mínimo 5 TON</strong>
         </div>
         
         <div class="withdraw-limit-info" style="border-color: #ef4444;">
-            <i class="fa-solid fa-fire"></i> <strong>🔥 Los diamantes no retirados se QUEMAN al final del domingo</strong>
+            <i class="fa-solid fa-fire"></i> <strong>🔥 Los diamantes no retirados se QUEMAN</strong>
         </div>
         
-        <button onclick="processWithdraw()" id="withdraw-btn" style="background: #10b981; font-size: 16px;">
-            <i class="fa-solid fa-money-bill-transfer"></i> RETIRAR (Mín. 5 TON)
+        <button onclick="processWithdraw()" id="withdraw-btn" style="background: #10b981;">
+            RETIRAR
         </button>
         
         <button class="close" onclick="closeAll()">Cancelar</button>
     </div>
 
+    <!-- NAV BAR -->
     <div class="nav-bar">
         <div class="nav-item" onclick="openDailyReward()">
             <i class="fa-solid fa-calendar-day"></i>
