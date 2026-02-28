@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN COMPLETA CON TODAS LAS FUNCIONES
+// TON CITY GAME - VERSIÓN FINAL CORREGIDA
 // ======================================================
 
 console.log("✅ Ton City Game - Inicializando...");
@@ -47,8 +47,10 @@ let currentWallet = null;
 let userData = {
     id: null,
     username: "Cargando...",
+    firstName: "",
+    lastName: "",
     diamonds: 0,
-    // 🏗️ EDIFICIOS PRODUCTORES (4)
+    // 🏗️ SOLO 4 EDIFICIOS PRODUCTORES
     lvl_piscina: 0,
     lvl_fabrica: 0,
     lvl_escuela: 0,
@@ -69,7 +71,7 @@ let userData = {
     last_daily_claim: null,
     // 💎 ESTADO DE INVERSOR
     haInvertido: false,
-    // 🎰 LÍMITES DIARIOS PARA CASINO
+    // 🎰 LÍMITES DIARIOS
     jugadasHoy: {
         highlow: 0,
         ruleta: 0,
@@ -584,64 +586,82 @@ function actualizarDailyUI() {
     }
 }
 
+// ==========================================
+// RECLAMAR RECOMPENSA DIARIA (VERSIÓN CORREGIDA)
+// ==========================================
 async function claimDailyReward() {
     try {
         console.log("🎁 Intentando reclamar recompensa diaria...");
         
-        if (!puedeReclamarDiaria()) {
-            const ultimo = new Date(userData.last_daily_claim);
-            const manana = new Date(ultimo);
-            manana.setDate(manana.getDate() + 1);
-            manana.setHours(0, 0, 0, 0);
-            
-            const horasRestantes = Math.ceil((manana - new Date()) / (1000 * 60 * 60));
-            
-            alert(`❌ Ya reclamaste hoy. Próxima recompensa en ${horasRestantes} horas`);
+        if (!userData.id) {
+            alert("❌ Error: Usuario no identificado");
             return;
         }
         
-        let nuevoDia = 1;
-        const rachaActual = userData.daily_streak || 0;
+        if (!puedeReclamarDiaria()) {
+            const ultimo = userData.last_daily_claim ? new Date(userData.last_daily_claim) : null;
+            const manana = new Date();
+            manana.setDate(manana.getDate() + 1);
+            manana.setHours(0, 0, 0, 0);
+            
+            alert("❌ Ya reclamaste hoy. Vuelve mañana.");
+            return;
+        }
         
-        if (userData.last_daily_claim) {
+        // Calcular día
+        let nuevoDia = 1;
+        if (userData.last_daily_claim && userData.daily_streak > 0) {
             const ultimo = new Date(userData.last_daily_claim);
             const ahora = new Date();
             const diffHoras = (ahora - ultimo) / (1000 * 60 * 60);
             
-            if (diffHoras < 48 && rachaActual > 0) {
-                nuevoDia = rachaActual + 1;
+            if (diffHoras < 48) {
+                nuevoDia = userData.daily_streak + 1;
             }
         }
         
         if (nuevoDia > 30) nuevoDia = 30;
         
-        const recompensa = getDailyRewardAmount(nuevoDia);
+        // Calcular recompensa
+        const recompensa = nuevoDia <= 30 ? 10 + (nuevoDia - 1) * 10 : 300;
         
-        console.log(`📅 Día calculado: ${nuevoDia}, Recompensa: ${recompensa}💎`);
+        console.log(`📅 Día: ${nuevoDia}, Recompensa: ${recompensa}💎`);
         
-        if (!confirm(`¿Reclamar recompensa del Día ${nuevoDia} por ${recompensa} 💎?`)) return;
+        if (!confirm(`¿Reclamar Día ${nuevoDia} por ${recompensa} 💎?`)) return;
         
+        // Guardar valores originales por si falla
+        const oldDiamonds = userData.diamonds;
+        const oldStreak = userData.daily_streak;
+        const oldClaim = userData.last_daily_claim;
+        
+        // Actualizar localmente
         userData.diamonds += recompensa;
         userData.daily_streak = nuevoDia;
         userData.last_daily_claim = new Date().toISOString();
         
+        // Actualizar UI inmediatamente
         actualizarUI();
         actualizarDailyUI();
-        actualizarBannerDiario();
         
-        const saveResult = await saveUserData();
+        // Guardar en Supabase
+        const guardado = await saveUserData();
         
-        if (saveResult) {
-            console.log("✅ Recompensa guardada en Supabase");
+        if (guardado) {
+            console.log("✅ Recompensa guardada");
             alert(`✅ ¡+${recompensa} diamantes! Día ${nuevoDia}/30`);
         } else {
-            console.error("❌ Error al guardar");
-            alert("❌ Error al guardar la recompensa. Intenta de nuevo.");
+            // Revertir cambios
+            userData.diamonds = oldDiamonds;
+            userData.daily_streak = oldStreak;
+            userData.last_daily_claim = oldClaim;
+            actualizarUI();
+            actualizarDailyUI();
+            alert("❌ Error al guardar. Intenta de nuevo.");
         }
         
     } catch (error) {
-        console.error("❌ Error CRÍTICO en claimDailyReward:", error);
-        alert("Error al reclamar recompensa: " + error.message);
+        console.error("❌ Error en claimDailyReward:", error);
+        alert("❌ Error al reclamar: " + error.message);
     }
 }
 
@@ -688,7 +708,7 @@ function getMinDiamondsFor5TON() {
 }
 
 // ==========================================
-// INICIALIZACIÓN Y CARGA DE DATOS
+// INICIALIZACIÓN Y CARGA DE DATOS (MODIFICADO PARA NOMBRE REAL)
 // ==========================================
 async function initApp() {
     try {
@@ -698,9 +718,24 @@ async function initApp() {
 
         const user = tg.initDataUnsafe.user;
         if (user) {
-            console.log("✅ Usuario Telegram:", user.username || user.first_name);
+            console.log("✅ Usuario Telegram:", user);
+            
             userData.id = user.id.toString();
-            userData.username = user.username || user.first_name || "Usuario";
+            
+            // ✅ NOMBRE REAL DEL USUARIO (no el @)
+            // Prioridad: first_name + last_name, o solo first_name
+            if (user.first_name && user.last_name) {
+                userData.username = `${user.first_name} ${user.last_name}`;
+            } else if (user.first_name) {
+                userData.username = user.first_name;
+            } else if (user.username) {
+                userData.username = user.username; // fallback al username si no hay nombre
+            } else {
+                userData.username = "Usuario";
+            }
+            
+            userData.firstName = user.first_name || "";
+            userData.lastName = user.last_name || "";
             
             const nameElem = document.getElementById("user-display");
             if (nameElem) nameElem.textContent = userData.username;
@@ -756,6 +791,9 @@ function actualizarBannerDomingo() {
     }
 }
 
+// ==========================================
+// CARGAR USUARIO DESDE SUPABASE (MODIFICADO)
+// ==========================================
 async function loadUserFromDB(tgId) {
     try {
         console.log("👤 Cargando usuario desde DB:", tgId);
@@ -776,7 +814,7 @@ async function loadUserFromDB(tgId) {
             
             const nuevoUsuario = {
                 telegram_id: tgId.toString(),
-                username: userData.username,
+                username: userData.username, // Guardamos el nombre real
                 diamonds: 0,
                 lvl_piscina: 0,
                 lvl_fabrica: 0,
@@ -831,6 +869,7 @@ async function loadUserFromDB(tgId) {
             };
             
             console.log("📊 Datos cargados:", {
+                nombre: userData.username,
                 piscina: userData.lvl_piscina,
                 fabrica: userData.lvl_fabrica,
                 escuela: userData.lvl_escuela,
@@ -1637,6 +1676,11 @@ async function buyUpgrade(name, field, price) {
         console.log(`💎 Diamantes actuales: ${userData.diamonds}`);
         console.log(`📊 Nivel actual de ${field}: ${userData[`lvl_${field}`]}`);
         
+        if (!userData.id) {
+            alert("❌ Error: Usuario no identificado");
+            return;
+        }
+        
         if ((userData.diamonds || 0) < price) {
             alert("❌ No tienes suficientes diamantes");
             return;
@@ -1675,51 +1719,52 @@ async function buyUpgrade(name, field, price) {
 }
 
 // ==========================================
-// GUARDAR DATOS EN SUPABASE (VERSIÓN ULTRA CORREGIDA)
+// GUARDAR DATOS EN SUPABASE (VERSIÓN CORREGIDA)
 // ==========================================
 async function saveUserData() {
     if (!userData.id) {
-        console.warn("⚠️ No hay userData.id para guardar");
+        console.log("⚠️ No hay ID de usuario");
         return false;
     }
     
     try {
-        userData.last_production_update = new Date().toISOString();
+        console.log("💾 Intentando guardar datos...");
         
-        const diamondsInt = Math.floor(Number(userData.diamonds) || 0);
-        
-        const datosAGuardar = {
-            diamonds: diamondsInt,
-            lvl_piscina: Number(userData.lvl_piscina) || 0,
-            lvl_fabrica: Number(userData.lvl_fabrica) || 0,
-            lvl_escuela: Number(userData.lvl_escuela) || 0,
-            lvl_hospital: Number(userData.lvl_hospital) || 0,
-            referral_earnings: Number(userData.referral_earnings) || 0,
+        // Preparar datos - FORZAR tipos correctos
+        const datos = {
+            diamonds: Math.floor(Number(userData.diamonds) || 0),
+            lvl_piscina: parseInt(userData.lvl_piscina) || 0,
+            lvl_fabrica: parseInt(userData.lvl_fabrica) || 0,
+            lvl_escuela: parseInt(userData.lvl_escuela) || 0,
+            lvl_hospital: parseInt(userData.lvl_hospital) || 0,
+            referral_earnings: parseInt(userData.referral_earnings) || 0,
             referred_users: userData.referred_users || [],
             last_online: new Date().toISOString(),
-            last_production_update: userData.last_production_update,
-            last_withdraw_week: userData.last_withdraw_week ? Number(userData.last_withdraw_week) : null,
+            last_production_update: new Date().toISOString(),
+            last_withdraw_week: userData.last_withdraw_week ? parseInt(userData.last_withdraw_week) : null,
             last_ad_watch: userData.last_ad_watch,
-            daily_streak: Number(userData.daily_streak) || 0,
+            daily_streak: parseInt(userData.daily_streak) || 0,
             last_daily_claim: userData.last_daily_claim,
             haInvertido: userData.haInvertido || false
         };
         
-        console.log("💾 Guardando en Supabase:", datosAGuardar);
+        console.log("📦 Datos a guardar:", datos);
         
+        // Intentar actualizar
         const { error } = await _supabase
             .from('game_data')
-            .update(datosAGuardar)
+            .update(datos)
             .eq('telegram_id', userData.id);
         
         if (error) {
             console.error("❌ Error de Supabase:", error);
             
+            // Si el error es que no existe, insertar
             if (error.code === 'PGRST116') {
-                console.log("🔄 Registro no existe, insertando...");
+                console.log("🔄 Usuario no existe, insertando...");
                 
-                const datosInsertar = {
-                    ...datosAGuardar,
+                const insertData = {
+                    ...datos,
                     telegram_id: userData.id,
                     username: userData.username,
                     referral_code: userData.referral_code || ('REF' + userData.id.slice(-6)),
@@ -1728,31 +1773,28 @@ async function saveUserData() {
                 
                 const { error: insertError } = await _supabase
                     .from('game_data')
-                    .insert([datosInsertar]);
+                    .insert([insertData]);
                 
                 if (insertError) {
                     console.error("❌ Error al insertar:", insertError);
+                    alert("❌ Error al crear usuario en base de datos");
                     return false;
                 }
                 
                 console.log("✅ Usuario insertado correctamente");
-                
-                await updateTotalDiamonds();
-                
                 return true;
             }
             
+            alert("❌ Error de base de datos: " + error.message);
             return false;
         }
         
-        console.log("✅ Datos guardados correctamente en Supabase");
-        
-        await updateTotalDiamonds();
-        
+        console.log("✅ Datos guardados correctamente");
         return true;
         
     } catch (error) {
-        console.error("❌ Error EXCEPCIÓN en saveUserData:", error);
+        console.error("❌ Error en saveUserData:", error);
+        alert("❌ Error al guardar: " + error.message);
         return false;
     }
 }
@@ -1958,4 +2000,4 @@ window.disconnectWallet = disconnectWallet;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 
-console.log("✅ Ton City Game - Versión completa con todas las funciones");
+console.log("✅ Ton City Game - Versión completa con nombre real de usuario");
