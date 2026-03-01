@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN FINAL CORREGIDA
+// TON CITY GAME - VERSIÓN FINAL COMPLETA
 // ======================================================
 
 console.log("✅ Ton City Game - Inicializando...");
@@ -1062,7 +1062,7 @@ function openCentral() {
 }
 
 // ==========================================
-// CASINO - FUNCIONES DE APERTURA (SIN PROBABILIDADES)
+// CASINO - FUNCIONES DE APERTURA
 // ==========================================
 
 function openCasino() {
@@ -1151,7 +1151,7 @@ function cambiarApuesta(juego, delta) {
     }
 }
 
-// JUEGO 1: HIGH/LOW (SIN PROBABILIDADES)
+// JUEGO 1: HIGH/LOW
 function jugarHighLow(eleccion) {
     const apuesta = apuestaActual.highlow;
     
@@ -1197,7 +1197,7 @@ function jugarHighLow(eleccion) {
     saveUserData();
 }
 
-// JUEGO 2: RULETA (SIN PROBABILIDADES)
+// JUEGO 2: RULETA
 function jugarRuleta(tipo) {
     const apuesta = apuestaActual.ruleta;
     
@@ -1282,7 +1282,7 @@ function jugarRuleta(tipo) {
     saveUserData();
 }
 
-// JUEGO 3: TRAGAPERRAS (SIN PROBABILIDADES)
+// JUEGO 3: TRAGAPERRAS
 function jugarTragaperras() {
     const apuesta = apuestaActual.tragaperras;
     
@@ -1343,7 +1343,7 @@ function jugarTragaperras() {
     saveUserData();
 }
 
-// JUEGO 4: DADOS (SIN PROBABILIDADES)
+// JUEGO 4: DADOS
 function jugarDados(eleccion) {
     const apuesta = apuestaActual.dados;
     
@@ -1412,7 +1412,7 @@ function jugarDados(eleccion) {
     saveUserData();
 }
 
-// JUEGO 5: LOTERÍA (SIN PROBABILIDADES)
+// JUEGO 5: LOTERÍA
 function comprarBoletos() {
     const cantidad = apuestaActual.loteria;
     const costoTotal = cantidad * 5;
@@ -1642,7 +1642,7 @@ async function disconnectWallet() {
 }
 
 // ==========================================
-// COMPRAR MEJORAS (VERSIÓN CORREGIDA)
+// COMPRAR MEJORAS
 // ==========================================
 async function buyUpgrade(name, field, price) {
     try {
@@ -1693,7 +1693,7 @@ async function buyUpgrade(name, field, price) {
 }
 
 // ==========================================
-// GUARDAR DATOS EN SUPABASE (VERSIÓN CORREGIDA)
+// GUARDAR DATOS EN SUPABASE
 // ==========================================
 async function saveUserData() {
     if (!userData.id) {
@@ -1771,7 +1771,7 @@ async function saveUserData() {
 }
 
 // ==========================================
-// RETIROS SEMANALES (BOTÓN DE CAMBIO)
+// RETIROS SEMANALES
 // ==========================================
 async function openWithdraw() {
     try {
@@ -1970,4 +1970,4 @@ window.disconnectWallet = disconnectWallet;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 
-console.log("✅ Ton City Game - Versión final");
+console.log("✅ Ton City Game - Versión final completa");
