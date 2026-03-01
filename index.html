@@ -34,6 +34,7 @@
             --pool: #38bdf8;
             --win: #4ade80;
             --lose: #ef4444;
+            --exchange: #f97316;
         }
         
         body {
@@ -764,6 +765,23 @@
             border-radius: 12px;
             border: 2px solid #facc15;
         }
+        
+        .exchange-btn {
+            background: linear-gradient(135deg, #f97316, #c2410c) !important;
+            margin-top: 10px !important;
+        }
+        
+        .withdraw-btn {
+            background: #10b981 !important;
+            margin-top: 10px !important;
+        }
+        
+        .two-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -1210,7 +1228,7 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL RETIRO -->
+    <!-- MODAL RETIRO (CON DOS BOTONES) -->
     <div class="modal" id="modalWithdraw">
         <h3>💰 Retiro Semanal <span class="withdraw-sunday-badge">DOMINGOS</span></h3>
         
@@ -1246,7 +1264,7 @@
         </div>
         
         <div class="input-group">
-            <label>💎 Diamantes a cambiar:</label>
+            <label>💎 Diamantes a cambiar/retirar:</label>
             <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1">
             <p class="info-text">Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
         </div>
@@ -1259,9 +1277,15 @@
             <i class="fa-solid fa-fire"></i> <strong>🔥 Los diamantes no cambiados se QUEMAN</strong>
         </div>
         
-        <button onclick="processWithdraw()" id="withdraw-btn" style="background: #10b981;">
-            CAMBIAR POR TON
-        </button>
+        <!-- DOS BOTONES SEPARADOS -->
+        <div class="two-buttons">
+            <button onclick="exchangeDiamonds()" class="exchange-btn">
+                <i class="fa-solid fa-arrows-spin"></i> CAMBIAR (intercambiar)
+            </button>
+            <button onclick="processWithdraw()" class="withdraw-btn">
+                <i class="fa-solid fa-money-bill-transfer"></i> RETIRAR (enviar a wallet)
+            </button>
+        </div>
         
         <button class="close" onclick="closeAll()">Cancelar</button>
     </div>
