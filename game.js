@@ -587,7 +587,7 @@ function actualizarDailyUI() {
 }
 
 // ==========================================
-// RECLAMAR RECOMPENSA DIARIA (VERSIÓN CORREGIDA)
+// RECLAMAR RECOMPENSA DIARIA
 // ==========================================
 async function claimDailyReward() {
     try {
@@ -599,16 +599,10 @@ async function claimDailyReward() {
         }
         
         if (!puedeReclamarDiaria()) {
-            const ultimo = userData.last_daily_claim ? new Date(userData.last_daily_claim) : null;
-            const manana = new Date();
-            manana.setDate(manana.getDate() + 1);
-            manana.setHours(0, 0, 0, 0);
-            
             alert("❌ Ya reclamaste hoy. Vuelve mañana.");
             return;
         }
         
-        // Calcular día
         let nuevoDia = 1;
         if (userData.last_daily_claim && userData.daily_streak > 0) {
             const ultimo = new Date(userData.last_daily_claim);
@@ -622,40 +616,24 @@ async function claimDailyReward() {
         
         if (nuevoDia > 30) nuevoDia = 30;
         
-        // Calcular recompensa
         const recompensa = nuevoDia <= 30 ? 10 + (nuevoDia - 1) * 10 : 300;
         
         console.log(`📅 Día: ${nuevoDia}, Recompensa: ${recompensa}💎`);
         
         if (!confirm(`¿Reclamar Día ${nuevoDia} por ${recompensa} 💎?`)) return;
         
-        // Guardar valores originales por si falla
-        const oldDiamonds = userData.diamonds;
-        const oldStreak = userData.daily_streak;
-        const oldClaim = userData.last_daily_claim;
-        
-        // Actualizar localmente
         userData.diamonds += recompensa;
         userData.daily_streak = nuevoDia;
         userData.last_daily_claim = new Date().toISOString();
         
-        // Actualizar UI inmediatamente
         actualizarUI();
         actualizarDailyUI();
         
-        // Guardar en Supabase
         const guardado = await saveUserData();
         
         if (guardado) {
-            console.log("✅ Recompensa guardada");
             alert(`✅ ¡+${recompensa} diamantes! Día ${nuevoDia}/30`);
         } else {
-            // Revertir cambios
-            userData.diamonds = oldDiamonds;
-            userData.daily_streak = oldStreak;
-            userData.last_daily_claim = oldClaim;
-            actualizarUI();
-            actualizarDailyUI();
             alert("❌ Error al guardar. Intenta de nuevo.");
         }
         
@@ -708,7 +686,7 @@ function getMinDiamondsFor5TON() {
 }
 
 // ==========================================
-// INICIALIZACIÓN Y CARGA DE DATOS (MODIFICADO PARA NOMBRE REAL)
+// INICIALIZACIÓN Y CARGA DE DATOS
 // ==========================================
 async function initApp() {
     try {
@@ -722,14 +700,13 @@ async function initApp() {
             
             userData.id = user.id.toString();
             
-            // ✅ NOMBRE REAL DEL USUARIO (no el @)
-            // Prioridad: first_name + last_name, o solo first_name
+            // ✅ NOMBRE REAL DEL USUARIO (sin @)
             if (user.first_name && user.last_name) {
                 userData.username = `${user.first_name} ${user.last_name}`;
             } else if (user.first_name) {
                 userData.username = user.first_name;
             } else if (user.username) {
-                userData.username = user.username; // fallback al username si no hay nombre
+                userData.username = user.username;
             } else {
                 userData.username = "Usuario";
             }
@@ -791,9 +768,6 @@ function actualizarBannerDomingo() {
     }
 }
 
-// ==========================================
-// CARGAR USUARIO DESDE SUPABASE (MODIFICADO)
-// ==========================================
 async function loadUserFromDB(tgId) {
     try {
         console.log("👤 Cargando usuario desde DB:", tgId);
@@ -814,7 +788,7 @@ async function loadUserFromDB(tgId) {
             
             const nuevoUsuario = {
                 telegram_id: tgId.toString(),
-                username: userData.username, // Guardamos el nombre real
+                username: userData.username,
                 diamonds: 0,
                 lvl_piscina: 0,
                 lvl_fabrica: 0,
@@ -1088,7 +1062,7 @@ function openCentral() {
 }
 
 // ==========================================
-// CASINO - FUNCIONES DE APERTURA
+// CASINO - FUNCIONES DE APERTURA (SIN PROBABILIDADES)
 // ==========================================
 
 function openCasino() {
@@ -1177,7 +1151,7 @@ function cambiarApuesta(juego, delta) {
     }
 }
 
-// JUEGO 1: HIGH/LOW
+// JUEGO 1: HIGH/LOW (SIN PROBABILIDADES)
 function jugarHighLow(eleccion) {
     const apuesta = apuestaActual.highlow;
     
@@ -1187,7 +1161,7 @@ function jugarHighLow(eleccion) {
     }
     
     if (!puedeJugar('highlow')) {
-        alert("❌ Límite diario alcanzado. Conviértete en inversor comprando TON para jugar sin límites.");
+        alert("❌ Límite diario alcanzado");
         return;
     }
     
@@ -1223,7 +1197,7 @@ function jugarHighLow(eleccion) {
     saveUserData();
 }
 
-// JUEGO 2: RULETA
+// JUEGO 2: RULETA (SIN PROBABILIDADES)
 function jugarRuleta(tipo) {
     const apuesta = apuestaActual.ruleta;
     
@@ -1233,7 +1207,7 @@ function jugarRuleta(tipo) {
     }
     
     if (!puedeJugar('ruleta')) {
-        alert("❌ Límite diario alcanzado. Conviértete en inversor comprando TON para jugar sin límites.");
+        alert("❌ Límite diario alcanzado");
         return;
     }
     
@@ -1308,7 +1282,7 @@ function jugarRuleta(tipo) {
     saveUserData();
 }
 
-// JUEGO 3: TRAGAPERRAS
+// JUEGO 3: TRAGAPERRAS (SIN PROBABILIDADES)
 function jugarTragaperras() {
     const apuesta = apuestaActual.tragaperras;
     
@@ -1318,7 +1292,7 @@ function jugarTragaperras() {
     }
     
     if (!puedeJugar('tragaperras')) {
-        alert("❌ Límite diario alcanzado. Conviértete en inversor comprando TON para jugar sin límites.");
+        alert("❌ Límite diario alcanzado");
         return;
     }
     
@@ -1369,7 +1343,7 @@ function jugarTragaperras() {
     saveUserData();
 }
 
-// JUEGO 4: DADOS
+// JUEGO 4: DADOS (SIN PROBABILIDADES)
 function jugarDados(eleccion) {
     const apuesta = apuestaActual.dados;
     
@@ -1379,7 +1353,7 @@ function jugarDados(eleccion) {
     }
     
     if (!puedeJugar('dados')) {
-        alert("❌ Límite diario alcanzado. Conviértete en inversor comprando TON para jugar sin límites.");
+        alert("❌ Límite diario alcanzado");
         return;
     }
     
@@ -1438,7 +1412,7 @@ function jugarDados(eleccion) {
     saveUserData();
 }
 
-// JUEGO 5: LOTERÍA
+// JUEGO 5: LOTERÍA (SIN PROBABILIDADES)
 function comprarBoletos() {
     const cantidad = apuestaActual.loteria;
     const costoTotal = cantidad * 5;
@@ -1449,7 +1423,7 @@ function comprarBoletos() {
     }
     
     if (!puedeJugar('loteria', cantidad)) {
-        alert("❌ Límite diario de boletos alcanzado. Conviértete en inversor comprando TON para jugar sin límites.");
+        alert("❌ Límite diario de boletos alcanzado");
         return;
     }
     
@@ -1730,7 +1704,6 @@ async function saveUserData() {
     try {
         console.log("💾 Intentando guardar datos...");
         
-        // Preparar datos - FORZAR tipos correctos
         const datos = {
             diamonds: Math.floor(Number(userData.diamonds) || 0),
             lvl_piscina: parseInt(userData.lvl_piscina) || 0,
@@ -1750,7 +1723,6 @@ async function saveUserData() {
         
         console.log("📦 Datos a guardar:", datos);
         
-        // Intentar actualizar
         const { error } = await _supabase
             .from('game_data')
             .update(datos)
@@ -1759,7 +1731,6 @@ async function saveUserData() {
         if (error) {
             console.error("❌ Error de Supabase:", error);
             
-            // Si el error es que no existe, insertar
             if (error.code === 'PGRST116') {
                 console.log("🔄 Usuario no existe, insertando...");
                 
@@ -1800,7 +1771,7 @@ async function saveUserData() {
 }
 
 // ==========================================
-// RETIROS SEMANALES
+// RETIROS SEMANALES (BOTÓN DE CAMBIO)
 // ==========================================
 async function openWithdraw() {
     try {
@@ -1824,11 +1795,11 @@ async function openWithdraw() {
         
         const statusElem = document.getElementById("withdraw-status");
         if (!enVentanaRetiro()) {
-            statusElem.innerHTML = '<i class="fa-solid fa-circle-info" style="color: #f97316;"></i> ⏳ Espera al DOMINGO para retirar';
+            statusElem.innerHTML = '<i class="fa-solid fa-circle-info" style="color: #f97316;"></i> ⏳ Espera al DOMINGO para cambiar';
         } else if (userData.last_withdraw_week === getNumeroSemana()) {
-            statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #ef4444;"></i> ✅ Ya retiraste esta semana';
+            statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #ef4444;"></i> ✅ Ya cambiaste esta semana';
         } else {
-            statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> ✅ Puedes retirar hoy';
+            statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> ✅ Puedes cambiar hoy';
         }
         
         const input = document.getElementById("withdraw-amount");
@@ -1885,7 +1856,7 @@ async function processWithdraw() {
     
     const semanaActual = getNumeroSemana();
     if (userData.last_withdraw_week === semanaActual) {
-        alert("❌ Ya retiraste esta semana");
+        alert("❌ Ya cambiaste esta semana");
         return;
     }
     
@@ -1900,7 +1871,7 @@ async function processWithdraw() {
     }
     
     if (diamantes < minDiamondsFor5TON) {
-        return alert(`❌ Mínimo ${minDiamondsFor5TON} 💎 para retirar 5 TON`);
+        return alert(`❌ Mínimo ${minDiamondsFor5TON} 💎 para 5 TON`);
     }
     
     const tonRecibido = diamantes * tasa;
@@ -1910,9 +1881,8 @@ async function processWithdraw() {
     }
     
     const confirmMsg = 
-        `¿Retirar ${diamantes.toLocaleString()} 💎?\n\n` +
-        `Recibirás: ${tonRecibido.toFixed(4)} TON\n` +
-        `⚠️ Los diamantes no retirados se QUEMAN al final del domingo.`;
+        `¿Cambiar ${diamantes.toLocaleString()} 💎 por ${tonRecibido.toFixed(4)} TON?\n\n` +
+        `⚠️ Los diamantes no cambiados se QUEMAN al final del domingo.`;
     
     if (!confirm(confirmMsg)) return;
     
@@ -1920,7 +1890,7 @@ async function processWithdraw() {
     userData.last_withdraw_week = semanaActual;
     await saveUserData();
     
-    alert(`✅ Retiro procesado! Recibirás ${tonRecibido.toFixed(4)} TON en las próximas 24h`);
+    alert(`✅ Cambio exitoso! Recibirás ${tonRecibido.toFixed(4)} TON en las próximas 24h`);
     closeAll();
 }
 
@@ -2000,4 +1970,4 @@ window.disconnectWallet = disconnectWallet;
 window.processWithdraw = processWithdraw;
 window.updateWithdrawCalculation = updateWithdrawCalculation;
 
-console.log("✅ Ton City Game - Versión completa con nombre real de usuario");
+console.log("✅ Ton City Game - Versión final");
