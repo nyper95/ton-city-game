@@ -782,7 +782,7 @@
 
     <!-- HEADER -->
     <div class="header">
-        <div>@<span id="user-display">Cargando...</span></div>
+        <div><span id="user-display">Cargando...</span></div>
         <div class="balance"><span id="diamonds">0</span> 💎</div>
         <div class="rate">+ <span id="rate">0</span> / hr</div>
     </div>
@@ -799,24 +799,28 @@
 
     <!-- GRID DE EDIFICIOS -->
     <div class="grid">
+        <!-- 🟡 BANCO -->
         <div class="card" style="border: 1px solid #facc15;" onclick="openBank()">
             <i class="fa-solid fa-building-columns bank"></i>
             <h3>Banco</h3>
             <small style="color: #facc15;">Comprar TON → 💎</small>
         </div>
         
+        <!-- 🔵 TIENDA -->
         <div class="card" style="border: 1px solid #3b82f6;" onclick="openStore()">
             <i class="fa-solid fa-cart-shopping store"></i>
             <h3>Tienda</h3>
             <small style="color: #3b82f6;">Mejorar edificios</small>
         </div>
         
+        <!-- 🟠 CASINO -->
         <div class="card" style="border: 1px solid #f97316;" onclick="openCasino()">
             <i class="fa-solid fa-dice casino"></i>
             <h3>Casino</h3>
             <small style="color: #f97316;">5 juegos de azar</small>
         </div>
         
+        <!-- 🟢 PARQUE -->
         <div class="card" style="border: 1px solid #10b981;" onclick="showAdsModal()">
             <i class="fa-solid fa-tree park"></i>
             <h3>Parque</h3>
@@ -824,24 +828,28 @@
             <div id="park-timer" style="font-size: 10px; color: #f97316; margin-top: 5px;"></div>
         </div>
         
+        <!-- 🔵 PISCINA -->
         <div class="card" style="border: 1px solid #38bdf8;">
             <i class="fa-solid fa-water-ladder pool"></i>
             <h3>Piscina</h3>
             <small>Lvl: <span id="lvl_piscina" style="color: #38bdf8;">0</span></small>
         </div>
         
+        <!-- 🟣 FÁBRICA -->
         <div class="card" style="border: 1px solid #a78bfa;">
             <i class="fa-solid fa-industry factory"></i>
             <h3>Fábrica</h3>
             <small>Lvl: <span id="lvl_fabrica" style="color: #a78bfa;">0</span></small>
         </div>
         
+        <!-- 🟤 ESCUELA -->
         <div class="card" style="border: 1px solid #a16207;">
             <i class="fa-solid fa-school school"></i>
             <h3>Escuela</h3>
             <small>Lvl: <span id="lvl_escuela" style="color: #a16207;">0</span></small>
         </div>
         
+        <!-- 🔴 HOSPITAL -->
         <div class="card" style="border: 1px solid #f87171;">
             <i class="fa-solid fa-hospital hospital"></i>
             <h3>Hospital</h3>
@@ -1238,7 +1246,7 @@
         </div>
         
         <div class="input-group">
-            <label>💎 Diamantes a retirar:</label>
+            <label>💎 Diamantes a cambiar:</label>
             <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1">
             <p class="info-text">Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
         </div>
@@ -1248,11 +1256,11 @@
         </div>
         
         <div class="withdraw-limit-info" style="border-color: #ef4444;">
-            <i class="fa-solid fa-fire"></i> <strong>🔥 Los diamantes no retirados se QUEMAN</strong>
+            <i class="fa-solid fa-fire"></i> <strong>🔥 Los diamantes no cambiados se QUEMAN</strong>
         </div>
         
         <button onclick="processWithdraw()" id="withdraw-btn" style="background: #10b981;">
-            RETIRAR
+            CAMBIAR POR TON
         </button>
         
         <button class="close" onclick="closeAll()">Cancelar</button>
