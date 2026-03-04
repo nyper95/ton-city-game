@@ -35,6 +35,11 @@
             --win: #4ade80;
             --lose: #ef4444;
             --exchange: #f97316;
+            --premium: #8b5cf6;
+            --diamond: #60a5fa;
+            --gold: #fbbf24;
+            --silver: #94a3b8;
+            --citizen: #4ade80;
         }
         
         body {
@@ -44,6 +49,13 @@
             color: white;
             overflow-x: hidden;
             padding-bottom: 70px;
+        }
+        
+        /* Usuario premium */
+        .premium-user {
+            color: #60a5fa !important;
+            text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+            font-weight: bold;
         }
         
         .sunday-banner {
@@ -202,6 +214,7 @@
         .factory { color: var(--factory); }
         .school { color: var(--school); }
         .hospital { color: var(--hospital); }
+        .premium { color: var(--premium); }
         
         .overlay, .modal {
             position: fixed;
@@ -363,6 +376,121 @@
             color: #facc15;
             font-weight: bold;
             font-size: 18px;
+        }
+        
+        /* TIENDA PREMIUM */
+        .premium-item {
+            background: linear-gradient(145deg, #2e1065, #4c1d95);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+            border-left: 4px solid #8b5cf6;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .premium-item::before {
+            content: "⭐";
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 20px;
+            opacity: 0.3;
+        }
+        
+        .premium-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .premium-item-price {
+            color: #facc15;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .premium-badge {
+            background: #8b5cf6;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        
+        .premium-timer {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            border: 1px solid #8b5cf6;
+        }
+        
+        .premium-benefits {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .premium-benefits ul {
+            margin: 5px 0;
+            padding-left: 20px;
+            color: #94a3b8;
+        }
+        
+        .premium-benefits li {
+            margin: 3px 0;
+        }
+        
+        /* RANGOS DE RECOMPENSA */
+        .rank-card {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+        }
+        
+        .diamond-rank {
+            border-left: 4px solid #60a5fa;
+        }
+        
+        .gold-rank {
+            border-left: 4px solid #fbbf24;
+        }
+        
+        .silver-rank {
+            border-left: 4px solid #94a3b8;
+        }
+        
+        .citizen-rank {
+            border-left: 4px solid #4ade80;
+        }
+        
+        .rank-name {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        
+        .diamond-text {
+            color: #60a5fa;
+        }
+        
+        .gold-text {
+            color: #fbbf24;
+        }
+        
+        .silver-text {
+            color: #94a3b8;
+        }
+        
+        .citizen-text {
+            color: #4ade80;
         }
         
         .casino-menu {
@@ -782,6 +910,27 @@
             gap: 10px;
             margin-top: 15px;
         }
+        
+        .rank-indicator {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border: 2px solid var(--primary);
+        }
+        
+        .rank-position {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .rank-projection {
+            background: #022c22;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -795,7 +944,7 @@
     </div>
 
     <div id="ads-banner" class="ads-available" onclick="showAdsModal()" style="display: none;">
-        <i class="fa-solid fa-circle-play"></i> ¡PARQUE DISPONIBLE! Gana 30 💎
+        <i class="fa-solid fa-circle-play"></i> ¡PARQUE DISPONIBLE! Gana 30 💎 (1h)
     </div>
 
     <!-- HEADER -->
@@ -803,13 +952,16 @@
         <div><span id="user-display">Cargando...</span></div>
         <div class="balance"><span id="diamonds">0</span> 💎</div>
         <div class="rate">+ <span id="rate">0</span> / hr</div>
+        <div id="premium-timer" style="display: none; margin-top: 5px; font-size: 12px; background: #8b5cf6; color: white; padding: 4px 8px; border-radius: 20px;">
+            ⭐ Premium: <span id="premium-time-left">0</span>
+        </div>
     </div>
 
     <!-- EDIFICIO CENTRAL -->
     <div class="central" onclick="openCentral()">
         <i class="fa-solid fa-city"></i>
         <h2>Edificio Central</h2>
-        <small>Estadísticas de producción</small>
+        <small>Estadísticas de producción y rango</small>
         <div id="central-sunday-indicator" style="display: none; margin-top: 8px; font-size: 12px; background: #f97316; color: white; padding: 4px; border-radius: 20px;">
             ⏸️ Producción pausada (Domingo)
         </div>
@@ -828,7 +980,7 @@
         <div class="card" style="border: 1px solid #3b82f6;" onclick="openStore()">
             <i class="fa-solid fa-cart-shopping store"></i>
             <h3>Tienda</h3>
-            <small style="color: #3b82f6;">Mejorar edificios</small>
+            <small style="color: #3b82f6;">Mejoras + Premium</small>
         </div>
         
         <!-- 🟠 CASINO -->
@@ -881,11 +1033,40 @@
     <!-- MODAL CENTRAL -->
     <div class="modal" id="centralModal">
         <h3>🏛 Edificio Central</h3>
+        
+        <!-- RANGO DEL USUARIO -->
+        <div class="rank-indicator">
+            <div class="rank-position" id="user-rank">Cargando...</div>
+            <div id="rank-description"></div>
+            <div class="rank-projection" id="rank-projection">
+                Proyectado: <span id="projected-reward">0</span> TON
+            </div>
+        </div>
+        
         <div class="stat"><span style="color: #38bdf8;">Piscina</span><span id="s_piscina">0</span></div>
         <div class="stat"><span style="color: #a78bfa;">Fábrica</span><span id="s_fabrica">0</span></div>
         <div class="stat"><span style="color: #a16207;">Escuela</span><span id="s_escuela">0</span></div>
         <div class="stat"><span style="color: #f87171;">Hospital</span><span id="s_hospital">0</span></div>
         <div class="stat" style="background:#022c22"><b>Total / hr</b><b id="s_total">0</b></div>
+        
+        <!-- INFORMACIÓN DE RANGOS -->
+        <div class="rank-card diamond-rank">
+            <div class="rank-name diamond-text">💎 Diamante (Top 1-3)</div>
+            <div>40% del pool (reparto equitativo)</div>
+        </div>
+        <div class="rank-card gold-rank">
+            <div class="rank-name gold-text">🥇 Oro (Top 4-10)</div>
+            <div>25% del pool (reparto equitativo)</div>
+        </div>
+        <div class="rank-card silver-rank">
+            <div class="rank-name silver-text">🥈 Plata (Top 11-50)</div>
+            <div>20% del pool (reparto equitativo)</div>
+        </div>
+        <div class="rank-card citizen-rank">
+            <div class="rank-name citizen-text">👥 Ciudadano (Resto)</div>
+            <div>15% del pool (proporcional a diamantes)</div>
+        </div>
+        
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
@@ -903,8 +1084,31 @@
 
     <!-- MODAL TIENDA -->
     <div class="modal" id="modalStore">
-        <h3 style="color: #3b82f6;">🏪 Tienda de Mejoras</h3>
+        <h3 style="color: #3b82f6;">🏪 Tienda</h3>
+        
+        <!-- TIENDA NORMAL (MEJORAS) -->
         <div id="storeList"></div>
+        
+        <!-- TIENDA PREMIUM -->
+        <h4 style="color: #8b5cf6; margin-top: 20px;">⭐ Tienda Premium</h4>
+        
+        <div id="premium-status" style="display: none;" class="premium-timer">
+            <i class="fa-solid fa-crown" style="color: #8b5cf6;"></i> Tiempo restante: <span id="premium-time">0</span>
+        </div>
+        
+        <div class="premium-benefits">
+            <strong>🎁 Beneficios Premium:</strong>
+            <ul>
+                <li>✨ Multiplicador x2 en ganancias de diamantes</li>
+                <li>🚫 Sin anuncios (recompensa diaria, casino, parque)</li>
+                <li>💎 Nombre en azul brillante</li>
+                <li>⚡ Acceso prioritario a eventos</li>
+            </ul>
+        </div>
+        
+        <!-- Planes Premium -->
+        <div id="premium-plans"></div>
+        
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
@@ -912,6 +1116,11 @@
     <div class="modal" id="modalCasino">
         <h3 style="color: #f97316;">🎰 Casino - 5 Juegos</h3>
         <p class="info-text">Elige un juego para comenzar</p>
+        
+        <div id="casino-rescue" style="background: #0f172a; padding: 10px; border-radius: 8px; margin: 10px 0; border: 1px solid #f97316; display: none;">
+            <p>💎 ¿Sin diamantes? ¡Gana 100 💎 viendo un anuncio!</p>
+            <button onclick="rescueWithAd()" style="background: #f97316;">VER ANUNCIO +100 💎</button>
+        </div>
         
         <div class="casino-menu">
             <div class="casino-game-card" onclick="abrirJuego('highlow')">
@@ -1185,7 +1394,7 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL ANUNCIOS -->
+    <!-- MODAL ANUNCIOS (PARQUE - 1 HORA) -->
     <div class="modal" id="modalAds">
         <h3 style="color: #10b981;">🌳 Parque - Anuncios</h3>
         <div style="text-align: center; margin-bottom: 15px;">
@@ -1194,7 +1403,7 @@
         
         <div class="stat">
             <span>Disponible cada</span>
-            <span>2 horas</span>
+            <span>1 hora</span>
         </div>
         
         <div class="stat">
@@ -1228,7 +1437,7 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL RETIRO (CON DOS BOTONES) -->
+    <!-- MODAL RETIRO -->
     <div class="modal" id="modalWithdraw">
         <h3>💰 Retiro Semanal <span class="withdraw-sunday-badge">DOMINGOS</span></h3>
         
@@ -1245,46 +1454,27 @@
         </div>
         
         <div class="stat">
-            <span>Pool disponible</span>
-            <span id="pool-amount" style="color: #10b981;">0 TON</span>
+            <span>Pool total</span>
+            <span id="pool-total" style="color: #10b981;">0 TON</span>
         </div>
         
         <div class="stat">
-            <span>Diamantes totales</span>
-            <span id="total-diamonds" style="color: #facc15;">0 💎</span>
+            <span>Pool usuarios (80%)</span>
+            <span id="pool-users" style="color: #facc15;">0 TON</span>
         </div>
         
         <div class="stat" style="background: #1e293b;">
-            <span>1 TON =</span>
-            <span id="current-price" style="color: #facc15;">0 💎</span>
+            <span>Tu rango</span>
+            <span id="withdraw-rank" style="color: #facc15;">Cargando...</span>
+        </div>
+        
+        <div class="stat">
+            <span>Tu proyección</span>
+            <span id="withdraw-projection" style="color: #4ade80;">0 TON</span>
         </div>
         
         <div id="withdraw-status" class="withdraw-info-sunday">
             <i class="fa-solid fa-circle-info"></i> Verificando...
-        </div>
-        
-        <div class="input-group">
-            <label>💎 Diamantes a cambiar/retirar:</label>
-            <input type="number" id="withdraw-amount" placeholder="Ej: 1000" min="1">
-            <p class="info-text">Recibirás: <span id="ton-receive" class="highlight">0</span> TON</p>
-        </div>
-        
-        <div class="withdraw-limit-info">
-            <i class="fa-solid fa-clock"></i> <strong>Mínimo 5 TON</strong>
-        </div>
-        
-        <div class="withdraw-limit-info" style="border-color: #ef4444;">
-            <i class="fa-solid fa-fire"></i> <strong>🔥 Los diamantes no cambiados se QUEMAN</strong>
-        </div>
-        
-        <!-- DOS BOTONES SEPARADOS -->
-        <div class="two-buttons">
-            <button onclick="exchangeDiamonds()" class="exchange-btn">
-                <i class="fa-solid fa-arrows-spin"></i> CAMBIAR (intercambiar)
-            </button>
-            <button onclick="processWithdraw()" class="withdraw-btn">
-                <i class="fa-solid fa-money-bill-transfer"></i> RETIRAR (enviar a wallet)
-            </button>
         </div>
         
         <button class="close" onclick="closeAll()">Cancelar</button>
