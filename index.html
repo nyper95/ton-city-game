@@ -40,6 +40,7 @@
             --gold: #fbbf24;
             --silver: #94a3b8;
             --citizen: #4ade80;
+            --event: #f97316;
         }
         
         body {
@@ -110,6 +111,29 @@
         
         .ads-available i {
             margin-right: 5px;
+        }
+        
+        .event-banner {
+            background: linear-gradient(135deg, #f97316, #c2410c);
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            border-radius: 20px;
+            margin: 5px 12px;
+            border: 2px solid #facc15;
+            animation: event-pulse 2s infinite;
+        }
+        
+        .event-banner i {
+            margin-right: 5px;
+        }
+        
+        @keyframes event-pulse {
+            0% { box-shadow: 0 0 5px #f97316; }
+            50% { box-shadow: 0 0 20px #f97316; }
+            100% { box-shadow: 0 0 5px #f97316; }
         }
         
         @keyframes ads-pulse {
@@ -215,6 +239,12 @@
         .school { color: var(--school); }
         .hospital { color: var(--hospital); }
         .premium { color: var(--premium); }
+        .event { color: var(--event); }
+        
+        .event-card {
+            border: 2px solid #f97316 !important;
+            animation: event-pulse 2s infinite;
+        }
         
         .overlay, .modal {
             position: fixed;
@@ -357,28 +387,7 @@
             display: block !important;
         }
         
-        .store-item {
-            background: #0f172a;
-            padding: 15px;
-            border-radius: 12px;
-            margin: 10px 0;
-            border-left: 4px solid #3b82f6;
-        }
-        
-        .store-item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .store-item-price {
-            color: #facc15;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        
-        /* TIENDA PREMIUM */
+        /* TIENDA PREMIUM (ÚNICA) */
         .premium-item {
             background: linear-gradient(145deg, #2e1065, #4c1d95);
             padding: 15px;
@@ -445,6 +454,35 @@
         
         .premium-benefits li {
             margin: 3px 0;
+        }
+        
+        /* EDIFICIOS CON MEJORAS */
+        .building-detail {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+        }
+        
+        .building-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .building-level {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .building-upgrade {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
         }
         
         /* RANGOS DE RECOMPENSA */
@@ -947,6 +985,10 @@
         <i class="fa-solid fa-circle-play"></i> ¡PARQUE DISPONIBLE! Gana 30 💎 (1h)
     </div>
 
+    <div id="event-banner" class="event-banner" style="display: none;">
+        <i class="fa-solid fa-star"></i> <span id="event-text">Evento Semanal Activo</span>
+    </div>
+
     <!-- HEADER -->
     <div class="header">
         <div><span id="user-display">Cargando...</span></div>
@@ -976,11 +1018,11 @@
             <small style="color: #facc15;">Comprar TON → 💎</small>
         </div>
         
-        <!-- 🔵 TIENDA -->
-        <div class="card" style="border: 1px solid #3b82f6;" onclick="openStore()">
-            <i class="fa-solid fa-cart-shopping store"></i>
-            <h3>Tienda</h3>
-            <small style="color: #3b82f6;">Mejoras + Premium</small>
+        <!-- 🔵 TIENDA (SOLO PREMIUM) -->
+        <div class="card" style="border: 1px solid #8b5cf6;" onclick="openStore()">
+            <i class="fa-solid fa-crown premium"></i>
+            <h3>Tienda Premium</h3>
+            <small style="color: #8b5cf6;">Planes exclusivos</small>
         </div>
         
         <!-- 🟠 CASINO -->
@@ -999,28 +1041,28 @@
         </div>
         
         <!-- 🔵 PISCINA -->
-        <div class="card" style="border: 1px solid #38bdf8;">
+        <div class="card" style="border: 1px solid #38bdf8;" onclick="openBuilding('piscina')">
             <i class="fa-solid fa-water-ladder pool"></i>
             <h3>Piscina</h3>
             <small>Lvl: <span id="lvl_piscina" style="color: #38bdf8;">0</span></small>
         </div>
         
         <!-- 🟣 FÁBRICA -->
-        <div class="card" style="border: 1px solid #a78bfa;">
+        <div class="card" style="border: 1px solid #a78bfa;" onclick="openBuilding('fabrica')">
             <i class="fa-solid fa-industry factory"></i>
             <h3>Fábrica</h3>
             <small>Lvl: <span id="lvl_fabrica" style="color: #a78bfa;">0</span></small>
         </div>
         
         <!-- 🟤 ESCUELA -->
-        <div class="card" style="border: 1px solid #a16207;">
+        <div class="card" style="border: 1px solid #a16207;" onclick="openBuilding('escuela')">
             <i class="fa-solid fa-school school"></i>
             <h3>Escuela</h3>
             <small>Lvl: <span id="lvl_escuela" style="color: #a16207;">0</span></small>
         </div>
         
         <!-- 🔴 HOSPITAL -->
-        <div class="card" style="border: 1px solid #f87171;">
+        <div class="card" style="border: 1px solid #f87171;" onclick="openBuilding('hospital')">
             <i class="fa-solid fa-hospital hospital"></i>
             <h3>Hospital</h3>
             <small>Lvl: <span id="lvl_hospital" style="color: #f87171;">0</span></small>
@@ -1082,15 +1124,9 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL TIENDA -->
+    <!-- MODAL TIENDA PREMIUM (ÚNICA) -->
     <div class="modal" id="modalStore">
-        <h3 style="color: #3b82f6;">🏪 Tienda</h3>
-        
-        <!-- TIENDA NORMAL (MEJORAS) -->
-        <div id="storeList"></div>
-        
-        <!-- TIENDA PREMIUM -->
-        <h4 style="color: #8b5cf6; margin-top: 20px;">⭐ Tienda Premium</h4>
+        <h3 style="color: #8b5cf6;">⭐ Tienda Premium</h3>
         
         <div id="premium-status" style="display: none;" class="premium-timer">
             <i class="fa-solid fa-crown" style="color: #8b5cf6;"></i> Tiempo restante: <span id="premium-time">0</span>
@@ -1109,6 +1145,71 @@
         <!-- Planes Premium -->
         <div id="premium-plans"></div>
         
+        <button class="close" onclick="closeAll()">Cerrar</button>
+    </div>
+
+    <!-- MODALES DE EDIFICIOS (MEJORAS INCORPORADAS) -->
+    <div class="modal" id="modalPiscina">
+        <h3 style="color: #38bdf8;">🏊 Piscina</h3>
+        <div class="building-detail">
+            <div class="building-header">
+                <span class="building-level">Nivel <span id="piscina-level">0</span></span>
+                <span style="color: #facc15;">+<span id="piscina-prod">0</span> 💎/h</span>
+            </div>
+            <div class="stat">
+                <span>Mejorar al nivel <span id="piscina-next">1</span></span>
+                <span id="piscina-price">5000 💎</span>
+            </div>
+            <button onclick="buyUpgradeFromBuilding('piscina', 5000)" class="building-upgrade" id="piscina-btn">MEJORAR</button>
+        </div>
+        <button class="close" onclick="closeAll()">Cerrar</button>
+    </div>
+
+    <div class="modal" id="modalFabrica">
+        <h3 style="color: #a78bfa;">🏭 Fábrica</h3>
+        <div class="building-detail">
+            <div class="building-header">
+                <span class="building-level">Nivel <span id="fabrica-level">0</span></span>
+                <span style="color: #facc15;">+<span id="fabrica-prod">0</span> 💎/h</span>
+            </div>
+            <div class="stat">
+                <span>Mejorar al nivel <span id="fabrica-next">1</span></span>
+                <span id="fabrica-price">10000 💎</span>
+            </div>
+            <button onclick="buyUpgradeFromBuilding('fabrica', 10000)" class="building-upgrade" id="fabrica-btn">MEJORAR</button>
+        </div>
+        <button class="close" onclick="closeAll()">Cerrar</button>
+    </div>
+
+    <div class="modal" id="modalEscuela">
+        <h3 style="color: #a16207;">🏫 Escuela</h3>
+        <div class="building-detail">
+            <div class="building-header">
+                <span class="building-level">Nivel <span id="escuela-level">0</span></span>
+                <span style="color: #facc15;">+<span id="escuela-prod">0</span> 💎/h</span>
+            </div>
+            <div class="stat">
+                <span>Mejorar al nivel <span id="escuela-next">1</span></span>
+                <span id="escuela-price">3000 💎</span>
+            </div>
+            <button onclick="buyUpgradeFromBuilding('escuela', 3000)" class="building-upgrade" id="escuela-btn">MEJORAR</button>
+        </div>
+        <button class="close" onclick="closeAll()">Cerrar</button>
+    </div>
+
+    <div class="modal" id="modalHospital">
+        <h3 style="color: #f87171;">🏥 Hospital</h3>
+        <div class="building-detail">
+            <div class="building-header">
+                <span class="building-level">Nivel <span id="hospital-level">0</span></span>
+                <span style="color: #facc15;">+<span id="hospital-prod">0</span> 💎/h</span>
+            </div>
+            <div class="stat">
+                <span>Mejorar al nivel <span id="hospital-next">1</span></span>
+                <span id="hospital-price">7500 💎</span>
+            </div>
+            <button onclick="buyUpgradeFromBuilding('hospital', 7500)" class="building-upgrade" id="hospital-btn">MEJORAR</button>
+        </div>
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
@@ -1153,7 +1254,7 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL HIGH/LOW -->
+    <!-- MODAL HIGH/LOW (CORREGIDO) -->
     <div class="modal" id="modalHighLow">
         <h3>📊 High/Low (4 Dígitos)</h3>
         
@@ -1421,6 +1522,27 @@
             <i class="fa-solid fa-circle-play"></i> VER ANUNCIO +30 💎
         </button>
         
+        <button class="close" onclick="closeAll()">Cerrar</button>
+    </div>
+
+    <!-- MODAL EVENTO SEMANAL -->
+    <div class="modal" id="modalEvent">
+        <h3 style="color: #f97316;">🎉 Evento de la Semana</h3>
+        <div id="event-content" style="text-align: center;">
+            <i class="fa-solid fa-star" style="font-size: 48px; color: #f97316;"></i>
+            <h4 id="event-title">Cargando...</h4>
+            <p id="event-description"></p>
+            <div class="stat">
+                <span>Recompensa base</span>
+                <span id="event-reward">0 💎</span>
+            </div>
+            <div class="stat">
+                <span>Recompensa premium (x2)</span>
+                <span id="event-reward-premium">0 💎</span>
+            </div>
+            <div id="event-progress"></div>
+            <button onclick="startEventTask()" id="event-btn" style="background: #f97316;">PARTICIPAR</button>
+        </div>
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
