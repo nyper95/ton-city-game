@@ -1,5 +1,5 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN COMPLETA CON TODAS LAS MEJORAS
+// TON CITY GAME - VERSIÓN COMPLETA CORREGIDA
 // ======================================================
 
 console.log("✅ Ton City Game - Inicializando...");
@@ -35,8 +35,8 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ==========================================
 // CONSTANTES PARA RETIROS
 // ==========================================
-const K = 0.9; // Factor de respaldo (90% del pool disponible)
-const R = 0.95; // Factor de comisión de red (5% para gas)
+const K = 0.9;
+const R = 0.95;
 
 // ==========================================
 // ESTADO DEL JUEGO
@@ -50,31 +50,26 @@ let userData = {
     firstName: "",
     lastName: "",
     diamonds: 0,
-    // 🏗️ EDIFICIOS PRODUCTORES
     lvl_piscina: 0,
     lvl_fabrica: 0,
     lvl_escuela: 0,
     lvl_hospital: 0,
-    // 👥 REFERIDOS
     referral_code: null,
     referral_earnings: 0,
     referred_users: [],
-    // ⏱️ CONTROL DE TIEMPO
     last_online: null,
     last_production_update: null,
-    // 💰 RETIROS SEMANALES
     last_withdraw_week: null,
-    // 📺 ANUNCIOS
     last_ad_watch: null,
-    last_casino_rescue: null, // Último rescate en casino
-    // 📅 RECOMPENSA DIARIA
+    last_casino_rescue: null,
     daily_streak: 0,
     last_daily_claim: null,
-    // 💎 ESTADO DE INVERSOR
     haInvertido: false,
-    // ⭐ SISTEMA PREMIUM
-    premium_expires: null, // Fecha de expiración del premium
-    // 🎰 LÍMITES DIARIOS
+    premium_expires: null,
+    weekly_rank: null,
+    weekly_earnings: 0,
+    rank: "Ciudadano",
+    projectedReward: 0,
     jugadasHoy: {
         highlow: 0,
         ruleta: 0,
@@ -82,12 +77,7 @@ let userData = {
         dados: 0,
         loteria: 0,
         fecha: new Date().toDateString()
-    },
-    // 📊 RANKING SEMANAL
-    weekly_rank: null,
-    weekly_earnings: 0,
-    rank: "Ciudadano",
-    projectedReward: 0
+    }
 };
 
 let globalPoolData = { 
@@ -97,7 +87,7 @@ let globalPoolData = {
     user_rankings: []
 };
 
-// 🏗️ VALORES DE PRODUCCIÓN (4 edificios)
+// 🏗️ VALORES DE PRODUCCIÓN
 const PROD_VAL = { 
     piscina: 60,
     fabrica: 120,
@@ -114,6 +104,50 @@ const PREMIUM_PLANS = [
     { name: "1 mes", days: 30, price: 3.00, description: "👑 30 días de beneficios completos" }
 ];
 
+// 🎯 EVENTOS SEMANALES
+const EVENTOS_SEMANALES = [
+    {
+        nombre: "Hospital",
+        icono: "fa-hospital",
+        color: "#f87171",
+        descripcion: "Campaña de Vacunación Digital",
+        tarea: "Ver 3 anuncios de video seguidos",
+        recompensa: 100,
+        premium: 200,
+        tipo: 'ads'
+    },
+    {
+        nombre: "Fábrica",
+        icono: "fa-industry",
+        color: "#a78bfa",
+        descripcion: "Contratos de Exportación",
+        tarea: "Suscribirse al canal del socio",
+        recompensa: 150,
+        premium: 300,
+        tipo: 'subscribe'
+    },
+    {
+        nombre: "Piscina",
+        icono: "fa-water-ladder",
+        color: "#38bdf8",
+        descripcion: "Publicidad del Resort",
+        tarea: "Compartir enlace en 3 grupos",
+        recompensa: 80,
+        premium: 160,
+        tipo: 'share'
+    },
+    {
+        nombre: "Escuela",
+        icono: "fa-school",
+        color: "#a16207",
+        descripcion: "Becas de Estudio",
+        tarea: "Responder encuesta rápida",
+        recompensa: 200,
+        premium: 400,
+        tipo: 'survey'
+    }
+];
+
 // ==========================================
 // APUESTAS ACTUALES POR JUEGO
 // ==========================================
@@ -128,34 +162,25 @@ let apuestaActual = {
 let boletosComprados = [];
 
 // ==========================================
-// FUNCIÓN PARA VERIFICAR SI ES PREMIUM
+// FUNCIONES PREMIUM
 // ==========================================
 function esPremium() {
     if (!userData.premium_expires) return false;
-    
     const ahora = new Date();
     const expiracion = new Date(userData.premium_expires);
-    
     return ahora < expiracion;
 }
 
 function getPremiumTimeLeft() {
     if (!userData.premium_expires) return 0;
-    
     const ahora = new Date();
     const expiracion = new Date(userData.premium_expires);
-    
     if (ahora >= expiracion) return 0;
-    
     const diffMs = expiracion - ahora;
     const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffDias > 0) {
-        return `${diffDias} día${diffDias > 1 ? 's' : ''}`;
-    } else {
-        return `${diffHoras} hora${diffHoras > 1 ? 's' : ''}`;
-    }
+    if (diffDias > 0) return `${diffDias} día${diffDias > 1 ? 's' : ''}`;
+    return `${diffHoras} hora${diffHoras > 1 ? 's' : ''}`;
 }
 
 function actualizarPremiumUI() {
@@ -164,308 +189,139 @@ function actualizarPremiumUI() {
     const premiumTimeElem = document.getElementById("premium-time-left");
     
     if (esPremium()) {
-        // Nombre en azul brillante
-        if (userElem) {
-            userElem.classList.add("premium-user");
-        }
-        
-        // Mostrar timer
+        if (userElem) userElem.classList.add("premium-user");
         if (premiumTimer && premiumTimeElem) {
             premiumTimer.style.display = "block";
             premiumTimeElem.textContent = getPremiumTimeLeft();
         }
-        
-        console.log("⭐ Usuario premium activo");
     } else {
-        // Nombre normal
-        if (userElem) {
-            userElem.classList.remove("premium-user");
-        }
-        
-        // Ocultar timer
-        if (premiumTimer) {
-            premiumTimer.style.display = "none";
-        }
+        if (userElem) userElem.classList.remove("premium-user");
+        if (premiumTimer) premiumTimer.style.display = "none";
     }
 }
 
 // ==========================================
-// FUNCIÓN PARA OBTENER POOL REAL DESDE TONAPI
+// FUNCIONES DE EDIFICIOS
 // ==========================================
-async function updateRealPoolBalance() {
-    try {
-        console.log("💰 Consultando balance REAL del pool...");
-        
-        const response = await fetch(`${TON_API_URL}/v2/accounts/${BILLETERA_POOL}`, {
-            headers: {
-                'Authorization': `Bearer ${TON_API_KEY}`,
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        const balanceNanoton = data.balance || 0;
-        const balanceTon = balanceNanoton / 1000000000;
-        
-        console.log(`✅ Balance REAL del pool: ${balanceTon.toFixed(4)} TON`);
-        
-        globalPoolData.pool_ton = balanceTon;
-        globalPoolData.last_updated = new Date().toISOString();
-        
-        await _supabase
-            .from('game_data')
-            .update({
-                pool_ton: balanceTon,
-                last_seen: new Date().toISOString()
-            })
-            .eq('telegram_id', 'MASTER');
-        
-        return balanceTon;
-        
-    } catch (error) {
-        console.error("❌ Error obteniendo balance REAL:", error);
-        
-        const { data } = await _supabase
-            .from('game_data')
-            .select('pool_ton')
-            .eq('telegram_id', 'MASTER')
-            .single();
-        
-        globalPoolData.pool_ton = data?.pool_ton || 100;
-        return globalPoolData.pool_ton;
+function openBuilding(building) {
+    const precios = {
+        piscina: 5000,
+        fabrica: 10000,
+        escuela: 3000,
+        hospital: 7500
+    };
+    
+    const producciones = {
+        piscina: 60,
+        fabrica: 120,
+        escuela: 40,
+        hospital: 80
+    };
+    
+    const nivel = userData[`lvl_${building}`] || 0;
+    const precio = precios[building];
+    const prod = producciones[building];
+    
+    document.getElementById(`${building}-level`).textContent = nivel;
+    document.getElementById(`${building}-prod`).textContent = nivel * prod;
+    document.getElementById(`${building}-next`).textContent = nivel + 1;
+    document.getElementById(`${building}-price`).textContent = `${precio.toLocaleString()} 💎`;
+    
+    const btn = document.getElementById(`${building}-btn`);
+    if (btn) {
+        btn.disabled = userData.diamonds < precio;
+        btn.style.background = userData.diamonds < precio ? '#475569' : '#2563eb';
     }
+    
+    showModal(`modal${building.charAt(0).toUpperCase() + building.slice(1)}`);
+}
+
+async function buyUpgradeFromBuilding(building, price) {
+    const nombres = {
+        piscina: "Piscina",
+        fabrica: "Fábrica",
+        escuela: "Escuela",
+        hospital: "Hospital"
+    };
+    
+    await buyUpgrade(nombres[building], building, price);
+    openBuilding(building);
 }
 
 // ==========================================
-// FUNCIÓN PARA OBTENER TOTAL DE DIAMANTES REAL
+// FUNCIONES DE EVENTOS SEMANALES
 // ==========================================
-async function updateTotalDiamonds() {
-    try {
-        console.log("💎 Calculando total de diamantes de todos los usuarios...");
-        
-        const { data, error } = await _supabase
-            .from("game_data")
-            .select("telegram_id, diamonds")
-            .neq("telegram_id", "MASTER");
-            
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-            const total = data.reduce((sum, user) => sum + (Number(user.diamonds) || 0), 0);
-            globalPoolData.total_diamonds = total;
-            
-            // Ordenar por diamantes para ranking
-            globalPoolData.user_rankings = data
-                .map(user => ({
-                    id: user.telegram_id,
-                    diamonds: Number(user.diamonds) || 0
-                }))
-                .sort((a, b) => b.diamonds - a.diamonds);
-            
-            await _supabase
-                .from('game_data')
-                .update({
-                    total_diamonds: total,
-                    last_seen: new Date().toISOString()
-                })
-                .eq('telegram_id', 'MASTER');
-            
-            console.log(`✅ Total diamantes REAL: ${total.toLocaleString()} 💎`);
-            console.log(`👥 Usuarios activos: ${data.length}`);
-            
-            return total;
-        }
-        
-        return 0;
-        
-    } catch (error) {
-        console.error("❌ Error calculando total diamantes:", error);
-        return globalPoolData.total_diamonds || 0;
-    }
+function getEventoActual() {
+    const semana = Math.floor(Date.now() / (1000 * 60 * 60 * 24 * 7)) % 4;
+    return EVENTOS_SEMANALES[semana];
 }
 
-// ==========================================
-// FUNCIÓN PARA ACTUALIZAR RANGO DEL USUARIO
-// ==========================================
-async function updateUserRank() {
-    try {
-        if (!userData.id) return;
+function actualizarBannerEvento() {
+    const evento = getEventoActual();
+    const banner = document.getElementById("event-banner");
+    const textElem = document.getElementById("event-text");
+    
+    if (banner && textElem) {
+        banner.style.display = "block";
+        textElem.innerHTML = `🎉 Evento: ${evento.nombre} - ${evento.descripcion}`;
         
-        // Asegurar que tenemos rankings actualizados
-        if (globalPoolData.user_rankings.length === 0) {
-            await updateTotalDiamonds();
-        }
-        
-        // Buscar posición del usuario
-        const posicion = globalPoolData.user_rankings.findIndex(u => u.id === userData.id);
-        
-        if (posicion === -1) {
-            userData.rank = "Ciudadano";
-            userData.weekly_rank = globalPoolData.user_rankings.length + 1;
-        } else {
-            userData.weekly_rank = posicion + 1;
-            
-            // Determinar rango según posición
-            if (posicion < 3) {
-                userData.rank = "Diamante";
-            } else if (posicion < 10) {
-                userData.rank = "Oro";
-            } else if (posicion < 50) {
-                userData.rank = "Plata";
-            } else {
-                userData.rank = "Ciudadano";
-            }
-        }
-        
-        console.log(`📊 Rango del usuario: ${userData.rank} (#${userData.weekly_rank})`);
-        
-        // Calcular proyección de recompensa
-        await calculateProjectedReward();
-        
-        // Actualizar UI
-        const rankElem = document.getElementById("user-rank");
-        const rankDescElem = document.getElementById("rank-description");
-        const projElem = document.getElementById("projected-reward");
-        
-        if (rankElem) {
-            rankElem.innerHTML = `<span class="${userData.rank.toLowerCase()}-text">${userData.rank}</span> (Posición #${userData.weekly_rank})`;
-        }
-        
-        if (rankDescElem) {
-            let descripcion = "";
-            switch(userData.rank) {
-                case "Diamante":
-                    descripcion = "💎 Top 1-3: 40% del pool (reparto equitativo)";
-                    break;
-                case "Oro":
-                    descripcion = "🥇 Top 4-10: 25% del pool (reparto equitativo)";
-                    break;
-                case "Plata":
-                    descripcion = "🥈 Top 11-50: 20% del pool (reparto equitativo)";
-                    break;
-                default:
-                    descripcion = "👥 Resto de usuarios: 15% del pool (proporcional)";
-            }
-            rankDescElem.textContent = descripcion;
-        }
-        
-        if (projElem) {
-            projElem.textContent = userData.projectedReward.toFixed(4);
-        }
-        
-    } catch (error) {
-        console.error("❌ Error actualizando rango:", error);
-    }
-}
-
-// ==========================================
-// FUNCIÓN PARA CALCULAR PROYECCIÓN DE RECOMPENSA
-// ==========================================
-async function calculateProjectedReward() {
-    try {
-        // Pool total después de comisión del 20%
-        const poolUsuarios = globalPoolData.pool_ton * 0.8;
-        
-        if (poolUsuarios <= 0 || globalPoolData.user_rankings.length === 0) {
-            userData.projectedReward = 0;
-            return;
-        }
-        
-        const miPosicion = userData.weekly_rank - 1; // 0-based
-        
-        if (miPosicion < 0) {
-            userData.projectedReward = 0;
-            return;
-        }
-        
-        let recompensa = 0;
-        
-        if (miPosicion < 3) { // Diamante (top 3)
-            const poolDiamante = poolUsuarios * 0.4; // 40%
-            recompensa = poolDiamante / 3; // Reparto equitativo entre 3
-            
-        } else if (miPosicion < 10) { // Oro (puestos 4-10)
-            const poolOro = poolUsuarios * 0.25; // 25%
-            recompensa = poolOro / 7; // 7 personas
-            
-        } else if (miPosicion < 50) { // Plata (puestos 11-50)
-            const poolPlata = poolUsuarios * 0.20; // 20%
-            recompensa = poolPlata / 40; // 40 personas
-            
-        } else { // Ciudadano (resto)
-            const poolCiudadano = poolUsuarios * 0.15; // 15%
-            
-            // Calcular total de diamantes de ciudadanos
-            const ciudadanos = globalPoolData.user_rankings.slice(50);
-            const totalDiamantesCiudadanos = ciudadanos.reduce((sum, u) => sum + u.diamonds, 0);
-            
-            if (totalDiamantesCiudadanos > 0) {
-                // Proporcional a sus diamantes
-                recompensa = poolCiudadano * (userData.diamonds / totalDiamantesCiudadanos);
-            }
-        }
-        
-        userData.projectedReward = recompensa;
-        
-    } catch (error) {
-        console.error("❌ Error calculando proyección:", error);
-        userData.projectedReward = 0;
-    }
-}
-
-// ==========================================
-// FUNCIÓN PARA COMPRAR PLAN PREMIUM
-// ==========================================
-async function comprarPremium(plan) {
-    try {
-        if (!tonConnectUI || !tonConnectUI.connected) {
-            alert("❌ Conecta tu wallet primero");
-            return;
-        }
-        
-        const confirmMsg = 
-            `¿Comprar plan ${plan.name} por ${plan.price} TON?\n\n` +
-            `Beneficios:\n` +
-            `• Multiplicador x2 en ganancias\n` +
-            `• Sin anuncios\n` +
-            `• Nombre en azul\n` +
-            `• Duración: ${plan.days} días`;
-        
-        if (!confirm(confirmMsg)) return;
-        
-        // Transacción directa a wallet del propietario
-        const tx = {
-            validUntil: Math.floor(Date.now() / 1000) + 300,
-            messages: [
-                { 
-                    address: BILLETERA_PROPIETARIO, 
-                    amount: Math.floor(plan.price * 1e9).toString() 
-                }
-            ]
+        // Destacar edificio de la semana
+        const edificioMap = {
+            "Hospital": "hospital",
+            "Fábrica": "fabrica",
+            "Piscina": "piscina",
+            "Escuela": "escuela"
         };
         
-        await tonConnectUI.sendTransaction(tx);
+        const edificioId = edificioMap[evento.nombre];
+        if (edificioId) {
+            const card = document.querySelector(`.card[onclick="openBuilding('${edificioId}')"]`);
+            if (card) {
+                card.classList.add('event-card');
+            }
+        }
+    }
+}
+
+function openEventModal() {
+    const evento = getEventoActual();
+    
+    document.getElementById("event-title").textContent = `${evento.nombre} - ${evento.descripcion}`;
+    document.getElementById("event-description").textContent = evento.tarea;
+    document.getElementById("event-reward").textContent = `${evento.recompensa} 💎`;
+    document.getElementById("event-reward-premium").textContent = `${evento.premium} 💎`;
+    
+    showModal("modalEvent");
+}
+
+async function startEventTask() {
+    const evento = getEventoActual();
+    
+    if (!tonConnectUI || !tonConnectUI.connected) {
+        alert("❌ Conecta tu wallet primero");
+        return;
+    }
+    
+    if (evento.tipo === 'ads') {
+        if (!adsReady || !AdController) {
+            alert("❌ Sistema de anuncios no disponible");
+            return;
+        }
         
-        // Calcular fecha de expiración
-        const ahora = new Date();
-        const expiracion = new Date(ahora);
-        expiracion.setDate(expiracion.getDate() + plan.days);
-        
-        userData.premium_expires = expiracion.toISOString();
-        await saveUserData();
-        
-        actualizarPremiumUI();
-        renderPremiumPlans();
-        
-        alert(`✅ ¡Plan ${plan.name} activado! Expira: ${expiracion.toLocaleDateString()}`);
-        
-    } catch (e) {
-        console.error("❌ Error comprando premium:", e);
-        alert("❌ Error en la transacción");
+        try {
+            const result = await AdController.show();
+            if (result.done) {
+                const recompensa = esPremium() ? evento.premium : evento.recompensa;
+                userData.diamonds += recompensa;
+                await saveUserData();
+                actualizarUI();
+                alert(`✅ ¡+${recompensa} diamantes por participar!`);
+            }
+        } catch (error) {
+            console.error("❌ Error en anuncio:", error);
+        }
+    } else {
+        alert(`🔗 Para participar: ${evento.tarea}`);
     }
 }
 
@@ -484,7 +340,6 @@ async function rescueWithAd() {
             return;
         }
         
-        // Verificar si ya usó rescate hoy
         if (userData.last_casino_rescue) {
             const ultimo = new Date(userData.last_casino_rescue);
             const hoy = new Date();
@@ -511,7 +366,6 @@ async function rescueWithAd() {
             
             actualizarUI();
             document.getElementById("casino-rescue").style.display = "none";
-            
             alert("✅ ¡Ganaste 100 diamantes de rescate!");
         }
         
@@ -521,20 +375,225 @@ async function rescueWithAd() {
 }
 
 // ==========================================
-// SISTEMA DE PRODUCCIÓN OFFLINE (CON MULTIPLICADOR PREMIUM)
+// FUNCIÓN PARA OBTENER POOL REAL
 // ==========================================
+async function updateRealPoolBalance() {
+    try {
+        const response = await fetch(`${TON_API_URL}/v2/accounts/${BILLETERA_POOL}`, {
+            headers: { 'Authorization': `Bearer ${TON_API_KEY}` }
+        });
+        
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        
+        const data = await response.json();
+        const balanceTon = (data.balance || 0) / 1000000000;
+        
+        globalPoolData.pool_ton = balanceTon;
+        globalPoolData.last_updated = new Date().toISOString();
+        
+        await _supabase
+            .from('game_data')
+            .update({ pool_ton: balanceTon })
+            .eq('telegram_id', 'MASTER');
+        
+        return balanceTon;
+        
+    } catch (error) {
+        console.error("❌ Error:", error);
+        const { data } = await _supabase
+            .from('game_data')
+            .select('pool_ton')
+            .eq('telegram_id', 'MASTER')
+            .single();
+        
+        globalPoolData.pool_ton = data?.pool_ton || 100;
+        return globalPoolData.pool_ton;
+    }
+}
 
+// ==========================================
+// FUNCIÓN PARA OBTENER TOTAL DE DIAMANTES
+// ==========================================
+async function updateTotalDiamonds() {
+    try {
+        const { data, error } = await _supabase
+            .from("game_data")
+            .select("telegram_id, diamonds")
+            .neq("telegram_id", "MASTER");
+            
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+            const total = data.reduce((sum, user) => sum + (Number(user.diamonds) || 0), 0);
+            globalPoolData.total_diamonds = total;
+            
+            globalPoolData.user_rankings = data
+                .map(user => ({ id: user.telegram_id, diamonds: Number(user.diamonds) || 0 }))
+                .sort((a, b) => b.diamonds - a.diamonds);
+            
+            await _supabase
+                .from('game_data')
+                .update({ total_diamonds: total })
+                .eq('telegram_id', 'MASTER');
+            
+            return total;
+        }
+        return 0;
+        
+    } catch (error) {
+        console.error("❌ Error:", error);
+        return globalPoolData.total_diamonds || 0;
+    }
+}
+
+// ==========================================
+// FUNCIÓN PARA ACTUALIZAR RANGO
+// ==========================================
+async function updateUserRank() {
+    try {
+        if (!userData.id) return;
+        
+        if (globalPoolData.user_rankings.length === 0) {
+            await updateTotalDiamonds();
+        }
+        
+        const posicion = globalPoolData.user_rankings.findIndex(u => u.id === userData.id);
+        
+        if (posicion === -1) {
+            userData.rank = "Ciudadano";
+            userData.weekly_rank = globalPoolData.user_rankings.length + 1;
+        } else {
+            userData.weekly_rank = posicion + 1;
+            
+            if (posicion < 3) userData.rank = "Diamante";
+            else if (posicion < 10) userData.rank = "Oro";
+            else if (posicion < 50) userData.rank = "Plata";
+            else userData.rank = "Ciudadano";
+        }
+        
+        await calculateProjectedReward();
+        
+        const rankElem = document.getElementById("user-rank");
+        const rankDescElem = document.getElementById("rank-description");
+        const projElem = document.getElementById("projected-reward");
+        
+        if (rankElem) {
+            rankElem.innerHTML = `<span class="${userData.rank.toLowerCase()}-text">${userData.rank}</span> (#${userData.weekly_rank})`;
+        }
+        
+        if (rankDescElem) {
+            let desc = "";
+            switch(userData.rank) {
+                case "Diamante": desc = "💎 Top 1-3: 40% del pool"; break;
+                case "Oro": desc = "🥇 Top 4-10: 25% del pool"; break;
+                case "Plata": desc = "🥈 Top 11-50: 20% del pool"; break;
+                default: desc = "👥 Resto: 15% del pool (proporcional)";
+            }
+            rankDescElem.textContent = desc;
+        }
+        
+        if (projElem) projElem.textContent = userData.projectedReward.toFixed(4);
+        
+    } catch (error) {
+        console.error("❌ Error:", error);
+    }
+}
+
+// ==========================================
+// CALCULAR PROYECCIÓN DE RECOMPENSA
+// ==========================================
+async function calculateProjectedReward() {
+    try {
+        const poolUsuarios = globalPoolData.pool_ton * 0.8;
+        
+        if (poolUsuarios <= 0 || globalPoolData.user_rankings.length === 0) {
+            userData.projectedReward = 0;
+            return;
+        }
+        
+        const miPosicion = userData.weekly_rank - 1;
+        
+        if (miPosicion < 0) {
+            userData.projectedReward = 0;
+            return;
+        }
+        
+        let recompensa = 0;
+        
+        if (miPosicion < 3) {
+            recompensa = (poolUsuarios * 0.4) / 3;
+        } else if (miPosicion < 10) {
+            recompensa = (poolUsuarios * 0.25) / 7;
+        } else if (miPosicion < 50) {
+            recompensa = (poolUsuarios * 0.20) / 40;
+        } else {
+            const ciudadanos = globalPoolData.user_rankings.slice(50);
+            const totalDiamantesCiudadanos = ciudadanos.reduce((sum, u) => sum + u.diamonds, 0);
+            
+            if (totalDiamantesCiudadanos > 0) {
+                recompensa = (poolUsuarios * 0.15) * (userData.diamonds / totalDiamantesCiudadanos);
+            }
+        }
+        
+        userData.projectedReward = recompensa;
+        
+    } catch (error) {
+        console.error("❌ Error:", error);
+        userData.projectedReward = 0;
+    }
+}
+
+// ==========================================
+// FUNCIÓN PARA COMPRAR PLAN PREMIUM
+// ==========================================
+async function comprarPremium(plan) {
+    try {
+        if (!tonConnectUI || !tonConnectUI.connected) {
+            alert("❌ Conecta tu wallet primero");
+            return;
+        }
+        
+        const confirmMsg = `¿Comprar plan ${plan.name} por ${plan.price} TON?`;
+        
+        if (!confirm(confirmMsg)) return;
+        
+        const tx = {
+            validUntil: Math.floor(Date.now() / 1000) + 300,
+            messages: [
+                { address: BILLETERA_PROPIETARIO, amount: Math.floor(plan.price * 1e9).toString() }
+            ]
+        };
+        
+        await tonConnectUI.sendTransaction(tx);
+        
+        const ahora = new Date();
+        const expiracion = new Date(ahora);
+        expiracion.setDate(expiracion.getDate() + plan.days);
+        
+        userData.premium_expires = expiracion.toISOString();
+        await saveUserData();
+        
+        actualizarPremiumUI();
+        renderPremiumPlans();
+        
+        alert(`✅ ¡Plan ${plan.name} activado!`);
+        
+    } catch (e) {
+        console.error("❌ Error:", e);
+        alert("❌ Error en la transacción");
+    }
+}
+
+// ==========================================
+// SISTEMA DE PRODUCCIÓN
+// ==========================================
 function getTotalProductionPerHour() {
     let base = (userData.lvl_piscina * 60) +
                (userData.lvl_fabrica * 120) +
                (userData.lvl_escuela * 40) +
                (userData.lvl_hospital * 80);
     
-    // Multiplicador x2 para premium
-    if (esPremium()) {
-        base *= 2;
-    }
-    
+    if (esPremium()) base *= 2;
     return base;
 }
 
@@ -547,42 +606,25 @@ async function calculateOfflineProduction() {
     
     if (secondsPassed < 1) return 0;
     
-    const totalPerHour = getTotalProductionPerHour();
-    const earnedDiamonds = (totalPerHour / 3600) * secondsPassed;
-    
-    console.log(`⏱️ Tiempo offline: ${secondsPassed} segundos`);
-    console.log(`💰 Diamantes offline: +${earnedDiamonds.toFixed(2)} 💎`);
-    
+    const earnedDiamonds = (getTotalProductionPerHour() / 3600) * secondsPassed;
     return earnedDiamonds;
 }
 
 // ==========================================
-// SISTEMA DE LÍMITES PARA JUEGOS
+// SISTEMA DE LÍMITES
 // ==========================================
-
 function puedeJugar(juegoId, cantidad = 1) {
     if (userData.haInvertido) return true;
     
     const hoy = new Date().toDateString();
     if (userData.jugadasHoy.fecha !== hoy) {
         userData.jugadasHoy = {
-            highlow: 0,
-            ruleta: 0,
-            tragaperras: 0,
-            dados: 0,
-            loteria: 0,
+            highlow: 0, ruleta: 0, tragaperras: 0, dados: 0, loteria: 0,
             fecha: hoy
         };
     }
     
-    const limites = {
-        highlow: 20,
-        ruleta: 15,
-        tragaperras: 30,
-        dados: 20,
-        loteria: 5
-    };
-    
+    const limites = { highlow: 20, ruleta: 15, tragaperras: 30, dados: 20, loteria: 5 };
     return (userData.jugadasHoy[juegoId] + cantidad) <= limites[juegoId];
 }
 
@@ -597,66 +639,39 @@ function actualizarLimitesUI() {
     const hoy = new Date().toDateString();
     if (userData.jugadasHoy.fecha !== hoy) {
         userData.jugadasHoy = {
-            highlow: 0,
-            ruleta: 0,
-            tragaperras: 0,
-            dados: 0,
-            loteria: 0,
+            highlow: 0, ruleta: 0, tragaperras: 0, dados: 0, loteria: 0,
             fecha: hoy
         };
     }
     
-    const limites = {
-        highlow: 20,
-        ruleta: 15,
-        tragaperras: 30,
-        dados: 20,
-        loteria: 5
+    const limites = { highlow: 20, ruleta: 15, tragaperras: 30, dados: 20, loteria: 5 };
+    
+    const elems = {
+        'hl-limit': `Jugadas hoy: ${userData.jugadasHoy.highlow}/${limites.highlow}`,
+        'ruleta-limit': `Jugadas hoy: ${userData.jugadasHoy.ruleta}/${limites.ruleta}`,
+        'tragaperras-limit': `Jugadas hoy: ${userData.jugadasHoy.tragaperras}/${limites.tragaperras}`,
+        'dados-limit': `Jugadas hoy: ${userData.jugadasHoy.dados}/${limites.dados}`,
+        'loteria-limit': `Boletos hoy: ${userData.jugadasHoy.loteria}/${limites.loteria}`
     };
     
-    if (document.getElementById('hl-limit')) {
-        document.getElementById('hl-limit').innerHTML = `Jugadas hoy: ${userData.jugadasHoy.highlow}/${limites.highlow}`;
-    }
-    if (document.getElementById('ruleta-limit')) {
-        document.getElementById('ruleta-limit').innerHTML = `Jugadas hoy: ${userData.jugadasHoy.ruleta}/${limites.ruleta}`;
-    }
-    if (document.getElementById('tragaperras-limit')) {
-        document.getElementById('tragaperras-limit').innerHTML = `Jugadas hoy: ${userData.jugadasHoy.tragaperras}/${limites.tragaperras}`;
-    }
-    if (document.getElementById('dados-limit')) {
-        document.getElementById('dados-limit').innerHTML = `Jugadas hoy: ${userData.jugadasHoy.dados}/${limites.dados}`;
-    }
-    if (document.getElementById('loteria-limit')) {
-        document.getElementById('loteria-limit').innerHTML = `Boletos hoy: ${userData.jugadasHoy.loteria}/${limites.loteria}`;
-    }
+    Object.entries(elems).forEach(([id, texto]) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = texto;
+    });
 }
 
 // ==========================================
-// ADSGRAM - SISTEMA DE ANUNCIOS (1 HORA PARA PREMIUM)
+// ADSGRAM - SISTEMA DE ANUNCIOS
 // ==========================================
-
 function loadAdsgramSafe() {
     return new Promise((resolve, reject) => {
-        if (window.Adsgram) {
-            console.log("✅ Adsgram ya estaba cargado");
-            return resolve();
-        }
-
-        console.log("📦 Cargando script de Adsgram...");
+        if (window.Adsgram) return resolve();
+        
         const script = document.createElement("script");
         script.src = "https://sad.adsgram.ai/js/sad.min.js";
         script.async = true;
-
-        script.onload = () => {
-            console.log("✅ Adsgram cargado correctamente");
-            resolve();
-        };
-
-        script.onerror = (err) => {
-            console.error("❌ Error cargando Adsgram:", err);
-            reject("❌ Adsgram bloqueado o no disponible");
-        };
-
+        script.onload = resolve;
+        script.onerror = reject;
         document.head.appendChild(script);
     });
 }
@@ -664,60 +679,38 @@ function loadAdsgramSafe() {
 async function initAds() {
     try {
         await loadAdsgramSafe();
-
-        AdController = window.Adsgram.init({ 
-            blockId: ADSGRAM_BLOCK_ID 
-        });
-
+        AdController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
         adsReady = true;
-        console.log("✅ Sistema de anuncios listo con Block ID:", ADSGRAM_BLOCK_ID);
-
     } catch (err) {
-        console.warn("❌ Adsgram no disponible:", err);
         adsReady = false;
     }
 }
 
 setTimeout(initAds, 4500);
 setTimeout(() => {
-    if (!window.Adsgram) {
-        console.warn("🚫 Adsgram bloqueado por red / VPN / AdBlock");
-        adsReady = false;
-    }
+    if (!window.Adsgram) adsReady = false;
 }, 8000);
 
 function showAd() {
     if (!adsReady || !AdController) {
-        alert("❌ Sistema de anuncios no disponible. Intenta más tarde.");
+        alert("❌ Sistema de anuncios no disponible");
         return;
     }
-
-    console.log("🎬 Mostrando anuncio...");
-
+    
     AdController.show()
         .then((result) => {
-            console.log("📦 Resultado del anuncio:", result);
-            
-            if (result.done) {
-                giveAdReward();
-            } else {
-                alert("⚠️ No completaste el anuncio, no se otorgó la recompensa.");
-            }
+            if (result.done) giveAdReward();
+            else alert("⚠️ No completaste el anuncio");
         })
         .catch((result) => {
-            console.error("❌ Error en anuncio:", result.description);
-            
-            if (result.description === 'No ads') {
-                alert("😔 No hay anuncios disponibles. Intenta más tarde.");
-            } else {
-                alert("❌ Error al cargar el anuncio: " + result.description);
-            }
+            if (result.description === 'No ads') alert("😔 No hay anuncios disponibles");
+            else alert("❌ Error al cargar el anuncio");
         });
 }
 
 function showAdsModal() {
     if (!adsReady) {
-        alert("⏳ Cargando sistema de anuncios, intenta en unos segundos...");
+        alert("⏳ Cargando...");
         return;
     }
     showModal("modalAds");
@@ -725,7 +718,7 @@ function showAdsModal() {
 }
 
 function giveAdReward() {
-    const reward = esPremium() ? 60 : 30; // Premium gana el doble
+    const reward = esPremium() ? 60 : 30;
     userData.diamonds += reward;
     userData.last_ad_watch = new Date().toISOString();
     saveUserData();
@@ -733,36 +726,24 @@ function giveAdReward() {
     actualizarEstadoAnuncio();
     actualizarBannerAds();
     tg.showAlert(`🎁 +${reward} 💎`);
-    console.log(`💰 Recompensa entregada: +${reward} 💎`);
 }
 
 // ==========================================
-// FUNCIONES DE UI PARA ANUNCIOS (1 HORA)
+// FUNCIONES DE UI PARA ANUNCIOS
 // ==========================================
-
 function puedeVerAnuncio() {
-    if (esPremium()) return false; // Premium no ve anuncios
-    
+    if (esPremium()) return false;
     if (!userData.last_ad_watch) return true;
     
-    const ahora = new Date();
-    const ultimo = new Date(userData.last_ad_watch);
-    const horasPasadas = (ahora - ultimo) / (1000 * 60 * 60);
-    
-    return horasPasadas >= 1; // Cambiado de 2 a 1 hora
+    const horasPasadas = (new Date() - new Date(userData.last_ad_watch)) / (1000 * 60 * 60);
+    return horasPasadas >= 1;
 }
 
 function tiempoRestanteAnuncio() {
     if (!userData.last_ad_watch) return 0;
-    
-    const ahora = new Date();
-    const ultimo = new Date(userData.last_ad_watch);
-    const horasPasadas = (ahora - ultimo) / (1000 * 60 * 60);
-    
+    const horasPasadas = (new Date() - new Date(userData.last_ad_watch)) / (1000 * 60 * 60);
     if (horasPasadas >= 1) return 0;
-    
-    const minutosRestantes = Math.ceil((1 - horasPasadas) * 60);
-    return minutosRestantes;
+    return Math.ceil((1 - horasPasadas) * 60);
 }
 
 function actualizarTimerParque() {
@@ -776,8 +757,7 @@ function actualizarTimerParque() {
     }
     
     if (!puedeVerAnuncio()) {
-        const minutos = tiempoRestanteAnuncio();
-        timerElem.textContent = `⏳ ${minutos} min`;
+        timerElem.textContent = `⏳ ${tiempoRestanteAnuncio()} min`;
         timerElem.style.color = "#f59e0b";
     } else {
         timerElem.textContent = "✅ DISPONIBLE";
@@ -807,14 +787,13 @@ function actualizarEstadoAnuncio() {
         btnElem.style.background = "#f97316";
         btnElem.onclick = showAd;
     } else if (!adsReady) {
-        statusElem.innerHTML = '<span style="color: #f97316;">⏳ Cargando sistema de anuncios...</span>';
+        statusElem.innerHTML = '<span style="color: #f97316;">⏳ Cargando...</span>';
         timerElem.innerHTML = '';
         btnElem.disabled = true;
         btnElem.style.background = "#475569";
     } else {
-        const minutos = tiempoRestanteAnuncio();
         statusElem.innerHTML = '<span style="color: #f97316;">⏳ Anuncio no disponible</span>';
-        timerElem.innerHTML = `Próximo en: <span style="color: #f59e0b;">${minutos} minutos</span>`;
+        timerElem.innerHTML = `Próximo en: <span style="color: #f59e0b;">${tiempoRestanteAnuncio()} min</span>`;
         btnElem.disabled = true;
         btnElem.style.background = "#475569";
     }
@@ -823,53 +802,40 @@ function actualizarEstadoAnuncio() {
 function actualizarBannerAds() {
     const banner = document.getElementById("ads-banner");
     if (!banner) return;
-    
     if (esPremium()) {
         banner.style.display = "none";
         return;
     }
-    
     banner.style.display = (puedeVerAnuncio() && adsReady && !enVentanaRetiro()) ? "block" : "none";
 }
 
 // ==========================================
-// SISTEMA DE RECOMPENSA DIARIA (SIN ANUNCIOS PARA PREMIUM)
+// RECOMPENSA DIARIA
 // ==========================================
-
 function getDailyRewardAmount(day) {
     if (day <= 0) return 0;
     if (day >= 30) return 300;
     let base = Math.min(10 + (day - 1) * 10, 300);
-    
-    if (esPremium()) base *= 2; // Premium gana el doble
-    
+    if (esPremium()) base *= 2;
     return base;
 }
 
 function puedeReclamarDiaria() {
     if (!userData.last_daily_claim) return true;
-    
-    const ahora = new Date();
     const ultimo = new Date(userData.last_daily_claim);
-    
-    const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
-    const ultimoDia = new Date(ultimo.getFullYear(), ultimo.getMonth(), ultimo.getDate());
-    
-    return hoy > ultimoDia;
+    const hoy = new Date();
+    ultimo.setHours(0, 0, 0, 0);
+    hoy.setHours(0, 0, 0, 0);
+    return hoy > ultimo;
 }
 
 function rachaActiva() {
     if (!userData.last_daily_claim || userData.daily_streak === 0) return false;
-    
-    const ahora = new Date();
     const ultimo = new Date(userData.last_daily_claim);
-    
-    const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
-    const ultimoDia = new Date(ultimo.getFullYear(), ultimo.getMonth(), ultimo.getDate());
-    
-    const diffTime = hoy - ultimoDia;
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    
+    const hoy = new Date();
+    ultimo.setHours(0, 0, 0, 0);
+    hoy.setHours(0, 0, 0, 0);
+    const diffDays = (hoy - ultimo) / (1000 * 60 * 60 * 24);
     return diffDays <= 1;
 }
 
@@ -885,39 +851,42 @@ function actualizarDailyUI() {
     const recompensaHoy = getDailyRewardAmount(diaActual);
     
     const currentDayElem = document.getElementById("current-day");
-    if (currentDayElem) currentDayElem.textContent = diaActual > 30 ? 30 : diaActual;
-    
     const todayRewardElem = document.getElementById("today-reward");
-    if (todayRewardElem) todayRewardElem.textContent = `${recompensaHoy} 💎`;
-    
     const progressText = document.getElementById("progress-text");
-    if (progressText) progressText.textContent = `${Math.min(racha, 30)}/30`;
-    
     const statusElem = document.getElementById("daily-status");
     const btnElem = document.getElementById("claim-daily-btn");
     
+    if (currentDayElem) currentDayElem.textContent = diaActual > 30 ? 30 : diaActual;
+    if (todayRewardElem) todayRewardElem.textContent = `${recompensaHoy} 💎`;
+    if (progressText) progressText.textContent = `${Math.min(racha, 30)}/30`;
+    
     if (esPremium()) {
-        statusElem.innerHTML = '⭐ <span style="color: #8b5cf6;">Usuario premium - Recompensa x2</span>';
+        if (statusElem) statusElem.innerHTML = '⭐ <span style="color: #8b5cf6;">Premium - Recompensa x2</span>';
     }
     
     if (!puede) {
         const proxima = new Date();
         proxima.setDate(proxima.getDate() + 1);
         proxima.setHours(0, 0, 0, 0);
-        
         const horas = Math.ceil((proxima - new Date()) / (1000 * 60 * 60));
         
-        statusElem.innerHTML = `⏳ Ya reclamaste. Próxima en <span style="color: #f59e0b;">${horas} horas</span>`;
-        btnElem.disabled = true;
-        btnElem.style.background = "#475569";
-    } else {
-        if (!rachaActiva() && racha > 0) {
-            statusElem.innerHTML = '⚠️ Perdiste tu racha. ¡Empieza de nuevo!';
-        } else {
-            statusElem.innerHTML = `✅ ¡Recompensa disponible! Día ${diaActual}`;
+        if (statusElem) statusElem.innerHTML = `⏳ Próxima en <span style="color: #f59e0b;">${horas} horas</span>`;
+        if (btnElem) {
+            btnElem.disabled = true;
+            btnElem.style.background = "#475569";
         }
-        btnElem.disabled = false;
-        btnElem.style.background = "#f59e0b";
+    } else {
+        if (statusElem) {
+            if (!rachaActiva() && racha > 0) {
+                statusElem.innerHTML = '⚠️ Perdiste tu racha. ¡Empieza de nuevo!';
+            } else {
+                statusElem.innerHTML = `✅ ¡Recompensa disponible! Día ${diaActual}`;
+            }
+        }
+        if (btnElem) {
+            btnElem.disabled = false;
+            btnElem.style.background = "#f59e0b";
+        }
     }
     
     const calendarElem = document.getElementById("daily-calendar");
@@ -926,19 +895,11 @@ function actualizarDailyUI() {
         for (let i = 1; i <= 30; i++) {
             const reward = getDailyRewardAmount(i);
             let clase = 'daily-day';
+            if (i <= racha) clase += ' completed';
+            else if (i === racha + 1 && puede) clase += ' current';
+            else clase += ' locked';
             
-            if (i <= racha) {
-                clase += ' completed';
-            } else if (i === racha + 1 && puede) {
-                clase += ' current';
-            } else {
-                clase += ' locked';
-            }
-            
-            html += `<div class="${clase}">
-                        <div>Día ${i}</div>
-                        <div class="daily-reward">${reward}💎</div>
-                    </div>`;
+            html += `<div class="${clase}"><div>Día ${i}</div><div class="daily-reward">${reward}💎</div></div>`;
         }
         calendarElem.innerHTML = html;
     }
@@ -946,8 +907,6 @@ function actualizarDailyUI() {
 
 async function claimDailyReward() {
     try {
-        console.log("🎁 Intentando reclamar recompensa diaria...");
-        
         if (!userData.id) {
             alert("❌ Error: Usuario no identificado");
             return;
@@ -963,17 +922,12 @@ async function claimDailyReward() {
             const ultimo = new Date(userData.last_daily_claim);
             const ahora = new Date();
             const diffHoras = (ahora - ultimo) / (1000 * 60 * 60);
-            
-            if (diffHoras < 48) {
-                nuevoDia = userData.daily_streak + 1;
-            }
+            if (diffHoras < 48) nuevoDia = userData.daily_streak + 1;
         }
         
         if (nuevoDia > 30) nuevoDia = 30;
         
         const recompensa = getDailyRewardAmount(nuevoDia);
-        
-        console.log(`📅 Día: ${nuevoDia}, Recompensa: ${recompensa}💎`);
         
         if (!confirm(`¿Reclamar Día ${nuevoDia} por ${recompensa} 💎?`)) return;
         
@@ -984,17 +938,12 @@ async function claimDailyReward() {
         actualizarUI();
         actualizarDailyUI();
         
-        const guardado = await saveUserData();
-        
-        if (guardado) {
-            alert(`✅ ¡+${recompensa} diamantes! Día ${nuevoDia}/30`);
-        } else {
-            alert("❌ Error al guardar. Intenta de nuevo.");
-        }
+        await saveUserData();
+        alert(`✅ ¡+${recompensa} diamantes! Día ${nuevoDia}/30`);
         
     } catch (error) {
-        console.error("❌ Error en claimDailyReward:", error);
-        alert("❌ Error al reclamar: " + error.message);
+        console.error("❌ Error:", error);
+        alert("❌ Error al reclamar");
     }
 }
 
@@ -1009,18 +958,16 @@ function actualizarBannerDiario() {
     
     if (puedeReclamarDiaria()) {
         banner.style.display = "block";
-        banner.innerHTML = '<i class="fa-solid fa-calendar-day"></i> ¡RECOMPENSA DIARIA DISPONIBLE! <i class="fa-solid fa-arrow-right"></i>';
+        banner.innerHTML = '<i class="fa-solid fa-calendar-day"></i> ¡RECOMPENSA DIARIA DISPONIBLE!';
     } else {
-        const racha = userData.daily_streak || 0;
         banner.style.display = "block";
-        banner.innerHTML = `<i class="fa-solid fa-calendar-check"></i> Día ${racha}/30 - Vuelve mañana`;
+        banner.innerHTML = `<i class="fa-solid fa-calendar-check"></i> Día ${userData.daily_streak || 0}/30 - Vuelve mañana`;
     }
 }
 
 // ==========================================
-// SISTEMA DE CONTROL DE RETIROS (CORREGIDO)
+// SISTEMA DE CONTROL DE RETIROS
 // ==========================================
-
 function enVentanaRetiro() {
     return new Date().getDay() === 0;
 }
@@ -1033,16 +980,12 @@ function getNumeroSemana() {
 }
 
 function calcularTasaRetiro() {
-    if (!globalPoolData || globalPoolData.pool_ton <= 0 || globalPoolData.total_diamonds <= 0) {
-        return 0.001;
-    }
-    const tonDisponible = globalPoolData.pool_ton * K * R;
-    return tonDisponible / globalPoolData.total_diamonds;
+    if (!globalPoolData || globalPoolData.pool_ton <= 0 || globalPoolData.total_diamonds <= 0) return 0.001;
+    return (globalPoolData.pool_ton * K * R) / globalPoolData.total_diamonds;
 }
 
 function getMinDiamondsFor5TON() {
-    const tasa = calcularTasaRetiro();
-    return Math.ceil(5 / tasa);
+    return Math.ceil(5 / calcularTasaRetiro());
 }
 
 // ==========================================
@@ -1058,7 +1001,7 @@ function renderPremiumPlans() {
     if (esPremium()) {
         html = `<div class="premium-timer">
                     <i class="fa-solid fa-crown" style="color: #8b5cf6;"></i> 
-                    Tienes premium activo por ${getPremiumTimeLeft()}
+                    Premium activo: ${getPremiumTimeLeft()}
                 </div>`;
     }
     
@@ -1086,57 +1029,8 @@ function renderPremiumPlans() {
 }
 
 // ==========================================
-// RENDERIZAR TIENDA NORMAL
+// RENDERIZAR BANCO
 // ==========================================
-function renderStore() {
-    const storeContainer = document.getElementById("storeList");
-    if (!storeContainer) return;
-
-    const upgrades = [
-        { name: "Piscina", field: "piscina", price: 5000, prod: 60, color: "#38bdf8", icon: "fa-water-ladder" },
-        { name: "Fábrica", field: "fabrica", price: 10000, prod: 120, color: "#a78bfa", icon: "fa-industry" },
-        { name: "Escuela", field: "escuela", price: 3000, prod: 40, color: "#a16207", icon: "fa-school" },
-        { name: "Hospital", field: "hospital", price: 7500, prod: 80, color: "#f87171", icon: "fa-hospital" }
-    ];
-
-    let html = `<div class="stat" style="background:#0f172a; margin-bottom: 15px;">
-                  <span><b>🏪 Mejoras de Edificios</b></span>
-                  <span><b>${Math.floor(userData.diamonds || 0).toLocaleString()} 💎</b></span>
-                </div>`;
-
-    upgrades.forEach(item => {
-        const lvl = userData[`lvl_${item.field}`] || 0;
-        const canAfford = (userData.diamonds || 0) >= item.price;
-        
-        html += `
-        <div class="store-item" style="border-left: 4px solid ${item.color};">
-            <div class="store-item-header">
-                <div>
-                    <i class="fa-solid ${item.icon}" style="color: ${item.color}; margin-right: 8px;"></i>
-                    <strong>${item.name} Nvl ${lvl}</strong>
-                </div>
-                <div class="store-item-price">${item.price.toLocaleString()} 💎</div>
-            </div>
-            <p style="margin: 5px 0; color: #94a3b8;">
-                <i class="fa-solid fa-arrow-up" style="color: #10b981;"></i>
-                +${item.prod} 💎/hora
-            </p>
-            <button onclick="buyUpgrade('${item.name}', '${item.field}', ${item.price})" 
-                    style="background: ${canAfford ? item.color : '#475569'}; 
-                           color: white; border: none; padding: 10px; border-radius: 8px; width: 100%;"
-                    ${!canAfford ? 'disabled' : ''}>
-                ${canAfford ? 'MEJORAR' : 'FONDOS INSUFICIENTES'}
-            </button>
-        </div>`;
-    });
-
-    html += `<div class="info-text" style="margin-top: 15px;">
-               Cada mejora aumenta tu producción por hora
-             </div>`;
-
-    storeContainer.innerHTML = html;
-}
-
 function renderBank() {
     const bankContainer = document.getElementById("bankList");
     if (!bankContainer) return;
@@ -1190,12 +1084,7 @@ async function comprarTON(tonAmount) {
     let comprados = Math.floor(tonAmount / PRECIO_COMPRA);
     if (comprados < 100) comprados = 100;
 
-    const confirmMsg = 
-        `¿Comprar ${tonAmount.toFixed(2)} TON?\n\n` +
-        `Recibirás: ${comprados} 💎\n` +
-        `Precio: ${PRECIO_COMPRA.toFixed(3)} TON/💎`;
-
-    if (!confirm(confirmMsg)) return;
+    if (!confirm(`¿Comprar ${tonAmount.toFixed(2)} TON por ${comprados} 💎?`)) return;
 
     const tx = {
         validUntil: Math.floor(Date.now() / 1000) + 300,
@@ -1211,14 +1100,12 @@ async function comprarTON(tonAmount) {
         
         if (!userData.haInvertido && comprados >= 100) {
             userData.haInvertido = true;
-            tg.showAlert("🎉 ¡Felicidades! Ahora eres inversor. Sin límites en el casino.");
         }
         
         await saveUserData();
         actualizarUI();
-        alert(`✅ Compra exitosa! Recibiste ${comprados} 💎`);
+        alert(`✅ Compra exitosa! +${comprados} 💎`);
     } catch (e) {
-        console.error("❌ Error en transacción:", e);
         alert("❌ Error en la transacción");
     }
 }
@@ -1227,15 +1114,11 @@ async function comprarTON(tonAmount) {
 // PRODUCCIÓN
 // ==========================================
 function startProduction() {
-    console.log("⚙️ Iniciando producción...");
-    
     setInterval(() => {
         if (!userData.id) return;
-        
         if (enVentanaRetiro()) return;
         
-        const totalPerHr = getTotalProductionPerHour();
-        userData.diamonds += (totalPerHr / 3600);
+        userData.diamonds += getTotalProductionPerHour() / 3600;
         actualizarUI();
         
         if (document.getElementById("centralModal")?.style.display === "block") {
@@ -1274,18 +1157,16 @@ function openCentral() {
 }
 
 // ==========================================
-// FUNCIÓN DE RETIRO CORREGIDA (NO MÁS "VERIFICANDO")
+// FUNCIÓN DE RETIRO
 // ==========================================
 async function openWithdraw() {
     try {
         showModal("modalWithdraw");
         
-        // Actualizar datos del pool
         await updateRealPoolBalance();
         await updateTotalDiamonds();
         await updateUserRank();
         
-        // Calcular pool para usuarios (80%)
         const poolUsuarios = globalPoolData.pool_ton * 0.8;
         
         document.getElementById("week-indicator").textContent = `Semana #${getNumeroSemana()}`;
@@ -1297,14 +1178,14 @@ async function openWithdraw() {
         
         const statusElem = document.getElementById("withdraw-status");
         if (!enVentanaRetiro()) {
-            statusElem.innerHTML = '<i class="fa-solid fa-circle-info" style="color: #f97316;"></i> ⏳ Espera al DOMINGO para el reparto';
+            statusElem.innerHTML = '<i class="fa-solid fa-circle-info" style="color: #f97316;"></i> ⏳ Espera al DOMINGO';
         } else {
-            statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> ✅ Reparto disponible este domingo';
+            statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> ✅ Reparto disponible';
         }
         
     } catch (error) {
-        console.error("❌ Error en openWithdraw:", error);
-        document.getElementById("withdraw-status").innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color: #ef4444;"></i> Error al cargar datos';
+        console.error("❌ Error:", error);
+        document.getElementById("withdraw-status").innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color: #ef4444;"></i> Error al cargar';
     }
 }
 
@@ -1313,14 +1194,11 @@ async function openWithdraw() {
 // ==========================================
 async function initApp() {
     try {
-        console.log("🚀 Iniciando Aplicación...");
         tg.expand();
         tg.ready();
 
         const user = tg.initDataUnsafe.user;
         if (user) {
-            console.log("✅ Usuario Telegram:", user);
-            
             userData.id = user.id.toString();
             
             if (user.first_name && user.last_name) {
@@ -1333,12 +1211,7 @@ async function initApp() {
                 userData.username = "Usuario";
             }
             
-            userData.firstName = user.first_name || "";
-            userData.lastName = user.last_name || "";
-            
-            const nameElem = document.getElementById("user-display");
-            if (nameElem) nameElem.textContent = userData.username;
-            
+            document.getElementById("user-display").textContent = userData.username;
             await loadUserFromDB(user.id);
         } else {
             document.getElementById("user-display").textContent = "Invitado";
@@ -1350,17 +1223,14 @@ async function initApp() {
         await updateTotalDiamonds();
         await updateUserRank();
         
-        renderStore();
         renderBank();
         renderPremiumPlans();
+        actualizarBannerEvento();
         
         startProduction();
         
         setInterval(saveUserData, 30000);
-        
-        window.addEventListener('beforeunload', () => {
-            saveUserData();
-        });
+        window.addEventListener('beforeunload', () => saveUserData());
         
         actualizarTimerParque();
         actualizarBannerAds();
@@ -1395,8 +1265,6 @@ function actualizarBannerDomingo() {
 
 async function loadUserFromDB(tgId) {
     try {
-        console.log("👤 Cargando usuario desde DB:", tgId);
-        
         const { data, error } = await _supabase
             .from('game_data')
             .select('*')
@@ -1409,8 +1277,6 @@ async function loadUserFromDB(tgId) {
         }
 
         if (!data) {
-            console.log("🆕 Usuario no encontrado, creando nuevo...");
-            
             const nuevoUsuario = {
                 telegram_id: tgId.toString(),
                 username: userData.username,
@@ -1420,20 +1286,10 @@ async function loadUserFromDB(tgId) {
                 lvl_escuela: 0,
                 lvl_hospital: 0,
                 referral_code: 'REF' + tgId.toString().slice(-6),
-                referral_earnings: 0,
-                referred_users: [],
                 last_online: new Date().toISOString(),
                 last_production_update: new Date().toISOString(),
-                last_withdraw_week: null,
-                last_ad_watch: null,
-                last_casino_rescue: null,
-                premium_expires: null,
-                daily_streak: 0,
-                last_daily_claim: null,
                 haInvertido: false
             };
-            
-            console.log("📦 Insertando nuevo usuario:", nuevoUsuario);
             
             const { error: insertError } = await _supabase
                 .from('game_data')
@@ -1444,12 +1300,9 @@ async function loadUserFromDB(tgId) {
                 return;
             }
             
-            console.log("✅ Usuario creado en Supabase");
             userData = { ...userData, ...nuevoUsuario, id: tgId.toString() };
             
         } else {
-            console.log("📁 Usuario encontrado en DB:", data);
-            
             userData = { 
                 ...userData, 
                 ...data, 
@@ -1471,16 +1324,9 @@ async function loadUserFromDB(tgId) {
                 haInvertido: data.haInvertido || false
             };
             
-            console.log("📊 Datos cargados:", {
-                nombre: userData.username,
-                diamantes: userData.diamonds,
-                premium: esPremium() ? "SÍ" : "NO"
-            });
-            
             const offlineEarnings = await calculateOfflineProduction();
             if (offlineEarnings > 0) {
                 userData.diamonds += offlineEarnings;
-                console.log(`💰 Producción offline: +${offlineEarnings.toFixed(2)} 💎`);
                 await saveUserData();
             }
         }
@@ -1500,20 +1346,14 @@ async function loadUserFromDB(tgId) {
 }
 
 // ==========================================
-// FUNCIONES DE JUEGOS (CASINO)
+// CASINO - JUEGOS
 // ==========================================
-
 function openCasino() {
     showModal("modalCasino");
     
-    // Mostrar botón de rescate si tiene 0 diamantes
     const rescueDiv = document.getElementById("casino-rescue");
     if (rescueDiv) {
-        if (userData.diamonds <= 0 && !esPremium()) {
-            rescueDiv.style.display = "block";
-        } else {
-            rescueDiv.style.display = "none";
-        }
+        rescueDiv.style.display = (userData.diamonds <= 0 && !esPremium()) ? "block" : "none";
     }
 }
 
@@ -1565,14 +1405,16 @@ function cerrarJuego() {
     openCasino();
 }
 
+// CORRECCIÓN: AHORA FUNCIONA CORRECTAMENTE
 function cambiarApuesta(juego, delta) {
-    console.log(`🎰 Cambiando apuesta para ${juego}, delta: ${delta}`);
+    let key = juego;
+    if (juego === 'hl') key = 'highlow';
     
-    if (isNaN(apuestaActual[juego])) {
-        apuestaActual[juego] = juego === 'tragaperras' ? 5 : (juego === 'loteria' ? 1 : 10);
+    if (isNaN(apuestaActual[key])) {
+        apuestaActual[key] = key === 'tragaperras' ? 5 : (key === 'loteria' ? 1 : 10);
     }
     
-    let nueva = apuestaActual[juego] + delta;
+    let nueva = apuestaActual[key] + delta;
     if (nueva < 1) nueva = 1;
     
     const maximos = {
@@ -1583,23 +1425,19 @@ function cambiarApuesta(juego, delta) {
         loteria: 10
     };
     
-    if (nueva > maximos[juego]) nueva = maximos[juego];
+    if (nueva > maximos[key]) nueva = maximos[key];
     
-    apuestaActual[juego] = nueva;
+    apuestaActual[key] = nueva;
     
-    const elemId = juego === 'highlow' ? 'hl-bet' : 
-                   juego === 'ruleta' ? 'ruleta-bet' :
-                   juego === 'tragaperras' ? 'tragaperras-bet' :
-                   juego === 'dados' ? 'dados-bet' : 'loteria-bet';
+    const elemId = key === 'highlow' ? 'hl-bet' : 
+                   key === 'ruleta' ? 'ruleta-bet' :
+                   key === 'tragaperras' ? 'tragaperras-bet' :
+                   key === 'dados' ? 'dados-bet' : 'loteria-bet';
     
     const elem = document.getElementById(elemId);
-    if (elem) {
-        elem.textContent = nueva;
-        console.log(`✅ Apuesta actualizada a ${nueva}`);
-    }
+    if (elem) elem.textContent = nueva;
 }
 
-// JUEGO 1: HIGH/LOW
 function jugarHighLow(eleccion) {
     const apuesta = apuestaActual.highlow;
     
@@ -1628,19 +1466,16 @@ function jugarHighLow(eleccion) {
             : Math.floor(Math.random() * 5000) + 5000;
     }
     
-    const numeroStr = numero.toString().padStart(4, '0');
-    document.getElementById('hl-number').textContent = numeroStr;
-    
-    const resultado = document.getElementById('hl-result');
+    document.getElementById('hl-number').textContent = numero.toString().padStart(4, '0');
     
     let ganancia = apuesta * 2;
-    if (esPremium()) ganancia *= 2; // Premium x2
+    if (esPremium()) ganancia *= 2;
     
     if (gana) {
         userData.diamonds += ganancia;
-        resultado.innerHTML = '<span class="win-message">🎉 ¡GANASTE!</span>';
+        document.getElementById('hl-result').innerHTML = '<span class="win-message">🎉 ¡GANASTE!</span>';
     } else {
-        resultado.innerHTML = '<span class="lose-message">😞 Has perdido</span>';
+        document.getElementById('hl-result').innerHTML = '<span class="lose-message">😞 Has perdido</span>';
     }
     
     registrarJugada('highlow');
@@ -1648,7 +1483,6 @@ function jugarHighLow(eleccion) {
     saveUserData();
 }
 
-// JUEGO 2: RULETA
 function jugarRuleta(tipo) {
     const apuesta = apuestaActual.ruleta;
     
@@ -1664,13 +1498,7 @@ function jugarRuleta(tipo) {
     
     userData.diamonds -= apuesta;
     
-    let numero;
-    if (Math.random() < 0.03) {
-        numero = 0;
-    } else {
-        numero = Math.floor(Math.random() * 37);
-    }
-    
+    let numero = Math.random() < 0.03 ? 0 : Math.floor(Math.random() * 37);
     document.getElementById('ruleta-number').textContent = numero;
     
     let gana = false;
@@ -1695,18 +1523,9 @@ function jugarRuleta(tipo) {
             gana = numero >= 19 && numero <= 36;
             break;
         case 'numero':
-            const numeroElegido = prompt("Elige un número del 0 al 36:", "7");
-            if (numeroElegido !== null) {
-                const num = parseInt(numeroElegido);
-                if (num >= 0 && num <= 36) {
-                    gana = numero === num;
-                } else {
-                    alert("Número inválido");
-                    userData.diamonds += apuesta;
-                    actualizarUI();
-                    return;
-                }
-            } else {
+            const num = parseInt(prompt("Elige un número del 0 al 36:", "7"));
+            if (num >= 0 && num <= 36) gana = numero === num;
+            else {
                 userData.diamonds += apuesta;
                 actualizarUI();
                 return;
@@ -1714,17 +1533,14 @@ function jugarRuleta(tipo) {
             break;
     }
     
-    const resultado = document.getElementById('ruleta-result');
-    
-    let ganancia = apuesta * 2;
-    if (tipo === 'numero' && gana) ganancia = apuesta * 36;
+    let ganancia = tipo === 'numero' && gana ? apuesta * 36 : apuesta * 2;
     if (esPremium()) ganancia *= 2;
     
     if (gana) {
         userData.diamonds += ganancia;
-        resultado.innerHTML = '<span class="win-message">🎉 ¡GANASTE!</span>';
+        document.getElementById('ruleta-result').innerHTML = '<span class="win-message">🎉 ¡GANASTE!</span>';
     } else {
-        resultado.innerHTML = '<span class="lose-message">😞 Has perdido</span>';
+        document.getElementById('ruleta-result').innerHTML = '<span class="lose-message">😞 Has perdido</span>';
     }
     
     registrarJugada('ruleta');
@@ -1732,7 +1548,6 @@ function jugarRuleta(tipo) {
     saveUserData();
 }
 
-// JUEGO 3: TRAGAPERRAS
 function jugarTragaperras() {
     const apuesta = apuestaActual.tragaperras;
     
@@ -1760,10 +1575,10 @@ function jugarTragaperras() {
     const rodillos = [];
     for (let i = 0; i < 3; i++) {
         const rand = Math.random() * 100;
-        let acumulado = 0;
+        let acum = 0;
         for (const s of simbolos) {
-            acumulado += s.rareza;
-            if (rand < acumulado) {
+            acum += s.rareza;
+            if (rand < acum) {
                 rodillos.push(s);
                 break;
             }
@@ -1774,20 +1589,14 @@ function jugarTragaperras() {
     document.getElementById('slot2').textContent = rodillos[1].nombre;
     document.getElementById('slot3').textContent = rodillos[2].nombre;
     
-    const resultado = document.getElementById('tragaperras-result');
-    
     if (rodillos[0].nombre === rodillos[1].nombre && rodillos[1].nombre === rodillos[2].nombre) {
         let mult = rodillos[0].mult;
         if (esPremium()) mult *= 2;
         
         userData.diamonds += apuesta * mult;
-        resultado.innerHTML = `<span class="win-message">🎉 ¡GANASTE! x${mult}</span>`;
-        
-        if (rodillos[0].nombre === "💎") {
-            resultado.innerHTML = '<span class="win-message">💎 ¡JACKPOT! x100</span>';
-        }
+        document.getElementById('tragaperras-result').innerHTML = `<span class="win-message">🎉 ¡GANASTE! x${mult}</span>`;
     } else {
-        resultado.innerHTML = '<span class="lose-message">😞 No hay premio</span>';
+        document.getElementById('tragaperras-result').innerHTML = '<span class="lose-message">😞 No hay premio</span>';
     }
     
     registrarJugada('tragaperras');
@@ -1795,7 +1604,6 @@ function jugarTragaperras() {
     saveUserData();
 }
 
-// JUEGO 4: DADOS
 function jugarDados(eleccion) {
     const apuesta = apuestaActual.dados;
     
@@ -1811,27 +1619,8 @@ function jugarDados(eleccion) {
     
     userData.diamonds -= apuesta;
     
-    let dado1, dado2;
-    
-    if (eleccion === 'exacto' && Math.random() > 0.15) {
-        do {
-            dado1 = Math.floor(Math.random() * 6) + 1;
-            dado2 = Math.floor(Math.random() * 6) + 1;
-        } while (dado1 + dado2 === 7);
-    } else if (eleccion === 'menor' && Math.random() > 0.40) {
-        do {
-            dado1 = Math.floor(Math.random() * 6) + 1;
-            dado2 = Math.floor(Math.random() * 6) + 1;
-        } while (dado1 + dado2 >= 2 && dado1 + dado2 <= 6);
-    } else if (eleccion === 'mayor' && Math.random() > 0.40) {
-        do {
-            dado1 = Math.floor(Math.random() * 6) + 1;
-            dado2 = Math.floor(Math.random() * 6) + 1;
-        } while (dado1 + dado2 >= 8 && dado1 + dado2 <= 12);
-    } else {
-        dado1 = Math.floor(Math.random() * 6) + 1;
-        dado2 = Math.floor(Math.random() * 6) + 1;
-    }
+    let dado1 = Math.floor(Math.random() * 6) + 1;
+    let dado2 = Math.floor(Math.random() * 6) + 1;
     
     const caras = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
     document.getElementById('dado1').textContent = caras[dado1 - 1];
@@ -1839,8 +1628,6 @@ function jugarDados(eleccion) {
     
     const suma = dado1 + dado2;
     document.getElementById('dados-suma').textContent = `Suma: ${suma}`;
-    
-    const resultado = document.getElementById('dados-result');
     
     let gana = false;
     if (eleccion === 'menor' && suma >= 2 && suma <= 6) gana = true;
@@ -1852,9 +1639,9 @@ function jugarDados(eleccion) {
         if (esPremium()) ganancia *= 2;
         
         userData.diamonds += ganancia;
-        resultado.innerHTML = '<span class="win-message">🎉 ¡GANASTE!</span>';
+        document.getElementById('dados-result').innerHTML = '<span class="win-message">🎉 ¡GANASTE!</span>';
     } else {
-        resultado.innerHTML = '<span class="lose-message">😞 Has perdido</span>';
+        document.getElementById('dados-result').innerHTML = '<span class="lose-message">😞 Has perdido</span>';
     }
     
     registrarJugada('dados');
@@ -1862,7 +1649,6 @@ function jugarDados(eleccion) {
     saveUserData();
 }
 
-// JUEGO 5: LOTERÍA
 function comprarBoletos() {
     const cantidad = apuestaActual.loteria;
     const costoTotal = cantidad * 5;
@@ -1873,7 +1659,7 @@ function comprarBoletos() {
     }
     
     if (!puedeJugar('loteria', cantidad)) {
-        alert("❌ Límite diario de boletos alcanzado");
+        alert("❌ Límite diario alcanzado");
         return;
     }
     
@@ -1903,65 +1689,22 @@ function jugarLoteria() {
         return;
     }
     
-    const rand = Math.random();
-    let numeroGanador;
-    
-    const prob = [
-        { coinc: 4, prob: 0.00005 },
-        { coinc: 3, prob: 0.0005 },
-        { coinc: 2, prob: 0.005 },
-        { coinc: 1, prob: 0.05 },
-        { coinc: 0, prob: 0.94445 }
-    ];
-    
-    let acum = 0;
-    let nivelCoincidencia = 0;
-    for (const p of prob) {
-        acum += p.prob;
-        if (rand < acum) {
-            nivelCoincidencia = p.coinc;
-            break;
-        }
-    }
-    
-    if (nivelCoincidencia === 0) {
-        do {
-            numeroGanador = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-        } while (boletosComprados.some(b => coincidencias(b, numeroGanador) > 0));
-    } else {
-        const boletoBase = boletosComprados[Math.floor(Math.random() * boletosComprados.length)];
-        const digitos = boletoBase.split('');
-        
-        const posicionesMantener = [];
-        while (posicionesMantener.length < nivelCoincidencia) {
-            const pos = Math.floor(Math.random() * 4);
-            if (!posicionesMantener.includes(pos)) posicionesMantener.push(pos);
-        }
-        
-        for (let i = 0; i < 4; i++) {
-            if (!posicionesMantener.includes(i)) {
-                digitos[i] = Math.floor(Math.random() * 10).toString();
-            }
-        }
-        
-        numeroGanador = digitos.join('');
-    }
-    
+    const numeroGanador = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     document.getElementById('loteria-number').textContent = numeroGanador;
     
     let premioTotal = 0;
     const resultados = [];
     
     boletosComprados.forEach(boleto => {
-        const coinc = coincidencias(boleto, numeroGanador);
-        let premio = 0;
+        let coinc = 0;
+        for (let i = 0; i < 4; i++) if (boleto[i] === numeroGanador[i]) coinc++;
         
+        let premio = 0;
         switch(coinc) {
             case 4: premio = 5 * 500; break;
             case 3: premio = 5 * 50; break;
             case 2: premio = 5 * 5; break;
             case 1: premio = 5; break;
-            default: premio = 0;
         }
         
         if (esPremium()) premio *= 2;
@@ -1972,16 +1715,14 @@ function jugarLoteria() {
         }
     });
     
-    if (premioTotal > 0) {
-        userData.diamonds += premioTotal;
-    }
+    if (premioTotal > 0) userData.diamonds += premioTotal;
     
     let html = '<p style="color: #94a3b8;">Resultados:</p>';
     if (resultados.length > 0) {
         html += resultados.join('<br>');
-        html += `<br><span style="color: #facc15; font-weight: bold;">Total ganado: +${premioTotal}💎</span>`;
+        html += `<br><span style="color: #facc15; font-weight: bold;">Total: +${premioTotal}💎</span>`;
     } else {
-        html += '<span class="lose-message">😞 No ganaste con ningún boleto</span>';
+        html += '<span class="lose-message">😞 No ganaste</span>';
     }
     
     document.getElementById('loteria-result').innerHTML = html;
@@ -1989,14 +1730,6 @@ function jugarLoteria() {
     boletosComprados = [];
     actualizarUI();
     saveUserData();
-}
-
-function coincidencias(boleto, ganador) {
-    let cont = 0;
-    for (let i = 0; i < 4; i++) {
-        if (boleto[i] === ganador[i]) cont++;
-    }
-    return cont;
 }
 
 // ==========================================
@@ -2016,12 +1749,11 @@ function copyReferralCode() {
 
 function updateReferralUI() {
     const codeElem = document.getElementById("referral-code");
-    if (codeElem) codeElem.textContent = userData.referral_code || "NO DISPONIBLE";
-    
     const countElem = document.getElementById("ref-count");
-    if (countElem) countElem.textContent = userData.referred_users?.length || 0;
-    
     const totalElem = document.getElementById("ref-total");
+    
+    if (codeElem) codeElem.textContent = userData.referral_code || "NO DISPONIBLE";
+    if (countElem) countElem.textContent = userData.referred_users?.length || 0;
     if (totalElem) totalElem.textContent = `${userData.referral_earnings || 0} 💎`;
 }
 
@@ -2030,13 +1762,6 @@ function updateReferralUI() {
 // ==========================================
 async function initTONConnect() {
     try {
-        console.log("🔄 Inicializando TON Connect...");
-        
-        if (typeof TON_CONNECT_UI === 'undefined') {
-            console.error("❌ TON_CONNECT_UI no disponible");
-            return;
-        }
-        
         tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://nyper95.github.io/ton-city-game/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-button',
@@ -2046,15 +1771,9 @@ async function initTONConnect() {
         tonConnectUI.onStatusChange((wallet) => {
             currentWallet = wallet;
             updateWalletUI(wallet);
-            if (document.getElementById("modalBank")?.style.display === "block") {
-                renderBank();
-            }
-            if (document.getElementById("modalStore")?.style.display === "block") {
-                renderPremiumPlans();
-            }
+            if (document.getElementById("modalBank")?.style.display === "block") renderBank();
+            if (document.getElementById("modalStore")?.style.display === "block") renderPremiumPlans();
         });
-        
-        console.log("✅ TON Connect inicializado");
         
     } catch (error) {
         console.error("❌ Error en TON Connect:", error);
@@ -2062,24 +1781,20 @@ async function initTONConnect() {
 }
 
 function updateWalletUI(wallet) {
-    try {
-        const connectButton = document.getElementById('ton-connect-button');
-        const walletInfo = document.getElementById('wallet-info');
-        const disconnectBtn = document.getElementById('disconnect-btn');
-        
-        if (!walletInfo) return;
-        
-        if (wallet) {
-            if (connectButton) connectButton.style.display = 'none';
-            walletInfo.classList.remove('hidden');
-            if (disconnectBtn) disconnectBtn.style.display = 'inline-block';
-        } else {
-            if (connectButton) connectButton.style.display = 'block';
-            walletInfo.classList.add('hidden');
-            if (disconnectBtn) disconnectBtn.style.display = 'none';
-        }
-    } catch (error) {
-        console.error("❌ Error en UI wallet:", error);
+    const connectButton = document.getElementById('ton-connect-button');
+    const walletInfo = document.getElementById('wallet-info');
+    const disconnectBtn = document.getElementById('disconnect-btn');
+    
+    if (!walletInfo) return;
+    
+    if (wallet) {
+        if (connectButton) connectButton.style.display = 'none';
+        walletInfo.classList.remove('hidden');
+        if (disconnectBtn) disconnectBtn.style.display = 'inline-block';
+    } else {
+        if (connectButton) connectButton.style.display = 'block';
+        walletInfo.classList.add('hidden');
+        if (disconnectBtn) disconnectBtn.style.display = 'none';
     }
 }
 
@@ -2101,8 +1816,6 @@ async function disconnectWallet() {
 // ==========================================
 async function buyUpgrade(name, field, price) {
     try {
-        console.log(`🛒 Comprando mejora: ${name}, campo: ${field}, precio: ${price}`);
-        
         if (!userData.id) {
             alert("❌ Error: Usuario no identificado");
             return;
@@ -2113,34 +1826,17 @@ async function buyUpgrade(name, field, price) {
             return;
         }
         
-        const oldValue = userData[`lvl_${field}`] || 0;
-        const oldDiamonds = userData.diamonds;
-        
-        userData[`lvl_${field}`] = oldValue + 1;
+        userData[`lvl_${field}`] = (userData[`lvl_${field}`] || 0) + 1;
         userData.diamonds -= price;
         
-        console.log(`📊 NUEVO nivel: ${userData[`lvl_${field}`]}`);
-        
         actualizarUI();
-        renderStore();
+        await saveUserData();
         
-        const saveResult = await saveUserData();
-        
-        if (saveResult) {
-            console.log("✅ Mejora guardada");
-            alert(`✅ ¡${name} nivel ${userData[`lvl_${field}`]}!`);
-        } else {
-            console.error("❌ Error al guardar, revirtiendo cambios");
-            userData[`lvl_${field}`] = oldValue;
-            userData.diamonds = oldDiamonds;
-            actualizarUI();
-            renderStore();
-            alert("❌ Error al guardar la mejora. Intenta de nuevo.");
-        }
+        alert(`✅ ¡${name} nivel ${userData[`lvl_${field}`]}!`);
         
     } catch (error) {
         console.error("❌ Error en buyUpgrade:", error);
-        alert("Error al comprar mejora: " + error.message);
+        alert("Error al comprar mejora");
     }
 }
 
@@ -2148,14 +1844,9 @@ async function buyUpgrade(name, field, price) {
 // GUARDAR DATOS EN SUPABASE
 // ==========================================
 async function saveUserData() {
-    if (!userData.id) {
-        console.log("⚠️ No hay ID de usuario");
-        return false;
-    }
+    if (!userData.id) return false;
     
     try {
-        console.log("💾 Guardando datos...");
-        
         const datos = {
             diamonds: Math.floor(Number(userData.diamonds) || 0),
             lvl_piscina: parseInt(userData.lvl_piscina) || 0,
@@ -2181,11 +1872,7 @@ async function saveUserData() {
             .eq('telegram_id', userData.id);
         
         if (error) {
-            console.error("❌ Error de Supabase:", error);
-            
             if (error.code === 'PGRST116') {
-                console.log("🔄 Usuario no existe, insertando...");
-                
                 const insertData = {
                     ...datos,
                     telegram_id: userData.id,
@@ -2198,19 +1885,12 @@ async function saveUserData() {
                     .from('game_data')
                     .insert([insertData]);
                 
-                if (insertError) {
-                    console.error("❌ Error al insertar:", insertError);
-                    return false;
-                }
-                
-                console.log("✅ Usuario insertado");
+                if (insertError) return false;
                 return true;
             }
-            
             return false;
         }
         
-        console.log("✅ Datos guardados");
         return true;
         
     } catch (error) {
@@ -2241,15 +1921,10 @@ function actualizarUI() {
         if (el) el.textContent = value || 0;
     });
     
-    // Verificar si debe mostrar rescate en casino
     if (document.getElementById("modalCasino")?.style.display === "block") {
         const rescueDiv = document.getElementById("casino-rescue");
         if (rescueDiv) {
-            if (userData.diamonds <= 0 && !esPremium()) {
-                rescueDiv.style.display = "block";
-            } else {
-                rescueDiv.style.display = "none";
-            }
+            rescueDiv.style.display = (userData.diamonds <= 0 && !esPremium()) ? "block" : "none";
         }
     }
 }
@@ -2261,7 +1936,7 @@ function showModal(id) {
 
 function closeAll() {
     document.getElementById("overlay").style.display = "none";
-    ["centralModal", "modalBank", "modalStore", "modalFriends", "modalWithdraw", "modalAds", "modalDailyReward", "modalCasino", "modalHighLow", "modalRuleta", "modalTragaperras", "modalDados", "modalLoteria"].forEach(id => {
+    ["centralModal", "modalBank", "modalStore", "modalFriends", "modalWithdraw", "modalAds", "modalDailyReward", "modalCasino", "modalHighLow", "modalRuleta", "modalTragaperras", "modalDados", "modalLoteria", "modalPiscina", "modalFabrica", "modalEscuela", "modalHospital", "modalEvent"].forEach(id => {
         const m = document.getElementById(id);
         if (m) m.style.display = "none";
     });
@@ -2271,7 +1946,6 @@ function closeAll() {
 // INICIALIZACIÓN
 // ==========================================
 window.addEventListener('DOMContentLoaded', () => {
-    console.log("📄 DOM cargado");
     setTimeout(initApp, 500);
 });
 
@@ -2281,12 +1955,15 @@ window.addEventListener('beforeunload', () => {
 
 // EXPORTAR FUNCIONES GLOBALES
 window.openCentral = openCentral;
-window.openStore = () => { renderStore(); renderPremiumPlans(); showModal("modalStore"); };
+window.openStore = () => { renderPremiumPlans(); showModal("modalStore"); };
 window.openBank = () => { renderBank(); showModal("modalBank"); };
 window.openFriends = openFriends;
 window.openWithdraw = openWithdraw;
 window.openDailyReward = openDailyReward;
 window.openCasino = openCasino;
+window.openBuilding = openBuilding;
+window.openEventModal = openEventModal;
+window.startEventTask = startEventTask;
 window.abrirJuego = abrirJuego;
 window.cerrarJuego = cerrarJuego;
 window.cambiarApuesta = cambiarApuesta;
@@ -2301,10 +1978,10 @@ window.showAdsModal = showAdsModal;
 window.showAd = showAd;
 window.rescueWithAd = rescueWithAd;
 window.comprarPremium = comprarPremium;
+window.buyUpgradeFromBuilding = buyUpgradeFromBuilding;
 window.closeAll = closeAll;
 window.copyReferralCode = copyReferralCode;
 window.comprarTON = comprarTON;
-window.buyUpgrade = buyUpgrade;
 window.disconnectWallet = disconnectWallet;
 
-console.log("✅ Ton City Game - Versión completa con Premium, Rangos y Retiro corregido");
+console.log("✅ Ton City Game - Versión completa corregida");
