@@ -70,6 +70,7 @@ let userData = {
     weekly_earnings: 0,
     rank: "Ciudadano",
     projectedReward: 0,
+    event_progress: {}, // Para llevar progreso de eventos
     jugadasHoy: {
         highlow: 0,
         ruleta: 0,
@@ -108,43 +109,51 @@ const PREMIUM_PLANS = [
 const EVENTOS_SEMANALES = [
     {
         nombre: "Hospital",
+        edificio: "hospital",
         icono: "fa-hospital",
         color: "#f87171",
         descripcion: "Campaña de Vacunación Digital",
-        tarea: "Ver 3 anuncios de video seguidos",
+        tarea: "Ver 3 anuncios de video seguidos para ayudar a vacunar a la ciudad",
         recompensa: 100,
         premium: 200,
-        tipo: 'ads'
+        tipo: 'ads',
+        requeridos: 3
     },
     {
         nombre: "Fábrica",
+        edificio: "fabrica",
         icono: "fa-industry",
         color: "#a78bfa",
         descripcion: "Contratos de Exportación",
-        tarea: "Suscribirse al canal del socio",
+        tarea: "Suscribirse al canal oficial de Ton City para recibir ofertas exclusivas",
         recompensa: 150,
         premium: 300,
-        tipo: 'subscribe'
+        tipo: 'subscribe',
+        requeridos: 1
     },
     {
         nombre: "Piscina",
+        edificio: "piscina",
         icono: "fa-water-ladder",
         color: "#38bdf8",
         descripcion: "Publicidad del Resort",
-        tarea: "Compartir enlace en 3 grupos",
+        tarea: "Compartir el enlace de la ciudad en 3 grupos de Telegram",
         recompensa: 80,
         premium: 160,
-        tipo: 'share'
+        tipo: 'share',
+        requeridos: 3
     },
     {
         nombre: "Escuela",
+        edificio: "escuela",
         icono: "fa-school",
         color: "#a16207",
         descripcion: "Becas de Estudio",
-        tarea: "Responder encuesta rápida",
+        tarea: "Responder una encuesta rápida sobre la ciudad",
         recompensa: 200,
         premium: 400,
-        tipo: 'survey'
+        tipo: 'survey',
+        requeridos: 1
     }
 ];
 
@@ -177,9 +186,9 @@ function getPremiumTimeLeft() {
     const expiracion = new Date(userData.premium_expires);
     if (ahora >= expiracion) return 0;
     const diffMs = expiracion - ahora;
-    const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     if (diffDias > 0) return `${diffDias} día${diffDias > 1 ? 's' : ''}`;
+    const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
     return `${diffHoras} hora${diffHoras > 1 ? 's' : ''}`;
 }
 
@@ -201,9 +210,50 @@ function actualizarPremiumUI() {
 }
 
 // ==========================================
-// FUNCIONES DE EDIFICIOS
+// FUNCIÓN PARA OBTENER EVENTO ACTUAL
+// ==========================================
+function getEventoActual() {
+    const semana = Math.floor(Date.now() / (1000 * 60 * 60 * 24 * 7)) % 4;
+    return EVENTOS_SEMANALES[semana];
+}
+
+function actualizarBannerEvento() {
+    const evento = getEventoActual();
+    const banner = document.getElementById("event-banner");
+    const textElem = document.getElementById("event-text");
+    
+    if (banner && textElem) {
+        banner.style.display = "block";
+        banner.style.background = `linear-gradient(135deg, ${evento.color}, ${evento.color}dd)`;
+        textElem.innerHTML = `🎉 Evento: ${evento.nombre} - ${evento.descripcion}`;
+        
+        // Quitar clase event-card de todos los edificios
+        document.querySelectorAll('.card').forEach(card => {
+            card.classList.remove('event-card');
+        });
+        
+        // Destacar edificio de la semana
+        const edificioCard = document.querySelector(`.card[onclick="openBuilding('${evento.edificio}')"]`);
+        if (edificioCard) {
+            edificioCard.classList.add('event-card');
+        }
+    }
+}
+
+// ==========================================
+// FUNCIÓN DE EDIFICIOS (CON EVENTO)
 // ==========================================
 function openBuilding(building) {
+    const evento = getEventoActual();
+    
+    // Si este edificio es el protagonista de la semana
+    if (building === evento.edificio) {
+        // Abrir modal de evento
+        abrirModalEvento(evento);
+        return;
+    }
+    
+    // Si no es el edificio de la semana, abrir modal de mejoras normal
     const precios = {
         piscina: 5000,
         fabrica: 10000,
@@ -222,87 +272,102 @@ function openBuilding(building) {
     const precio = precios[building];
     const prod = producciones[building];
     
-    document.getElementById(`${building}-level`).textContent = nivel;
-    document.getElementById(`${building}-prod`).textContent = nivel * prod;
-    document.getElementById(`${building}-next`).textContent = nivel + 1;
-    document.getElementById(`${building}-price`).textContent = `${precio.toLocaleString()} 💎`;
+    const levelElem = document.getElementById(`${building}-level`);
+    const prodElem = document.getElementById(`${building}-prod`);
+    const nextElem = document.getElementById(`${building}-next`);
+    const priceElem = document.getElementById(`${building}-price`);
+    const btnElem = document.getElementById(`${building}-btn`);
     
-    const btn = document.getElementById(`${building}-btn`);
-    if (btn) {
-        btn.disabled = userData.diamonds < precio;
-        btn.style.background = userData.diamonds < precio ? '#475569' : '#2563eb';
+    if (levelElem) levelElem.textContent = nivel;
+    if (prodElem) prodElem.textContent = nivel * prod;
+    if (nextElem) nextElem.textContent = nivel + 1;
+    if (priceElem) priceElem.textContent = `${precio.toLocaleString()} 💎`;
+    
+    if (btnElem) {
+        btnElem.disabled = userData.diamonds < precio;
+        btnElem.style.background = userData.diamonds < precio ? '#475569' : '#2563eb';
     }
     
     showModal(`modal${building.charAt(0).toUpperCase() + building.slice(1)}`);
 }
 
-async function buyUpgradeFromBuilding(building, price) {
-    const nombres = {
-        piscina: "Piscina",
-        fabrica: "Fábrica",
-        escuela: "Escuela",
-        hospital: "Hospital"
-    };
-    
-    await buyUpgrade(nombres[building], building, price);
-    openBuilding(building);
-}
-
 // ==========================================
-// FUNCIONES DE EVENTOS SEMANALES
+// ABRIR MODAL DE EVENTO
 // ==========================================
-function getEventoActual() {
-    const semana = Math.floor(Date.now() / (1000 * 60 * 60 * 24 * 7)) % 4;
-    return EVENTOS_SEMANALES[semana];
-}
-
-function actualizarBannerEvento() {
-    const evento = getEventoActual();
-    const banner = document.getElementById("event-banner");
-    const textElem = document.getElementById("event-text");
+function abrirModalEvento(evento) {
+    // Actualizar contenido del modal
+    const titleElem = document.getElementById("event-title");
+    const iconElem = document.getElementById("event-icon");
+    const descElem = document.getElementById("event-description");
+    const rewardElem = document.getElementById("event-reward");
+    const premiumRewardElem = document.getElementById("event-reward-premium");
+    const btnElem = document.getElementById("event-btn");
+    const progressContainer = document.getElementById("event-progress");
+    const progressBar = document.getElementById("event-progress-bar");
+    const progressText = document.getElementById("event-progress-text");
     
-    if (banner && textElem) {
-        banner.style.display = "block";
-        textElem.innerHTML = `🎉 Evento: ${evento.nombre} - ${evento.descripcion}`;
-        
-        // Destacar edificio de la semana
-        const edificioMap = {
-            "Hospital": "hospital",
-            "Fábrica": "fabrica",
-            "Piscina": "piscina",
-            "Escuela": "escuela"
-        };
-        
-        const edificioId = edificioMap[evento.nombre];
-        if (edificioId) {
-            const card = document.querySelector(`.card[onclick="openBuilding('${edificioId}')"]`);
-            if (card) {
-                card.classList.add('event-card');
-            }
-        }
+    if (iconElem) {
+        iconElem.innerHTML = `<i class="fa-solid ${evento.icono}" style="color: ${evento.color}; font-size: 64px;"></i>`;
     }
-}
-
-function openEventModal() {
-    const evento = getEventoActual();
     
-    document.getElementById("event-title").textContent = `${evento.nombre} - ${evento.descripcion}`;
-    document.getElementById("event-description").textContent = evento.tarea;
-    document.getElementById("event-reward").textContent = `${evento.recompensa} 💎`;
-    document.getElementById("event-reward-premium").textContent = `${evento.premium} 💎`;
+    if (titleElem) {
+        titleElem.innerHTML = `${evento.nombre}`;
+        titleElem.style.color = evento.color;
+    }
+    
+    if (descElem) {
+        descElem.innerHTML = `<strong>${evento.descripcion}</strong><br><br>📋 <span style="color: #94a3b8;">${evento.tarea}</span>`;
+    }
+    
+    if (rewardElem) rewardElem.textContent = `${evento.recompensa} 💎`;
+    if (premiumRewardElem) premiumRewardElem.textContent = `${evento.premium} 💎`;
+    
+    if (btnElem) {
+        btnElem.style.background = evento.color;
+        btnElem.setAttribute('data-edificio', evento.edificio);
+        btnElem.setAttribute('data-tipo', evento.tipo);
+        btnElem.setAttribute('data-recompensa', evento.recompensa);
+        btnElem.setAttribute('data-premium', evento.premium);
+        btnElem.setAttribute('data-requeridos', evento.requeridos);
+    }
+    
+    // Mostrar progreso si existe
+    const progreso = userData.event_progress?.[evento.nombre] || 0;
+    if (evento.requeridos > 1 && progressContainer && progressBar && progressText) {
+        progressContainer.style.display = "block";
+        const porcentaje = (progreso / evento.requeridos) * 100;
+        progressBar.style.width = `${porcentaje}%`;
+        progressText.textContent = `${progreso}/${evento.requeridos} completado`;
+    } else if (progressContainer) {
+        progressContainer.style.display = "none";
+    }
     
     showModal("modalEvent");
 }
 
+// ==========================================
+// PARTICIPAR EN EVENTO
+// ==========================================
 async function startEventTask() {
     const evento = getEventoActual();
+    const btn = document.getElementById("event-btn");
+    const tipo = btn.getAttribute('data-tipo') || evento.tipo;
+    const requeridos = parseInt(btn.getAttribute('data-requeridos') || evento.requeridos || 1);
     
     if (!tonConnectUI || !tonConnectUI.connected) {
-        alert("❌ Conecta tu wallet primero");
+        alert("❌ Conecta tu wallet primero para participar");
         return;
     }
     
-    if (evento.tipo === 'ads') {
+    // Inicializar progreso si no existe
+    if (!userData.event_progress) userData.event_progress = {};
+    if (!userData.event_progress[evento.nombre]) userData.event_progress[evento.nombre] = 0;
+    
+    let progresoActual = userData.event_progress[evento.nombre];
+    
+    // Según el tipo de evento
+    if (tipo === 'ads') {
+        // Anuncios de Adsgram
         if (!adsReady || !AdController) {
             alert("❌ Sistema de anuncios no disponible");
             return;
@@ -311,17 +376,123 @@ async function startEventTask() {
         try {
             const result = await AdController.show();
             if (result.done) {
-                const recompensa = esPremium() ? evento.premium : evento.recompensa;
-                userData.diamonds += recompensa;
-                await saveUserData();
-                actualizarUI();
-                alert(`✅ ¡+${recompensa} diamantes por participar!`);
+                progresoActual++;
+                userData.event_progress[evento.nombre] = progresoActual;
+                
+                if (progresoActual >= requeridos) {
+                    const recompensa = esPremium() ? evento.premium : evento.recompensa;
+                    userData.diamonds += recompensa;
+                    userData.event_progress[evento.nombre] = 0; // Resetear progreso
+                    await saveUserData();
+                    actualizarUI();
+                    alert(`✅ ¡Evento completado! Ganaste +${recompensa} 💎`);
+                    closeAll();
+                } else {
+                    await saveUserData();
+                    actualizarUI();
+                    alert(`✅ Progreso: ${progresoActual}/${requeridos} anuncios vistos`);
+                    // Actualizar barra de progreso
+                    const porcentaje = (progresoActual / requeridos) * 100;
+                    const bar = document.getElementById("event-progress-bar");
+                    const text = document.getElementById("event-progress-text");
+                    if (bar) bar.style.width = `${porcentaje}%`;
+                    if (text) text.textContent = `${progresoActual}/${requeridos} completado`;
+                }
             }
         } catch (error) {
             console.error("❌ Error en anuncio:", error);
         }
-    } else {
-        alert(`🔗 Para participar: ${evento.tarea}`);
+        
+    } else if (tipo === 'subscribe') {
+        // Suscripción a canal
+        const canalLink = "https://t.me/toncity_oficial";
+        window.open(canalLink, '_blank');
+        
+        setTimeout(() => {
+            if (confirm("¿Ya te suscribiste al canal?")) {
+                const recompensa = esPremium() ? evento.premium : evento.recompensa;
+                userData.diamonds += recompensa;
+                saveUserData();
+                actualizarUI();
+                alert(`✅ ¡+${recompensa} diamantes por suscribirte!`);
+                closeAll();
+            }
+        }, 5000);
+        
+    } else if (tipo === 'share') {
+        // Compartir enlace
+        const enlace = `https://t.me/ton_city_bot?start=evento_${evento.nombre}`;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'Ton City Game',
+                text: `🎮 ¡Únete al evento de ${evento.nombre} en Ton City!`,
+                url: enlace
+            }).then(() => {
+                progresoActual++;
+                userData.event_progress[evento.nombre] = progresoActual;
+                
+                if (progresoActual >= requeridos) {
+                    const recompensa = esPremium() ? evento.premium : evento.recompensa;
+                    userData.diamonds += recompensa;
+                    userData.event_progress[evento.nombre] = 0;
+                    saveUserData();
+                    actualizarUI();
+                    alert(`✅ ¡Evento completado! +${recompensa} 💎`);
+                    closeAll();
+                } else {
+                    saveUserData();
+                    actualizarUI();
+                    alert(`✅ Progreso: ${progresoActual}/${requeridos} compartidos`);
+                    // Actualizar barra de progreso
+                    const porcentaje = (progresoActual / requeridos) * 100;
+                    const bar = document.getElementById("event-progress-bar");
+                    const text = document.getElementById("event-progress-text");
+                    if (bar) bar.style.width = `${porcentaje}%`;
+                    if (text) text.textContent = `${progresoActual}/${requeridos} completado`;
+                }
+            });
+        } else {
+            navigator.clipboard.writeText(enlace);
+            alert("📋 Enlace copiado al portapapeles");
+            
+            setTimeout(() => {
+                if (confirm("¿Ya compartiste el enlace?")) {
+                    progresoActual++;
+                    userData.event_progress[evento.nombre] = progresoActual;
+                    
+                    if (progresoActual >= requeridos) {
+                        const recompensa = esPremium() ? evento.premium : evento.recompensa;
+                        userData.diamonds += recompensa;
+                        userData.event_progress[evento.nombre] = 0;
+                        saveUserData();
+                        actualizarUI();
+                        alert(`✅ ¡Evento completado! +${recompensa} 💎`);
+                        closeAll();
+                    } else {
+                        saveUserData();
+                        actualizarUI();
+                        alert(`✅ Progreso: ${progresoActual}/${requeridos} compartidos`);
+                    }
+                }
+            }, 3000);
+        }
+        
+    } else if (tipo === 'survey') {
+        // Encuesta
+        alert("📝 Abriendo encuesta...");
+        window.open("https://forms.gle/tu_encuesta_aqui", '_blank');
+        
+        setTimeout(() => {
+            if (confirm("¿Completaste la encuesta?")) {
+                const recompensa = esPremium() ? evento.premium : evento.recompensa;
+                userData.diamonds += recompensa;
+                saveUserData();
+                actualizarUI();
+                alert(`✅ ¡+${recompensa} diamantes por tu opinión!`);
+                closeAll();
+            }
+        }, 10000);
     }
 }
 
@@ -681,6 +852,7 @@ async function initAds() {
         await loadAdsgramSafe();
         AdController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
         adsReady = true;
+        console.log("✅ Adsgram listo");
     } catch (err) {
         adsReady = false;
     }
@@ -860,8 +1032,8 @@ function actualizarDailyUI() {
     if (todayRewardElem) todayRewardElem.textContent = `${recompensaHoy} 💎`;
     if (progressText) progressText.textContent = `${Math.min(racha, 30)}/30`;
     
-    if (esPremium()) {
-        if (statusElem) statusElem.innerHTML = '⭐ <span style="color: #8b5cf6;">Premium - Recompensa x2</span>';
+    if (esPremium() && statusElem) {
+        statusElem.innerHTML = '⭐ <span style="color: #8b5cf6;">Premium - Recompensa x2</span>';
     }
     
     if (!puede) {
@@ -1242,6 +1414,7 @@ async function initApp() {
             actualizarBannerDiario();
             actualizarBannerAds();
             actualizarBannerDomingo();
+            actualizarBannerEvento();
             if (esPremium()) actualizarPremiumUI();
         }, 60000);
         
@@ -1288,7 +1461,8 @@ async function loadUserFromDB(tgId) {
                 referral_code: 'REF' + tgId.toString().slice(-6),
                 last_online: new Date().toISOString(),
                 last_production_update: new Date().toISOString(),
-                haInvertido: false
+                haInvertido: false,
+                event_progress: {}
             };
             
             const { error: insertError } = await _supabase
@@ -1321,7 +1495,8 @@ async function loadUserFromDB(tgId) {
                 premium_expires: data.premium_expires || null,
                 daily_streak: Number(data.daily_streak) || 0,
                 last_daily_claim: data.last_daily_claim || null,
-                haInvertido: data.haInvertido || false
+                haInvertido: data.haInvertido || false,
+                event_progress: data.event_progress || {}
             };
             
             const offlineEarnings = await calculateOfflineProduction();
@@ -1405,7 +1580,6 @@ function cerrarJuego() {
     openCasino();
 }
 
-// CORRECCIÓN: AHORA FUNCIONA CORRECTAMENTE
 function cambiarApuesta(juego, delta) {
     let key = juego;
     if (juego === 'hl') key = 'highlow';
@@ -1863,7 +2037,8 @@ async function saveUserData() {
             premium_expires: userData.premium_expires,
             daily_streak: parseInt(userData.daily_streak) || 0,
             last_daily_claim: userData.last_daily_claim,
-            haInvertido: userData.haInvertido || false
+            haInvertido: userData.haInvertido || false,
+            event_progress: userData.event_progress || {}
         };
         
         const { error } = await _supabase
@@ -1962,7 +2137,7 @@ window.openWithdraw = openWithdraw;
 window.openDailyReward = openDailyReward;
 window.openCasino = openCasino;
 window.openBuilding = openBuilding;
-window.openEventModal = openEventModal;
+window.abrirModalEvento = abrirModalEvento;
 window.startEventTask = startEventTask;
 window.abrirJuego = abrirJuego;
 window.cerrarJuego = cerrarJuego;
@@ -1984,4 +2159,4 @@ window.copyReferralCode = copyReferralCode;
 window.comprarTON = comprarTON;
 window.disconnectWallet = disconnectWallet;
 
-console.log("✅ Ton City Game - Versión completa corregida");
+console.log("✅ Ton City Game - Versión completa con eventos funcionales");
