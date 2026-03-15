@@ -59,7 +59,6 @@
             overflow-x: hidden;
         }
 
-        /* Usuario premium */
         .premium-user {
             color: #60a5fa !important;
             text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
@@ -399,7 +398,6 @@
             display: block !important;
         }
 
-        /* TIENDA PREMIUM */
         .premium-item {
             background: linear-gradient(145deg, #2e1065, #4c1d95);
             padding: 15px;
@@ -468,7 +466,6 @@
             margin: 3px 0;
         }
 
-        /* EDIFICIOS CON MEJORAS Y MINIJUEGOS */
         .building-detail {
             background: #0f172a;
             padding: 15px;
@@ -593,6 +590,7 @@
             justify-content: center;
             gap: 10px;
             margin: 20px 0;
+            flex-wrap: wrap;
         }
 
         .diver {
@@ -621,6 +619,8 @@
             padding: 10px;
             background: #1e293b;
             border-radius: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .box {
@@ -707,7 +707,6 @@
             background: #ef4444;
         }
 
-        /* RANGOS DE RECOMPENSA */
         .rank-card {
             background: #0f172a;
             padding: 15px;
@@ -900,18 +899,6 @@
             grid-template-columns: 1fr 1fr;
             gap: 10px;
             margin: 15px 0;
-        }
-
-        .win-message {
-            color: #4ade80;
-            font-weight: bold;
-            font-size: 20px;
-        }
-
-        .lose-message {
-            color: #ef4444;
-            font-weight: bold;
-            font-size: 20px;
         }
 
         .limit-info {
@@ -1312,7 +1299,6 @@
     <div class="modal" id="centralModal">
         <h3>🏛 Edificio Central</h3>
 
-        <!-- RANGO DEL USUARIO -->
         <div class="rank-indicator">
             <div class="rank-position" id="user-rank">Cargando...</div>
             <div id="rank-description"></div>
@@ -1327,7 +1313,6 @@
         <div class="stat"><span style="color: #f87171;">Hospital</span><span id="s_hospital">0</span></div>
         <div class="stat" style="background:#022c22"><b>Total / hr</b><b id="s_total">0</b></div>
 
-        <!-- INFORMACIÓN DE RANGOS -->
         <div class="rank-card diamond-rank">
             <div class="rank-name diamond-text">💎 Diamante (Top 1-3)</div>
             <div>40% del pool (reparto equitativo)</div>
@@ -1379,18 +1364,15 @@
             </ul>
         </div>
 
-        <!-- Planes Premium -->
         <div id="premium-plans"></div>
 
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODALES DE EDIFICIOS CON MINIJUEGOS -->
     <!-- MODAL PISCINA -->
     <div class="modal" id="modalPiscina">
         <h3 style="color: #38bdf8;">🏊 Piscina Olímpica</h3>
         
-        <!-- SECCIÓN DE MEJORAS (SIEMPRE VISIBLE) -->
         <div class="building-detail">
             <div class="building-header">
                 <span class="building-level">Nivel <span id="piscina-level">0</span></span>
@@ -1403,9 +1385,6 @@
             <button onclick="buyUpgradeFromBuilding('piscina', 5000)" class="building-upgrade" id="piscina-btn">MEJORAR</button>
         </div>
 
-        <!-- BOTÓN DE EVENTO (SI CORRESPONDE) - SE INSERTARÁ DINÁMICAMENTE -->
-
-        <!-- SECCIÓN DE MINIJUEGO: CLAVADISTAS -->
         <div class="game-section">
             <div class="game-title">
                 <i class="fa-solid fa-person-swimming" style="color: #38bdf8;"></i>
@@ -1441,7 +1420,6 @@
                     <button onclick="resetGame('piscina')" style="background: #f97316;">Reiniciar</button>
                 </div>
 
-                <!-- OPCIONES DE ANUNCIOS -->
                 <div id="piscina-ads" style="margin-top: 10px;">
                     <div class="ad-option" onclick="multiplyWin('piscina', 2)">
                         <i class="fa-solid fa-circle-play"></i> Ver anuncio: Multiplicar x2
@@ -1479,9 +1457,6 @@
             <button onclick="buyUpgradeFromBuilding('fabrica', 10000)" class="building-upgrade" id="fabrica-btn">MEJORAR</button>
         </div>
 
-        <!-- BOTÓN DE EVENTO (SI CORRESPONDE) - SE INSERTARÁ DINÁMICAMENTE -->
-
-        <!-- SECCIÓN DE MINIJUEGO: CINTA TRANSPORTADORA -->
         <div class="game-section">
             <div class="game-title">
                 <i class="fa-solid fa-gears" style="color: #a78bfa;"></i>
@@ -1494,12 +1469,10 @@
                     <span style="color: #facc15; font-weight: bold;" id="fabrica-bet">10</span> 💎
                 </div>
                 
-                <div id="conveyor-belt" class="conveyor">
-                    <!-- Se llena dinámicamente con JS -->
-                </div>
+                <div id="conveyor-belt" class="conveyor"></div>
 
                 <div class="game-result" id="fabrica-result">
-                    Haz clic en la caja correcta
+                    Haz clic en "INICIAR" para empezar
                 </div>
 
                 <div class="game-stats">
@@ -1513,7 +1486,6 @@
                     <button onclick="startFabricaGame()" style="background: #10b981;">INICIAR</button>
                 </div>
 
-                <!-- OPCIONES DE ANUNCIOS -->
                 <div id="fabrica-ads" style="margin-top: 10px;">
                     <div class="ad-option" onclick="multiplyWin('fabrica', 2)">
                         <i class="fa-solid fa-circle-play"></i> Ver anuncio: Multiplicar x2
@@ -1551,9 +1523,6 @@
             <button onclick="buyUpgradeFromBuilding('escuela', 3000)" class="building-upgrade" id="escuela-btn">MEJORAR</button>
         </div>
 
-        <!-- BOTÓN DE EVENTO (SI CORRESPONDE) - SE INSERTARÁ DINÁMICAMENTE -->
-
-        <!-- SECCIÓN DE MINIJUEGO: MEMORIA ACADÉMICA -->
         <div class="game-section">
             <div class="game-title">
                 <i class="fa-solid fa-brain" style="color: #a16207;"></i>
@@ -1566,9 +1535,7 @@
                     <span style="color: #facc15; font-weight: bold;" id="escuela-bet">10</span> 💎
                 </div>
                 
-                <div id="memory-game" class="memory-grid">
-                    <!-- Se llena dinámicamente con JS -->
-                </div>
+                <div id="memory-game" class="memory-grid"></div>
 
                 <div class="game-result" id="escuela-result">
                     Encuentra los pares
@@ -1585,7 +1552,6 @@
                     <button onclick="startEscuelaGame()" style="background: #10b981;">NUEVO JUEGO</button>
                 </div>
 
-                <!-- OPCIONES DE ANUNCIOS -->
                 <div id="escuela-ads" style="margin-top: 10px;">
                     <div class="ad-option" onclick="multiplyWin('escuela', 2)">
                         <i class="fa-solid fa-circle-play"></i> Ver anuncio: Multiplicar x2
@@ -1623,9 +1589,6 @@
             <button onclick="buyUpgradeFromBuilding('hospital', 7500)" class="building-upgrade" id="hospital-btn">MEJORAR</button>
         </div>
 
-        <!-- BOTÓN DE EVENTO (SI CORRESPONDE) - SE INSERTARÁ DINÁMICAMENTE -->
-
-        <!-- SECCIÓN DE MINIJUEGO: DIAGNÓSTICO RÁPIDO -->
         <div class="game-section">
             <div class="game-title">
                 <i class="fa-solid fa-stethoscope" style="color: #f87171;"></i>
@@ -1642,9 +1605,7 @@
                     Pregunta cargando...
                 </div>
 
-                <div id="diagnosis-options" class="options-grid">
-                    <!-- Se llena dinámicamente con JS -->
-                </div>
+                <div id="diagnosis-options" class="options-grid"></div>
 
                 <div class="game-result" id="hospital-result">
                     Responde correctamente
@@ -1661,7 +1622,6 @@
                     <button onclick="nextHospitalQuestion()" style="background: #10b981;">SIGUIENTE</button>
                 </div>
 
-                <!-- OPCIONES DE ANUNCIOS -->
                 <div id="hospital-ads" style="margin-top: 10px;">
                     <div class="ad-option" onclick="multiplyWin('hospital', 2)">
                         <i class="fa-solid fa-circle-play"></i> Ver anuncio: Multiplicar x2
@@ -1683,7 +1643,7 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL CASINO (EXISTENTE) -->
+    <!-- MODAL CASINO -->
     <div class="modal" id="modalCasino">
         <h3 style="color: #f97316;">🎰 Casino - 5 Juegos</h3>
         <p class="info-text">Elige un juego para comenzar</p>
@@ -1724,14 +1684,167 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODALES DE JUEGOS DE CASINO (EXISTENTES) -->
-    <div class="modal" id="modalHighLow">...</div>
-    <div class="modal" id="modalRuleta">...</div>
-    <div class="modal" id="modalTragaperras">...</div>
-    <div class="modal" id="modalDados">...</div>
-    <div class="modal" id="modalLoteria">...</div>
+    <!-- MODAL HIGH/LOW -->
+    <div class="modal" id="modalHighLow">
+        <h3>📊 High/Low (4 Dígitos)</h3>
+        <div class="game-instructions">
+            <h4>📋 Cómo jugar:</h4>
+            <p>🎯 Elige <span style="color: #3b82f6;">LOW</span> (0000-4999) o <span style="color: #ef4444;">HIGH</span> (5000-9999)</p>
+            <p>💎 Apuesta la cantidad que desees</p>
+            <p>💰 Si aciertas, recibes el doble</p>
+        </div>
+        <div class="game-display">
+            <div class="number-display" id="hl-number">0000</div>
+            <div id="hl-result" class="info-text">Selecciona una opción</div>
+        </div>
+        <div class="bet-controls">
+            <button onclick="cambiarApuesta('hl', -10)">-10</button>
+            <span id="hl-bet">10</span>
+            <button onclick="cambiarApuesta('hl', 10)">+10</button>
+        </div>
+        <div class="game-buttons">
+            <button onclick="jugarHighLow('low')" style="background: #3b82f6;">LOW (0000-4999)</button>
+            <button onclick="jugarHighLow('high')" style="background: #ef4444;">HIGH (5000-9999)</button>
+        </div>
+        <div class="limit-info" id="hl-limit">Jugadas hoy: 0/20</div>
+        <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
+    </div>
 
-    <!-- MODAL EVENTO SEMANAL -->
+    <!-- MODAL RULETA -->
+    <div class="modal" id="modalRuleta">
+        <h3>🎡 Ruleta Clásica</h3>
+        <div class="game-instructions">
+            <h4>📋 Cómo jugar:</h4>
+            <p>🎯 Elige tipo de apuesta:</p>
+            <ul>
+                <li>🔴 Rojo / ⚫ Negro (x2)</li>
+                <li>🟢 Par / Impar (x2)</li>
+                <li>⬇️ Bajo 1-18 / ⬆️ Alto 19-36 (x2)</li>
+                <li>🎯 Número exacto (x36)</li>
+            </ul>
+        </div>
+        <div class="game-display">
+            <div class="number-display" id="ruleta-number">0</div>
+            <div id="ruleta-result" class="info-text">Elige una apuesta</div>
+        </div>
+        <div class="bet-controls">
+            <button onclick="cambiarApuesta('ruleta', -10)">-10</button>
+            <span id="ruleta-bet">10</span>
+            <button onclick="cambiarApuesta('ruleta', 10)">+10</button>
+        </div>
+        <div class="game-buttons">
+            <button onclick="jugarRuleta('rojo')" style="background: #ef4444;">🔴 Rojo</button>
+            <button onclick="jugarRuleta('negro')" style="background: #000; border: 1px solid white;">⚫ Negro</button>
+            <button onclick="jugarRuleta('par')">🟢 Par</button>
+            <button onclick="jugarRuleta('impar')">🟢 Impar</button>
+            <button onclick="jugarRuleta('bajo')" style="background: #3b82f6;">⬇️ Bajo</button>
+            <button onclick="jugarRuleta('alto')" style="background: #f97316;">⬆️ Alto</button>
+            <button onclick="jugarRuleta('numero')" style="background: #facc15; color: black; grid-column: span 2;">🎯 Número exacto</button>
+        </div>
+        <div class="limit-info" id="ruleta-limit">Jugadas hoy: 0/15</div>
+        <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
+    </div>
+
+    <!-- MODAL TRAGAPERRAS -->
+    <div class="modal" id="modalTragaperras">
+        <h3>🎰 Tragamonedas Cripto</h3>
+        <div class="game-instructions">
+            <h4>📋 Cómo jugar:</h4>
+            <p>🎰 Gira los 3 rodillos</p>
+            <p>💎 Si los 3 símbolos son iguales, ¡GANAS!</p>
+            <p>💰 Multiplicadores:</p>
+            <ul>
+                <li>💎💎💎 x50 (Jackpot)</li>
+                <li>₿₿₿ x20</li>
+                <li>ΞΞΞ x10</li>
+                <li>🪙🪙🪙 x5</li>
+                <li>📈📈📈 / 📉📉📉 x2</li>
+            </ul>
+        </div>
+        <div class="game-display">
+            <div class="slot-machine">
+                <div class="slot" id="slot1">💎</div>
+                <div class="slot" id="slot2">💎</div>
+                <div class="slot" id="slot3">💎</div>
+            </div>
+            <div id="tragaperras-result" class="info-text">¡Gira y gana!</div>
+        </div>
+        <div class="bet-controls">
+            <button onclick="cambiarApuesta('tragaperras', -5)">-5</button>
+            <span id="tragaperras-bet">5</span>
+            <button onclick="cambiarApuesta('tragaperras', 5)">+5</button>
+        </div>
+        <button onclick="jugarTragaperras()" style="background: #fbbf24; color: black;">🎲 GIRAR</button>
+        <div class="limit-info" id="tragaperras-limit">Jugadas hoy: 0/30</div>
+        <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
+    </div>
+
+    <!-- MODAL DADOS -->
+    <div class="modal" id="modalDados">
+        <h3>🎲 Dados Mayor/Menor</h3>
+        <div class="game-instructions">
+            <h4>📋 Cómo jugar:</h4>
+            <p>🎯 Apuesta por el resultado de 2 dados:</p>
+            <ul>
+                <li>⬇️ MENOR (2-6) → x2</li>
+                <li>⬆️ MAYOR (8-12) → x2</li>
+                <li>🎯 EXACTO (7) → x5</li>
+            </ul>
+        </div>
+        <div class="game-display">
+            <div class="dice-display">
+                <div class="dice" id="dado1">⚀</div>
+                <div class="dice" id="dado2">⚀</div>
+            </div>
+            <div style="font-size: 24px;" id="dados-suma">Suma: 2</div>
+            <div id="dados-result" class="info-text">Elige una opción</div>
+        </div>
+        <div class="bet-controls">
+            <button onclick="cambiarApuesta('dados', -10)">-10</button>
+            <span id="dados-bet">10</span>
+            <button onclick="cambiarApuesta('dados', 10)">+10</button>
+        </div>
+        <div class="game-buttons">
+            <button onclick="jugarDados('menor')" style="background: #3b82f6;">⬇️ MENOR</button>
+            <button onclick="jugarDados('mayor')" style="background: #f97316;">⬆️ MAYOR</button>
+            <button onclick="jugarDados('exacto')" style="background: #facc15; color: black; grid-column: span 2;">🎯 EXACTO</button>
+        </div>
+        <div class="limit-info" id="dados-limit">Jugadas hoy: 0/20</div>
+        <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
+    </div>
+
+    <!-- MODAL LOTERÍA -->
+    <div class="modal" id="modalLoteria">
+        <h3>🎟️ Lotería Digital</h3>
+        <div class="game-instructions">
+            <h4>📋 Cómo jugar:</h4>
+            <p>🎫 Compra boletos de 4 dígitos</p>
+            <p>🎯 El sistema sortea un número ganador</p>
+            <p>💰 Premios por coincidencias:</p>
+            <ul>
+                <li>4 cifras: x500</li>
+                <li>3 cifras: x50</li>
+                <li>2 cifras: x5</li>
+                <li>1 cifra: recuperas</li>
+            </ul>
+        </div>
+        <div class="game-display">
+            <div class="number-display" id="loteria-number">0000</div>
+            <div id="loteria-boletos"></div>
+            <div id="loteria-result" class="info-text">Compra boletos y juega</div>
+        </div>
+        <div class="bet-controls">
+            <button onclick="cambiarApuesta('loteria', -1)">-1</button>
+            <span id="loteria-bet">1</span>
+            <button onclick="cambiarApuesta('loteria', 1)">+1</button>
+        </div>
+        <button onclick="comprarBoletos()" style="background: #10b981;">🎫 Comprar Boletos</button>
+        <button onclick="jugarLoteria()" style="background: #fbbf24; color: black;">🎲 INICIAR SORTEO</button>
+        <div class="limit-info" id="loteria-limit">Boletos hoy: 0/5</div>
+        <button class="close" onclick="cerrarJuego()">Volver al Casino</button>
+    </div>
+
+    <!-- MODAL EVENTO -->
     <div class="modal" id="modalEvent">
         <h3 style="color: #f97316; text-align: center;">🎉 EVENTO DE LA SEMANA</h3>
 
@@ -1819,9 +1932,7 @@
             </div>
             <div class="daily-calendar" id="daily-calendar"></div>
         </div>
-        <div class="daily-big-reward" id="big-reward">
-            ¡Día 30: 300 💎!
-        </div>
+        <div class="daily-big-reward" id="big-reward">¡Día 30: 300 💎!</div>
         <button onclick="claimDailyReward()" id="claim-daily-btn" style="background: #f59e0b;">
             <i class="fa-solid fa-gift"></i> RECLAMAR
         </button>
@@ -1852,7 +1963,7 @@
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL RETIRO (CON DOS BOTONES) -->
+    <!-- MODAL RETIRO -->
     <div class="modal" id="modalWithdraw">
         <h3>💰 Retiro Semanal <span class="withdraw-sunday-badge">DOMINGOS</span></h3>
 
@@ -1897,7 +2008,6 @@
             <i class="fa-solid fa-circle-info"></i> Verificando disponibilidad...
         </div>
 
-        <!-- DOS BOTONES SEPARADOS -->
         <div class="two-buttons">
             <button onclick="exchangeDiamonds()" id="exchange-btn" class="exchange-btn" disabled>
                 <i class="fa-solid fa-arrows-spin"></i> CAMBIAR DIAMANTES POR TON
