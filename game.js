@@ -1,27 +1,32 @@
 // ======================================================
-// TON CITY GAME - VERSIÓN CON MINIJUEGOS POR EDIFICIO
+// TON CITY GAME - VERSIÓN COMPLETA CON MINIJUEGOS
 // ======================================================
-// ✅ Piscina: Clavadistas (juego de precisión)
-// ✅ Fábrica: Cinta transportadora (juego de reflejos)
-// ✅ Escuela: Memoria académica (juego de memoria)
-// ✅ Hospital: Diagnóstico rápido (juego de preguntas)
-// ✅ Anuncios para multiplicar o revivir
-// ✅ Eventos como multiplicador de ganancias
-// ✅ Premium: multiplicador base x2 y anuncios gratis
+// Basado en tu código original + minijuegos añadidos
 // ======================================================
 
-console.log("✅ Ton City Game - Versión con Minijuegos");
+console.log("✅ Ton City Game - Inicializando...");
 
 const tg = window.Telegram.WebApp;
 
 // ==========================================
-// CONFIGURACIÓN
+// CONFIGURACIÓN DE BILLETERAS Y PRECIOS
 // ==========================================
 const BILLETERA_PROPIETARIO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw"; 
 const BILLETERA_POOL = "UQBuoEgT5DmcoEQ_nl6YwR0Q86fZWY4baACuX80EegWG49h2";
 const PRECIO_COMPRA = 0.008;
+
+// ==========================================
+// CONFIGURACIÓN ADSGRAM
+// ==========================================
 const ADSGRAM_BLOCK_ID = '23186';
 
+// Variables para Adsgram
+let adsReady = false;
+let AdController = null;
+
+// ==========================================
+// CONFIGURACIÓN TÉCNICA
+// ==========================================
 const TON_API_KEY = 'AG2XICNRZEOJNEQAAAAO737JGJAKU56K43DE4OSQLMHPWHMHONPW2U4LG24XY4DFYUJMLCQ';
 const TON_API_URL = 'https://tonapi.io';
 const SUPABASE_URL = 'https://xkkifqxxglcuyruwkbih.supabase.co';
@@ -30,7 +35,7 @@ const SUPABASE_KEY = 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ==========================================
-// CONSTANTES
+// CONSTANTES PARA RETIROS
 // ==========================================
 const K = 0.9;
 const R = 0.95;
@@ -40,8 +45,6 @@ const R = 0.95;
 // ==========================================
 let tonConnectUI = null;
 let currentWallet = null;
-let adsReady = false;
-let AdController = null;
 
 let userData = {
     id: null,
@@ -72,15 +75,15 @@ let userData = {
     event_progress: {},
     accumulated_ton: 0,
     
-    // Estadísticas de minijuegos
+    // NUEVO: Estadísticas de minijuegos
     gameStats: {
-        piscina: { streak: 0, total: 0, wins: 0, lastPlay: null, limit: 0 },
-        fabrica: { score: 0, total: 0, wins: 0, lastPlay: null, limit: 0 },
-        escuela: { matches: 0, attempts: 0, total: 0, wins: 0, lastPlay: null, limit: 0 },
-        hospital: { streak: 0, level: 1, total: 0, wins: 0, lastPlay: null, limit: 0 }
+        piscina: { streak: 0, total: 0, wins: 0 },
+        fabrica: { score: 0, total: 0, wins: 0 },
+        escuela: { matches: 0, attempts: 0, wins: 0, total: 0 },
+        hospital: { streak: 0, level: 1, wins: 0, total: 0 }
     },
     
-    // Estado actual de juegos
+    // NUEVO: Estado actual de juegos
     gameState: {
         piscina: { active: false, bet: 10, result: null, multiplier: 1 },
         fabrica: { active: false, bet: 10, result: null, multiplier: 1, boxes: [], target: null },
@@ -126,7 +129,7 @@ const PREMIUM_PLANS = [
     { name: "1 mes", days: 30, price: 3.00, description: "👑 30 días de beneficios completos" }
 ];
 
-// 🎯 EVENTOS SEMANALES
+// 🎯 EVENTOS SEMANALES (Rotativos automáticos)
 const EVENTOS_SEMANALES = [
     {
         nombre: "Hospital",
@@ -140,7 +143,7 @@ const EVENTOS_SEMANALES = [
         tipo: 'ads',
         requeridos: 3,
         requeridos_premium: 1,
-        gameMultiplier: 2 // Multiplicador para minijuegos del edificio
+        gameMultiplier: 2
     },
     {
         nombre: "Fábrica",
@@ -199,6 +202,19 @@ const HOSPITAL_QUESTIONS = [
 ];
 
 // ==========================================
+// APUESTAS ACTUALES POR JUEGO (CASINO)
+// ==========================================
+let apuestaActual = {
+    highlow: 10,
+    ruleta: 10,
+    tragaperras: 5,
+    dados: 10,
+    loteria: 1
+};
+
+let boletosComprados = [];
+
+// ==========================================
 // FUNCIONES PREMIUM
 // ==========================================
 function esPremium() {
@@ -255,18 +271,15 @@ function actualizarBannerEvento() {
         banner.style.background = `linear-gradient(135deg, ${evento.color}, ${evento.color}dd)`;
         textElem.innerHTML = `🎉 Evento: ${evento.nombre} - ${evento.descripcion} (x${evento.gameMultiplier} en juegos)`;
         
-        // Quitar clase event-card de todos los edificios
         document.querySelectorAll('.card').forEach(card => {
             card.classList.remove('event-card');
         });
         
-        // Destacar edificio de la semana
         const edificioCard = document.querySelector(`.card[onclick*="${evento.edificio}"]`);
         if (edificioCard) {
             edificioCard.classList.add('event-card');
         }
         
-        // Actualizar multiplicadores en los juegos
         actualizarMultiplicadoresEvento();
     }
 }
@@ -277,7 +290,9 @@ function actualizarMultiplicadoresEvento() {
     
     edificios.forEach(ed => {
         const multiplier = (ed === evento.edificio) ? evento.gameMultiplier : 1;
-        userData.gameState[ed].multiplier = multiplier;
+        if (userData.gameState && userData.gameState[ed]) {
+            userData.gameState[ed].multiplier = multiplier;
+        }
         
         const elem = document.getElementById(`${ed}-multiplier`);
         if (elem) {
@@ -315,7 +330,6 @@ function openBuilding(building) {
     const precio = precios[building];
     const prod = producciones[building];
     
-    // Actualizar información de mejoras
     const levelElem = document.getElementById(`${building}-level`);
     const prodElem = document.getElementById(`${building}-prod`);
     const nextElem = document.getElementById(`${building}-next`);
@@ -335,7 +349,6 @@ function openBuilding(building) {
     // Inicializar el juego del edificio
     inicializarJuego(building);
     
-    // Mostrar modal
     showModal(`modal${building.charAt(0).toUpperCase() + building.slice(1)}`);
 }
 
@@ -346,7 +359,7 @@ function inicializarJuego(building) {
     // Actualizar apuesta actual
     const betElem = document.getElementById(`${building}-bet`);
     if (betElem) {
-        betElem.textContent = userData.gameState[building].bet;
+        betElem.textContent = userData.gameState[building]?.bet || 10;
     }
     
     // Inicializar juegos específicos
@@ -421,7 +434,11 @@ function actualizarLimiteJuego(building) {
 // AJUSTAR APUESTA
 // ==========================================
 function adjustBet(building, delta) {
-    let nueva = userData.gameState[building].bet + delta;
+    if (!userData.gameState[building]) {
+        userData.gameState[building] = { bet: 10 };
+    }
+    
+    let nueva = (userData.gameState[building].bet || 10) + delta;
     if (nueva < 5) nueva = 5;
     if (nueva > 500) nueva = 500;
     
@@ -436,37 +453,31 @@ function adjustBet(building, delta) {
 // ==========================================
 function playPiscinaGame(diverNumber) {
     const building = 'piscina';
-    const apuesta = userData.gameState[building].bet;
+    const apuesta = userData.gameState[building]?.bet || 10;
     
-    // Verificar fondos
     if (userData.diamonds < apuesta) {
         alert("❌ No tienes suficientes diamantes");
         return;
     }
     
-    // Verificar límite diario
     if (!puedeJugarMinijuego(building)) {
         alert("❌ Límite diario alcanzado");
         return;
     }
     
-    // Restar apuesta
     userData.diamonds -= apuesta;
     registrarJugadaMinijuego(building);
     
-    // Determinar resultado (aleatorio con sesgo)
     const random = Math.random();
     let ganador;
     
-    // El clavadista 3 tiene más probabilidad (trampa para hacer el juego más divertido)
     if (diverNumber === 3) {
-        ganador = random < 0.4; // 40% de ganar
+        ganador = random < 0.4;
     } else {
-        ganador = random < 0.2; // 20% de ganar para otros
+        ganador = random < 0.2;
     }
     
-    // Calcular ganancia
-    const multiplicadorBase = userData.gameState[building].multiplier;
+    const multiplicadorBase = userData.gameState[building]?.multiplier || 1;
     const multiplicadorPremium = esPremium() ? 2 : 1;
     const multiplicadorTotal = multiplicadorBase * multiplicadorPremium;
     
@@ -478,27 +489,31 @@ function playPiscinaGame(diverNumber) {
         userData.diamonds += ganancia;
         mensaje = `🎉 ¡GANASTE! +${ganancia} 💎 (x${multiplicadorTotal})`;
         
-        // Actualizar estadísticas
         if (!userData.gameStats[building]) userData.gameStats[building] = { streak: 0, wins: 0, total: 0 };
         userData.gameStats[building].streak = (userData.gameStats[building].streak || 0) + 1;
         userData.gameStats[building].wins = (userData.gameStats[building].wins || 0) + 1;
     } else {
         mensaje = `😞 Perdiste -${apuesta} 💎`;
-        userData.gameStats[building].streak = 0;
+        if (userData.gameStats[building]) userData.gameStats[building].streak = 0;
     }
     
     userData.gameStats[building].total = (userData.gameStats[building].total || 0) + 1;
     
-    // Actualizar UI
-    document.getElementById('piscina-result').innerHTML = 
-        ganador ? `<span class="win-message">${mensaje}</span>` : `<span class="lose-message">${mensaje}</span>`;
+    const resultElem = document.getElementById('piscina-result');
+    if (resultElem) {
+        resultElem.innerHTML = ganador ? `<span class="win-message">${mensaje}</span>` : `<span class="lose-message">${mensaje}</span>`;
+    }
     
-    document.getElementById('piscina-streak').textContent = userData.gameStats[building].streak || 0;
+    const streakElem = document.getElementById('piscina-streak');
+    if (streakElem) streakElem.textContent = userData.gameStats[building]?.streak || 0;
     
-    const precision = userData.gameStats[building].total > 0 
-        ? Math.round((userData.gameStats[building].wins / userData.gameStats[building].total) * 100)
-        : 0;
-    document.getElementById('piscina-accuracy').textContent = precision + '%';
+    const accuracyElem = document.getElementById('piscina-accuracy');
+    if (accuracyElem) {
+        const precision = userData.gameStats[building]?.total > 0 
+            ? Math.round((userData.gameStats[building].wins / userData.gameStats[building].total) * 100)
+            : 0;
+        accuracyElem.textContent = precision + '%';
+    }
     
     actualizarUI();
     saveUserData();
@@ -510,7 +525,6 @@ function playPiscinaGame(diverNumber) {
 function iniciarFabricaJuego() {
     const building = 'fabrica';
     
-    // Crear cajas
     const boxes = [];
     for (let i = 0; i < 8; i++) {
         boxes.push({
@@ -520,15 +534,16 @@ function iniciarFabricaJuego() {
         });
     }
     
-    // Elegir caja objetivo (la que da premio)
     const targetIndex = Math.floor(Math.random() * boxes.length);
-    const targetValue = boxes[targetIndex].value;
+    
+    if (!userData.gameState[building]) {
+        userData.gameState[building] = { active: true, boxes: [], target: null, bet: 10 };
+    }
     
     userData.gameState[building].boxes = boxes;
     userData.gameState[building].target = targetIndex;
     userData.gameState[building].active = true;
     
-    // Renderizar cinta
     renderizarCinta(building);
 }
 
@@ -536,11 +551,14 @@ function renderizarCinta(building) {
     const conveyor = document.getElementById('conveyor-belt');
     if (!conveyor) return;
     
-    const boxes = userData.gameState[building].boxes;
+    const gameState = userData.gameState[building];
+    if (!gameState || !gameState.boxes) return;
+    
+    const boxes = gameState.boxes;
     let html = '';
     
     boxes.forEach((box, index) => {
-        const isTarget = index === userData.gameState[building].target;
+        const isTarget = index === gameState.target;
         html += `<div class="box" onclick="selectFabricaBox(${index})" 
                        style="background: ${isTarget ? '#facc15' : '#f97316'};">
                     ${box.value}
@@ -552,9 +570,10 @@ function renderizarCinta(building) {
 
 function selectFabricaBox(index) {
     const building = 'fabrica';
-    const apuesta = userData.gameState[building].bet;
+    const gameState = userData.gameState[building];
+    const apuesta = gameState?.bet || 10;
     
-    if (!userData.gameState[building].active) {
+    if (!gameState || !gameState.active) {
         alert("❌ Inicia un nuevo juego primero");
         return;
     }
@@ -572,8 +591,8 @@ function selectFabricaBox(index) {
     userData.diamonds -= apuesta;
     registrarJugadaMinijuego(building);
     
-    const isTarget = index === userData.gameState[building].target;
-    const multiplicadorBase = userData.gameState[building].multiplier;
+    const isTarget = index === gameState.target;
+    const multiplicadorBase = gameState.multiplier || 1;
     const multiplicadorPremium = esPremium() ? 2 : 1;
     const multiplicadorTotal = multiplicadorBase * multiplicadorPremium;
     
@@ -581,12 +600,11 @@ function selectFabricaBox(index) {
     let mensaje = '';
     
     if (isTarget) {
-        const boxValue = userData.gameState[building].boxes[index].value;
+        const boxValue = gameState.boxes[index].value;
         ganancia = apuesta * boxValue * multiplicadorTotal;
         userData.diamonds += ganancia;
         mensaje = `🎉 ¡CAJA CORRECTA! +${ganancia} 💎 (x${multiplicadorTotal})`;
         
-        // Actualizar estadísticas
         if (!userData.gameStats[building]) userData.gameStats[building] = { score: 0, wins: 0, total: 0 };
         userData.gameStats[building].score = (userData.gameStats[building].score || 0) + boxValue;
         userData.gameStats[building].wins = (userData.gameStats[building].wins || 0) + 1;
@@ -596,19 +614,23 @@ function selectFabricaBox(index) {
     
     userData.gameStats[building].total = (userData.gameStats[building].total || 0) + 1;
     
-    document.getElementById('fabrica-result').innerHTML = 
-        isTarget ? `<span class="win-message">${mensaje}</span>` : `<span class="lose-message">${mensaje}</span>';
+    const resultElem = document.getElementById('fabrica-result');
+    if (resultElem) {
+        resultElem.innerHTML = isTarget ? `<span class="win-message">${mensaje}</span>` : `<span class="lose-message">${mensaje}</span>`;
+    }
     
-    document.getElementById('fabrica-score').textContent = userData.gameStats[building].score || 0;
+    const scoreElem = document.getElementById('fabrica-score');
+    if (scoreElem) scoreElem.textContent = userData.gameStats[building]?.score || 0;
     
-    userData.gameState[building].active = false;
+    gameState.active = false;
     actualizarUI();
     saveUserData();
 }
 
 function startFabricaGame() {
     iniciarFabricaJuego();
-    document.getElementById('fabrica-result').innerHTML = '¡Elige una caja!';
+    const resultElem = document.getElementById('fabrica-result');
+    if (resultElem) resultElem.innerHTML = '¡Elige una caja!';
 }
 
 // ==========================================
@@ -617,18 +639,19 @@ function startFabricaGame() {
 function iniciarEscuelaJuego() {
     const building = 'escuela';
     
-    // Crear pares de cartas
     const symbols = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊'];
     let cards = [];
     
-    // Duplicar para hacer pares
     symbols.forEach((symbol, index) => {
         cards.push({ id: index * 2, symbol, matched: false, flipped: false });
         cards.push({ id: index * 2 + 1, symbol, matched: false, flipped: false });
     });
     
-    // Mezclar
     cards = cards.sort(() => Math.random() - 0.5);
+    
+    if (!userData.gameState[building]) {
+        userData.gameState[building] = { active: true, bet: 10 };
+    }
     
     userData.gameState[building].cards = cards;
     userData.gameState[building].flipped = [];
@@ -646,7 +669,10 @@ function renderizarMemoria(building) {
     const grid = document.getElementById('memory-game');
     if (!grid) return;
     
-    const cards = userData.gameState[building].cards;
+    const gameState = userData.gameState[building];
+    if (!gameState || !gameState.cards) return;
+    
+    const cards = gameState.cards;
     let html = '';
     
     cards.forEach((card, index) => {
@@ -656,7 +682,7 @@ function renderizarMemoria(building) {
         if (card.matched) {
             content = card.symbol;
             bgColor = '#4ade80';
-        } else if (userData.gameState[building].flipped.includes(index)) {
+        } else if (gameState.flipped && gameState.flipped.includes(index)) {
             content = card.symbol;
             bgColor = '#facc15';
         }
@@ -675,24 +701,21 @@ function flipCard(index) {
     const building = 'escuela';
     const gameState = userData.gameState[building];
     
-    if (!gameState.active) {
+    if (!gameState || !gameState.active) {
         alert("❌ Inicia un nuevo juego primero");
         return;
     }
     
     const card = gameState.cards[index];
     
-    // Verificar si ya está volteada o emparejada
-    if (card.matched || gameState.flipped.includes(index)) return;
+    if (card.matched || (gameState.flipped && gameState.flipped.includes(index))) return;
     
-    // Limitar a 2 cartas volteadas
-    if (gameState.flipped.length >= 2) return;
+    if (gameState.flipped && gameState.flipped.length >= 2) return;
     
-    // Voltear carta
+    if (!gameState.flipped) gameState.flipped = [];
     gameState.flipped.push(index);
     renderizarMemoria(building);
     
-    // Verificar par
     if (gameState.flipped.length === 2) {
         setTimeout(() => checkMatch(building), 500);
     }
@@ -704,15 +727,17 @@ function checkMatch(building) {
     const card1 = gameState.cards[idx1];
     const card2 = gameState.cards[idx2];
     
+    if (!userData.gameStats[building]) {
+        userData.gameStats[building] = { matches: 0, attempts: 0, wins: 0, total: 0 };
+    }
+    
     userData.gameStats[building].attempts = (userData.gameStats[building].attempts || 0) + 1;
     
     if (card1.symbol === card2.symbol) {
-        // Coincidencia
         card1.matched = true;
         card2.matched = true;
         userData.gameStats[building].matches = (userData.gameStats[building].matches || 0) + 1;
         
-        // Verificar si completó el juego
         const allMatched = gameState.cards.every(c => c.matched);
         if (allMatched) {
             completeMemoryGame(building, true);
@@ -722,12 +747,16 @@ function checkMatch(building) {
     gameState.flipped = [];
     renderizarMemoria(building);
     
-    document.getElementById('escuela-matches').textContent = userData.gameStats[building].matches || 0;
-    document.getElementById('escuela-attempts').textContent = userData.gameStats[building].attempts || 0;
+    const matchesElem = document.getElementById('escuela-matches');
+    if (matchesElem) matchesElem.textContent = userData.gameStats[building]?.matches || 0;
+    
+    const attemptsElem = document.getElementById('escuela-attempts');
+    if (attemptsElem) attemptsElem.textContent = userData.gameStats[building]?.attempts || 0;
 }
 
 function completeMemoryGame(building, won) {
-    const apuesta = userData.gameState[building].bet;
+    const gameState = userData.gameState[building];
+    const apuesta = gameState?.bet || 10;
     
     if (userData.diamonds < apuesta) {
         alert("❌ No tienes suficientes diamantes");
@@ -742,7 +771,7 @@ function completeMemoryGame(building, won) {
     userData.diamonds -= apuesta;
     registrarJugadaMinijuego(building);
     
-    const multiplicadorBase = userData.gameState[building].multiplier;
+    const multiplicadorBase = gameState?.multiplier || 1;
     const multiplicadorPremium = esPremium() ? 2 : 1;
     const multiplicadorTotal = multiplicadorBase * multiplicadorPremium;
     
@@ -750,8 +779,7 @@ function completeMemoryGame(building, won) {
     let mensaje = '';
     
     if (won) {
-        // Puntuación basada en intentos (menos intentos = más ganancia)
-        const intentos = userData.gameStats[building].attempts || 12;
+        const intentos = userData.gameStats[building]?.attempts || 12;
         const bonus = Math.max(1, 12 - intentos) * 10;
         ganancia = apuesta * 2 + bonus * multiplicadorTotal;
         userData.diamonds += ganancia;
@@ -764,17 +792,20 @@ function completeMemoryGame(building, won) {
     
     userData.gameStats[building].total = (userData.gameStats[building].total || 0) + 1;
     
-    document.getElementById('escuela-result').innerHTML = 
-        won ? `<span class="win-message">${mensaje}</span>` : `<span class="lose-message">${mensaje}</span>`;
+    const resultElem = document.getElementById('escuela-result');
+    if (resultElem) {
+        resultElem.innerHTML = won ? `<span class="win-message">${mensaje}</span>` : `<span class="lose-message">${mensaje}</span>`;
+    }
     
-    userData.gameState[building].active = false;
+    gameState.active = false;
     actualizarUI();
     saveUserData();
 }
 
 function startEscuelaGame() {
     iniciarEscuelaJuego();
-    document.getElementById('escuela-result').innerHTML = 'Encuentra los pares';
+    const resultElem = document.getElementById('escuela-result');
+    if (resultElem) resultElem.innerHTML = 'Encuentra los pares';
 }
 
 // ==========================================
@@ -785,28 +816,33 @@ function cargarPreguntaHospital() {
     const stats = userData.gameStats[building] || { level: 1 };
     const level = stats.level || 1;
     
-    // Seleccionar pregunta según nivel (más difícil en niveles altos)
     const questionIndex = (level - 1) % HOSPITAL_QUESTIONS.length;
     const question = HOSPITAL_QUESTIONS[questionIndex];
     
+    if (!userData.gameState[building]) {
+        userData.gameState[building] = { bet: 10, active: true };
+    }
+    
     userData.gameState[building].currentQuestion = question;
     
-    document.getElementById('diagnosis-question').textContent = question.question;
+    const questionElem = document.getElementById('diagnosis-question');
+    if (questionElem) questionElem.textContent = question.question;
     
     const optionsDiv = document.getElementById('diagnosis-options');
-    let html = '';
-    
-    question.options.forEach((option, idx) => {
-        html += `<button class="option-btn" onclick="answerHospitalQuestion(${idx})">${option}</button>`;
-    });
-    
-    optionsDiv.innerHTML = html;
+    if (optionsDiv) {
+        let html = '';
+        question.options.forEach((option, idx) => {
+            html += `<button class="option-btn" onclick="answerHospitalQuestion(${idx})">${option}</button>`;
+        });
+        optionsDiv.innerHTML = html;
+    }
 }
 
 function answerHospitalQuestion(selectedIdx) {
     const building = 'hospital';
-    const apuesta = userData.gameState[building].bet;
-    const question = userData.gameState[building].currentQuestion;
+    const gameState = userData.gameState[building];
+    const apuesta = gameState?.bet || 10;
+    const question = gameState?.currentQuestion;
     
     if (!question) {
         cargarPreguntaHospital();
@@ -827,7 +863,7 @@ function answerHospitalQuestion(selectedIdx) {
     registrarJugadaMinijuego(building);
     
     const isCorrect = selectedIdx === question.correct;
-    const multiplicadorBase = userData.gameState[building].multiplier;
+    const multiplicadorBase = gameState?.multiplier || 1;
     const multiplicadorPremium = esPremium() ? 2 : 1;
     const multiplicadorTotal = multiplicadorBase * multiplicadorPremium;
     
@@ -840,27 +876,31 @@ function answerHospitalQuestion(selectedIdx) {
         userData.diamonds += ganancia;
         mensaje = `🎉 ¡CORRECTO! +${ganancia} 💎 (x${multiplicadorTotal})`;
         
-        // Subir de nivel
-        if (!userData.gameStats[building]) userData.gameStats[building] = { streak: 0, level: 1, wins: 0, total: 0 };
+        if (!userData.gameStats[building]) {
+            userData.gameStats[building] = { streak: 0, level: 1, wins: 0, total: 0 };
+        }
         userData.gameStats[building].streak = (userData.gameStats[building].streak || 0) + 1;
         userData.gameStats[building].wins = (userData.gameStats[building].wins || 0) + 1;
         
-        // Cada 3 aciertos sube de nivel
         if (userData.gameStats[building].streak % 3 === 0) {
             userData.gameStats[building].level = (userData.gameStats[building].level || 1) + 1;
-            document.getElementById('hospital-level-game').textContent = userData.gameStats[building].level;
+            const levelElem = document.getElementById('hospital-level-game');
+            if (levelElem) levelElem.textContent = userData.gameStats[building].level;
         }
     } else {
         mensaje = `😞 Incorrecto -${apuesta} 💎`;
-        userData.gameStats[building].streak = 0;
+        if (userData.gameStats[building]) userData.gameStats[building].streak = 0;
     }
     
     userData.gameStats[building].total = (userData.gameStats[building].total || 0) + 1;
     
-    document.getElementById('hospital-result').innerHTML = 
-        isCorrect ? `<span class="win-message">${mensaje}</span>` : `<span class="lose-message">${mensaje}</span>`;
+    const resultElem = document.getElementById('hospital-result');
+    if (resultElem) {
+        resultElem.innerHTML = isCorrect ? `<span class="win-message">${mensaje}</span>` : `<span class="lose-message">${mensaje}</span>`;
+    }
     
-    document.getElementById('hospital-streak').textContent = userData.gameStats[building].streak || 0;
+    const streakElem = document.getElementById('hospital-streak');
+    if (streakElem) streakElem.textContent = userData.gameStats[building]?.streak || 0;
     
     actualizarUI();
     saveUserData();
@@ -868,7 +908,8 @@ function answerHospitalQuestion(selectedIdx) {
 
 function nextHospitalQuestion() {
     cargarPreguntaHospital();
-    document.getElementById('hospital-result').innerHTML = 'Selecciona una respuesta';
+    const resultElem = document.getElementById('hospital-result');
+    if (resultElem) resultElem.innerHTML = 'Selecciona una respuesta';
 }
 
 // ==========================================
@@ -877,8 +918,7 @@ function nextHospitalQuestion() {
 async function multiplyWin(building, multiplier) {
     try {
         if (esPremium()) {
-            // Premium: anuncios gratis
-            aplicarMultiplicador(building, multiplier);
+            alert(`✅ Anuncio gratis (Premium). Tu próxima victoria en ${building} será multiplicada x${multiplier}`);
             return;
         }
         
@@ -889,25 +929,18 @@ async function multiplyWin(building, multiplier) {
         
         const result = await AdController.show();
         if (result.done) {
-            aplicarMultiplicador(building, multiplier);
+            alert(`✅ Anuncio visto. Tu próxima victoria en ${building} será multiplicada x${multiplier}`);
         }
     } catch (error) {
         console.error("❌ Error en anuncio:", error);
     }
-}
-
-function aplicarMultiplicador(building, multiplier) {
-    // Este método debería ser llamado después de una victoria
-    // Por ahora, solo guardamos la intención
-    alert(`✅ Anuncio visto. Tu próxima victoria en ${building} será multiplicada x${multiplier}`);
-    // Aquí se puede implementar la lógica para guardar el multiplicador pendiente
 }
 
 async function reviveGame(building) {
     try {
         if (esPremium()) {
-            // Premium: revive gratis
-            reactivarJuego(building);
+            userData.gameState[building].active = true;
+            alert(`✅ Reviviste gratis en ${building}. ¡Sigue jugando!`);
             return;
         }
         
@@ -918,24 +951,25 @@ async function reviveGame(building) {
         
         const result = await AdController.show();
         if (result.done) {
-            reactivarJuego(building);
+            userData.gameState[building].active = true;
+            alert(`✅ Reviviste en ${building}. ¡Sigue jugando!`);
         }
     } catch (error) {
         console.error("❌ Error en anuncio:", error);
     }
 }
 
-function reactivarJuego(building) {
-    userData.gameState[building].active = true;
-    alert(`✅ Reviviste en ${building}. ¡Sigue jugando!`);
-}
-
 function resetGame(building) {
     if (building === 'piscina') {
         userData.gameStats[building] = { streak: 0, total: 0, wins: 0 };
-        document.getElementById('piscina-streak').textContent = '0';
-        document.getElementById('piscina-accuracy').textContent = '0%';
-        document.getElementById('piscina-result').innerHTML = 'Estadísticas reiniciadas';
+        const streakElem = document.getElementById('piscina-streak');
+        if (streakElem) streakElem.textContent = '0';
+        
+        const accuracyElem = document.getElementById('piscina-accuracy');
+        if (accuracyElem) accuracyElem.textContent = '0%';
+        
+        const resultElem = document.getElementById('piscina-result');
+        if (resultElem) resultElem.innerHTML = 'Estadísticas reiniciadas';
     }
 }
 
@@ -979,7 +1013,8 @@ async function rescueWithAd() {
             await saveUserData();
             
             actualizarUI();
-            document.getElementById("casino-rescue").style.display = "none";
+            const rescueDiv = document.getElementById("casino-rescue");
+            if (rescueDiv) rescueDiv.style.display = "none";
             alert("✅ ¡Ganaste 100 diamantes de rescate!");
         }
         
@@ -1673,7 +1708,9 @@ async function openWithdraw() {
         document.getElementById("available-diamonds").textContent = Math.floor(userData.diamonds).toLocaleString();
         document.getElementById("withdraw-rank").textContent = `${userData.rank} (#${userData.weekly_rank})`;
         document.getElementById("withdraw-projection").textContent = `${userData.projectedReward.toFixed(4)} TON`;
-        document.getElementById("accumulated-ton").textContent = `${(userData.accumulated_ton || 0).toFixed(4)} TON`;
+        
+        const accTonElem = document.getElementById("accumulated-ton");
+        if (accTonElem) accTonElem.textContent = `${(userData.accumulated_ton || 0).toFixed(4)} TON`;
         
         const statusElem = document.getElementById("withdraw-status");
         const exchangeBtn = document.getElementById("exchange-btn");
@@ -1681,30 +1718,35 @@ async function openWithdraw() {
         
         if (!enVentanaRetiro()) {
             statusElem.innerHTML = '<i class="fa-solid fa-circle-info" style="color: #f97316;"></i> ⏳ Espera al DOMINGO para intercambiar';
-            exchangeBtn.disabled = true;
+            if (exchangeBtn) exchangeBtn.disabled = true;
         } else {
             const semanaActual = getNumeroSemana();
             if (userData.last_withdraw_week === semanaActual) {
                 statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> ✅ Ya intercambiaste esta semana';
-                exchangeBtn.disabled = true;
+                if (exchangeBtn) exchangeBtn.disabled = true;
             } else {
                 statusElem.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> ✅ Intercambio disponible (solo hoy)';
-                exchangeBtn.disabled = false;
+                if (exchangeBtn) exchangeBtn.disabled = false;
             }
         }
         
-        withdrawBtn.disabled = !userData.accumulated_ton || userData.accumulated_ton < 1;
+        if (withdrawBtn) {
+            withdrawBtn.disabled = !userData.accumulated_ton || userData.accumulated_ton < 1;
+        }
         
         const withdrawInfo = document.getElementById("withdraw-info");
-        if (userData.accumulated_ton > 0) {
-            withdrawInfo.innerHTML = `<i class="fa-solid fa-fire"></i> <strong>Tienes ${userData.accumulated_ton.toFixed(4)} TON acumulados para retirar</strong>`;
-        } else {
-            withdrawInfo.innerHTML = '<i class="fa-solid fa-fire"></i> <strong>Los diamantes no intercambiados se queman al final del domingo</strong>';
+        if (withdrawInfo) {
+            if (userData.accumulated_ton > 0) {
+                withdrawInfo.innerHTML = `<i class="fa-solid fa-fire"></i> <strong>Tienes ${userData.accumulated_ton.toFixed(4)} TON acumulados para retirar</strong>`;
+            } else {
+                withdrawInfo.innerHTML = '<i class="fa-solid fa-fire"></i> <strong>Los diamantes no intercambiados se queman al final del domingo</strong>';
+            }
         }
         
     } catch (error) {
         console.error("❌ Error:", error);
-        document.getElementById("withdraw-status").innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color: #ef4444;"></i> Error al cargar';
+        const statusElem = document.getElementById("withdraw-status");
+        if (statusElem) statusElem.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color: #ef4444;"></i> Error al cargar';
     }
 }
 
@@ -1935,7 +1977,6 @@ async function initApp() {
             if (esPremium()) actualizarPremiumUI();
         }, 60000);
         
-        // Limpieza de diamantes no intercambiados
         setInterval(() => {
             if (enVentanaRetiro() && new Date().getHours() === 23 && new Date().getMinutes() === 59) {
                 if (userData.last_withdraw_week !== getNumeroSemana()) {
@@ -2051,6 +2092,16 @@ async function loadUserFromDB(tgId) {
         
         userData.last_production_update = new Date().toISOString();
         
+        // Inicializar gameState
+        if (!userData.gameState) {
+            userData.gameState = {
+                piscina: { active: false, bet: 10, multiplier: 1 },
+                fabrica: { active: false, bet: 10, multiplier: 1 },
+                escuela: { active: false, bet: 10, multiplier: 1 },
+                hospital: { active: false, bet: 10, multiplier: 1 }
+            };
+        }
+        
         actualizarPremiumUI();
         actualizarUI();
         updateReferralUI();
@@ -2064,7 +2115,7 @@ async function loadUserFromDB(tgId) {
 }
 
 // ==========================================
-// CASINO - JUEGOS (EXISTENTES)
+// CASINO - JUEGOS
 // ==========================================
 function openCasino() {
     showModal("modalCasino");
@@ -2155,13 +2206,323 @@ function cambiarApuesta(juego, delta) {
     if (elem) elem.textContent = nueva;
 }
 
-// Funciones de casino (resumidas por espacio)
-function jugarHighLow(eleccion) { /* ... */ }
-function jugarRuleta(tipo) { /* ... */ }
-function jugarTragaperras() { /* ... */ }
-function jugarDados(eleccion) { /* ... */ }
-function comprarBoletos() { /* ... */ }
-function jugarLoteria() { /* ... */ }
+function jugarHighLow(eleccion) {
+    const apuesta = apuestaActual.highlow;
+    
+    if (userData.diamonds < apuesta) {
+        alert("❌ No tienes suficientes diamantes");
+        return;
+    }
+    
+    if (!puedeJugar('highlow')) {
+        alert("❌ Límite diario alcanzado");
+        return;
+    }
+    
+    userData.diamonds -= apuesta;
+    
+    const gana = Math.random() < 0.485;
+    
+    let numero;
+    if (gana) {
+        numero = eleccion === "high" 
+            ? Math.floor(Math.random() * 5000) + 5000
+            : Math.floor(Math.random() * 5000);
+    } else {
+        numero = eleccion === "high"
+            ? Math.floor(Math.random() * 5000)
+            : Math.floor(Math.random() * 5000) + 5000;
+    }
+    
+    document.getElementById('hl-number').textContent = numero.toString().padStart(4, '0');
+    
+    let ganancia = apuesta * 2;
+    if (esPremium()) ganancia *= 2;
+    
+    if (gana) {
+        userData.diamonds += ganancia;
+        document.getElementById('hl-result').innerHTML = '<span class="win-message">🎉 ¡GANASTE!</span>';
+    } else {
+        document.getElementById('hl-result').innerHTML = '<span class="lose-message">😞 Has perdido</span>';
+    }
+    
+    registrarJugada('highlow');
+    actualizarUI();
+    saveUserData();
+}
+
+function jugarRuleta(tipo) {
+    const apuesta = apuestaActual.ruleta;
+    
+    if (userData.diamonds < apuesta) {
+        alert("❌ No tienes suficientes diamantes");
+        return;
+    }
+    
+    if (!puedeJugar('ruleta')) {
+        alert("❌ Límite diario alcanzado");
+        return;
+    }
+    
+    userData.diamonds -= apuesta;
+    
+    let numero = Math.random() < 0.03 ? 0 : Math.floor(Math.random() * 37);
+    document.getElementById('ruleta-number').textContent = numero;
+    
+    let gana = false;
+    
+    switch(tipo) {
+        case 'rojo':
+            gana = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(numero);
+            break;
+        case 'negro':
+            gana = [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35].includes(numero);
+            break;
+        case 'par':
+            gana = numero !== 0 && numero % 2 === 0;
+            break;
+        case 'impar':
+            gana = numero % 2 === 1;
+            break;
+        case 'bajo':
+            gana = numero >= 1 && numero <= 18;
+            break;
+        case 'alto':
+            gana = numero >= 19 && numero <= 36;
+            break;
+        case 'numero':
+            const num = parseInt(prompt("Elige un número del 0 al 36:", "7"));
+            if (num >= 0 && num <= 36) gana = numero === num;
+            else {
+                userData.diamonds += apuesta;
+                actualizarUI();
+                return;
+            }
+            break;
+    }
+    
+    let ganancia = tipo === 'numero' && gana ? apuesta * 36 : apuesta * 2;
+    if (esPremium()) ganancia *= 2;
+    
+    if (gana) {
+        userData.diamonds += ganancia;
+        document.getElementById('ruleta-result').innerHTML = '<span class="win-message">🎉 ¡GANASTE!</span>';
+    } else {
+        document.getElementById('ruleta-result').innerHTML = '<span class="lose-message">😞 Has perdido</span>';
+    }
+    
+    registrarJugada('ruleta');
+    actualizarUI();
+    saveUserData();
+}
+
+function jugarTragaperras() {
+    const apuesta = apuestaActual.tragaperras;
+    
+    if (userData.diamonds < apuesta) {
+        alert("❌ No tienes suficientes diamantes");
+        return;
+    }
+    
+    if (!puedeJugar('tragaperras')) {
+        alert("❌ Límite diario alcanzado");
+        return;
+    }
+    
+    userData.diamonds -= apuesta;
+    
+    const simbolos = [
+        { nombre: "💎", rareza: 1, mult: 50 },
+        { nombre: "₿", rareza: 3, mult: 20 },
+        { nombre: "Ξ", rareza: 6, mult: 10 },
+        { nombre: "🪙", rareza: 15, mult: 5 },
+        { nombre: "📈", rareza: 37.5, mult: 2 },
+        { nombre: "📉", rareza: 37.5, mult: 2 }
+    ];
+    
+    const rodillos = [];
+    for (let i = 0; i < 3; i++) {
+        const rand = Math.random() * 100;
+        let acum = 0;
+        for (const s of simbolos) {
+            acum += s.rareza;
+            if (rand < acum) {
+                rodillos.push(s);
+                break;
+            }
+        }
+    }
+    
+    document.getElementById('slot1').textContent = rodillos[0].nombre;
+    document.getElementById('slot2').textContent = rodillos[1].nombre;
+    document.getElementById('slot3').textContent = rodillos[2].nombre;
+    
+    if (rodillos[0].nombre === rodillos[1].nombre && rodillos[1].nombre === rodillos[2].nombre) {
+        let mult = rodillos[0].mult;
+        if (esPremium()) mult *= 2;
+        
+        userData.diamonds += apuesta * mult;
+        document.getElementById('tragaperras-result').innerHTML = `<span class="win-message">🎉 ¡GANASTE! x${mult}</span>`;
+    } else {
+        document.getElementById('tragaperras-result').innerHTML = '<span class="lose-message">😞 No hay premio</span>';
+    }
+    
+    registrarJugada('tragaperras');
+    actualizarUI();
+    saveUserData();
+}
+
+function jugarDados(eleccion) {
+    const apuesta = apuestaActual.dados;
+    
+    if (userData.diamonds < apuesta) {
+        alert("❌ No tienes suficientes diamantes");
+        return;
+    }
+    
+    if (!puedeJugar('dados')) {
+        alert("❌ Límite diario alcanzado");
+        return;
+    }
+    
+    userData.diamonds -= apuesta;
+    
+    let dado1 = Math.floor(Math.random() * 6) + 1;
+    let dado2 = Math.floor(Math.random() * 6) + 1;
+    
+    const caras = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+    document.getElementById('dado1').textContent = caras[dado1 - 1];
+    document.getElementById('dado2').textContent = caras[dado2 - 1];
+    
+    const suma = dado1 + dado2;
+    document.getElementById('dados-suma').textContent = `Suma: ${suma}`;
+    
+    let gana = false;
+    if (eleccion === 'menor' && suma >= 2 && suma <= 6) gana = true;
+    if (eleccion === 'mayor' && suma >= 8 && suma <= 12) gana = true;
+    if (eleccion === 'exacto' && suma === 7) gana = true;
+    
+    if (gana) {
+        let ganancia = eleccion === 'exacto' ? apuesta * 5 : apuesta * 2;
+        if (esPremium()) ganancia *= 2;
+        
+        userData.diamonds += ganancia;
+        document.getElementById('dados-result').innerHTML = '<span class="win-message">🎉 ¡GANASTE!</span>';
+    } else {
+        document.getElementById('dados-result').innerHTML = '<span class="lose-message">😞 Has perdido</span>';
+    }
+    
+    registrarJugada('dados');
+    actualizarUI();
+    saveUserData();
+}
+
+function comprarBoletos() {
+    const cantidad = apuestaActual.loteria;
+    const costoTotal = cantidad * 5;
+    
+    if (userData.diamonds < costoTotal) {
+        alert("❌ No tienes suficientes diamantes");
+        return;
+    }
+    
+    if (!puedeJugar('loteria', cantidad)) {
+        alert("❌ Límite diario alcanzado");
+        return;
+    }
+    
+    userData.diamonds -= costoTotal;
+    
+    boletosComprados = [];
+    for (let i = 0; i < cantidad; i++) {
+        const boleto = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        boletosComprados.push(boleto);
+    }
+    
+    let html = '<p style="color: #94a3b8;">Tus boletos:</p><div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">';
+    boletosComprados.forEach(b => {
+        html += `<span style="background: #0f172a; padding: 5px 10px; border-radius: 5px; border: 1px solid #fbbf24;">${b}</span>`;
+    });
+    html += '</div>';
+    document.getElementById('loteria-boletos').innerHTML = html;
+    
+    registrarJugada('loteria', cantidad);
+    actualizarUI();
+    saveUserData();
+}
+
+function jugarLoteria() {
+    if (boletosComprados.length === 0) {
+        alert("❌ Primero compra boletos");
+        return;
+    }
+    
+    const numeroGanador = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    document.getElementById('loteria-number').textContent = numeroGanador;
+    
+    let premioTotal = 0;
+    const resultados = [];
+    
+    boletosComprados.forEach(boleto => {
+        let coinc = 0;
+        for (let i = 0; i < 4; i++) if (boleto[i] === numeroGanador[i]) coinc++;
+        
+        let premio = 0;
+        switch(coinc) {
+            case 4: premio = 5 * 500; break;
+            case 3: premio = 5 * 50; break;
+            case 2: premio = 5 * 5; break;
+            case 1: premio = 5; break;
+        }
+        
+        if (esPremium()) premio *= 2;
+        
+        premioTotal += premio;
+        if (premio > 0) {
+            resultados.push(`<span style="color: #4ade80;">${boleto} → +${premio}💎 (${coinc} coincidencias)</span>`);
+        }
+    });
+    
+    if (premioTotal > 0) userData.diamonds += premioTotal;
+    
+    let html = '<p style="color: #94a3b8;">Resultados:</p>';
+    if (resultados.length > 0) {
+        html += resultados.join('<br>');
+        html += `<br><span style="color: #facc15; font-weight: bold;">Total: +${premioTotal}💎</span>`;
+    } else {
+        html += '<span class="lose-message">😞 No ganaste</span>';
+    }
+    
+    document.getElementById('loteria-result').innerHTML = html;
+    
+    boletosComprados = [];
+    actualizarUI();
+    saveUserData();
+}
+
+// Función para límites del casino
+function puedeJugar(juegoId, cantidad = 1) {
+    if (userData.haInvertido) return true;
+    
+    const hoy = new Date().toDateString();
+    if (userData.jugadasHoy.fecha !== hoy) {
+        userData.jugadasHoy = {
+            highlow: 0, ruleta: 0, tragaperras: 0, dados: 0, loteria: 0,
+            piscina: 0, fabrica: 0, escuela: 0, hospital: 0,
+            fecha: hoy
+        };
+    }
+    
+    const limites = { highlow: 20, ruleta: 15, tragaperras: 30, dados: 20, loteria: 5 };
+    return (userData.jugadasHoy[juegoId] + cantidad) <= limites[juegoId];
+}
+
+function registrarJugada(juegoId, cantidad = 1) {
+    if (!userData.haInvertido) {
+        userData.jugadasHoy[juegoId] += cantidad;
+        actualizarLimitesUI();
+    }
+}
 
 // ==========================================
 // AMIGOS
@@ -2395,7 +2756,6 @@ function actualizarLimitesUI() {
         if (el) el.innerHTML = texto;
     });
     
-    // Actualizar límites de minijuegos
     ['piscina', 'fabrica', 'escuela', 'hospital'].forEach(b => {
         actualizarLimiteJuego(b);
     });
@@ -2415,6 +2775,68 @@ function closeAll() {
 }
 
 // ==========================================
+// EVENTOS DEL JUEGO
+// ==========================================
+function startEventTask() {
+    // Esta función se mantiene igual que en tu código original
+    // Se ejecuta cuando el usuario hace clic en el botón del evento
+    const evento = getEventoActual();
+    
+    if (!tonConnectUI || !tonConnectUI.connected) {
+        alert("❌ Conecta tu wallet primero para participar");
+        return;
+    }
+    
+    const requeridos = esPremium() ? evento.requeridos_premium : evento.requeridos;
+    const recompensa = esPremium() ? evento.premium : evento.recompensa;
+    
+    if (!userData.event_progress) userData.event_progress = {};
+    if (!userData.event_progress[evento.nombre]) userData.event_progress[evento.nombre] = 0;
+    
+    let progresoActual = userData.event_progress[evento.nombre];
+    
+    if (progresoActual >= requeridos) {
+        alert("✅ Ya completaste este evento. ¡Espera al próximo!");
+        return;
+    }
+    
+    if (!adsReady || !AdController) {
+        alert("❌ Sistema de anuncios no disponible");
+        return;
+    }
+    
+    AdController.show()
+        .then(async (result) => {
+            if (result.done) {
+                progresoActual++;
+                userData.event_progress[evento.nombre] = progresoActual;
+                
+                if (progresoActual >= requeridos) {
+                    userData.diamonds += recompensa;
+                    userData.event_progress[evento.nombre] = 0;
+                    await saveUserData();
+                    actualizarUI();
+                    alert(`✅ ¡Evento completado! Ganaste +${recompensa} 💎`);
+                    closeAll();
+                } else {
+                    await saveUserData();
+                    actualizarUI();
+                    alert(`✅ Progreso: ${progresoActual}/${requeridos} anuncios vistos`);
+                    
+                    const porcentaje = (progresoActual / requeridos) * 100;
+                    const bar = document.getElementById("event-progress-bar");
+                    const text = document.getElementById("event-progress-text");
+                    if (bar) bar.style.width = `${porcentaje}%`;
+                    if (text) text.textContent = `${progresoActual}/${requeridos} anuncios vistos`;
+                }
+            }
+        })
+        .catch(() => {
+            alert("❌ Error al mostrar el anuncio");
+        });
+}
+
+// ==========================================
 // INICIALIZACIÓN
 // ==========================================
 window.addEventListener('DOMContentLoaded', () => {
@@ -2424,16 +2846,6 @@ window.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('beforeunload', () => {
     saveUserData();
 });
-
-// Variables para casino
-let apuestaActual = {
-    highlow: 10,
-    ruleta: 10,
-    tragaperras: 5,
-    dados: 10,
-    loteria: 1
-};
-let boletosComprados = [];
 
 // EXPORTAR FUNCIONES GLOBALES
 window.openCentral = openCentral;
