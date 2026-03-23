@@ -47,7 +47,28 @@
             --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
         }
 
-        /* ===== ANIMACIONES GLOBALES ===== */
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-bottom: 90px;
+            overflow-x: hidden;
+            animation: fadeIn 0.5s ease;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(191, 90, 242, 0.15), transparent 50%),
+                        radial-gradient(circle at 80% 70%, rgba(252, 207, 71, 0.15), transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -75,34 +96,7 @@
             to { transform: translateY(0); opacity: 1; }
         }
 
-        /* ===== ESTILOS BASE ===== */
-        body {
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding-bottom: 90px;
-            position: relative;
-            overflow-x: hidden;
-            animation: fadeIn 0.5s ease;
-        }
-
-        /* Fondo con efecto gradiente dinámico */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 20% 30%, rgba(191, 90, 242, 0.15), transparent 50%),
-                        radial-gradient(circle at 80% 70%, rgba(252, 207, 71, 0.15), transparent 50%);
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        /* ===== HEADER PROFESIONAL ===== */
+        /* ===== HEADER ===== */
         .app-header {
             padding: 24px 20px 12px;
             display: flex;
@@ -120,8 +114,8 @@
         .greeting-label {
             font-size: 13px;
             color: var(--text-secondary);
-            letter-spacing: 0.5px;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         #user-display {
@@ -155,7 +149,6 @@
         .balance-card {
             background: var(--glass-bg);
             backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             border: 1px solid var(--glass-border);
             border-radius: 28px;
             margin: 8px 20px 20px;
@@ -215,7 +208,7 @@
             color: var(--accent-green);
         }
 
-        /* ===== BANNERS DE ACCIÓN ===== */
+        /* ===== BANNERS ===== */
         .action-banner {
             background: linear-gradient(135deg, #1E2332, #141824);
             border-radius: 20px;
@@ -358,10 +351,8 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
             z-index: 90;
             display: none;
-            transition: opacity 0.3s;
         }
 
         /* ===== MODALES BASE ===== */
@@ -372,7 +363,7 @@
             transform: translate(-50%, -50%);
             width: calc(100% - 32px);
             max-width: 420px;
-            max-height: 80vh;
+            max-height: 85vh;
             background: var(--bg-card);
             border-radius: 32px;
             padding: 24px 20px;
@@ -403,7 +394,6 @@
             to { opacity: 1; transform: translate(-50%, -50%); }
         }
 
-        /* ===== HEADER DE MODALES ===== */
         .modal-header {
             display: flex;
             align-items: center;
@@ -504,6 +494,15 @@
             color: var(--primary);
         }
 
+        .badge {
+            background: var(--primary);
+            color: #000;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
         /* ===== BOTÓN DE MEJORA ===== */
         .upgrade-btn {
             background: var(--primary);
@@ -542,30 +541,7 @@
             box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
         }
 
-        /* ===== HOSPITAL - SALVA VIDAS ===== */
-        .patient-card {
-            background: linear-gradient(145deg, #1E2332, #141824);
-            border-radius: 24px;
-            padding: 24px;
-            text-align: center;
-            border: 3px solid var(--accent-red);
-            box-shadow: 0 12px 0 #991F1F;
-            margin: 16px 0;
-        }
-
-        .patient-emoji {
-            font-size: 80px;
-            filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.3));
-            animation: float 3s infinite;
-        }
-
-        .symptom-text {
-            font-size: 20px;
-            font-weight: 600;
-            margin: 16px 0;
-            color: #fff;
-        }
-
+        /* ===== HOSPITAL ===== */
         .health-bar {
             height: 28px;
             background: #2A2F45;
@@ -600,6 +576,7 @@
             transition: all 0.2s;
             box-shadow: 0 5px 0 #5A1F1F;
             color: #fff;
+            text-align: center;
         }
 
         .treatment-btn:active {
@@ -607,7 +584,7 @@
             box-shadow: none;
         }
 
-        /* ===== ESCUELA - ATRAPA EL SABER ===== */
+        /* ===== ESCUELA ===== */
         .catch-game {
             position: relative;
             height: 380px;
@@ -645,7 +622,7 @@
             transition: left 0.05s;
         }
 
-        /* ===== FÁBRICA - MONTAJE RÁPIDO ===== */
+        /* ===== FÁBRICA ===== */
         .product-display {
             font-size: 80px;
             text-align: center;
@@ -694,7 +671,7 @@
             box-shadow: none;
         }
 
-        /* ===== PISCINA - ENTRENAMIENTO ===== */
+        /* ===== PISCINA ===== */
         .swim-game {
             position: relative;
             height: 380px;
@@ -704,6 +681,7 @@
             border: 3px solid var(--accent-blue);
             box-shadow: 0 12px 0 #123456;
             margin: 16px 0;
+            cursor: pointer;
         }
 
         .lane {
@@ -723,7 +701,7 @@
 
         .obstacle {
             position: absolute;
-            font-size: 56px;
+            font-size: 48px;
             color: var(--accent-red);
             filter: drop-shadow(0 4px 4px black);
         }
@@ -779,7 +757,7 @@
             font-size: 16px;
         }
 
-        /* ===== CASINO GRID ===== */
+        /* ===== CASINO ===== */
         .casino-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -819,7 +797,7 @@
             font-size: 12px;
         }
 
-        /* ===== NÚMEROS PARA CASINO ===== */
+        /* ===== JUEGOS DE CASINO ===== */
         .number-display {
             font-size: 64px;
             font-weight: 800;
@@ -828,9 +806,8 @@
             padding: 30px;
             border-radius: 28px;
             margin: 16px 0;
-            letter-spacing: 8px;
-            border: 2px solid var(--primary);
             text-align: center;
+            border: 2px solid var(--primary);
         }
 
         .bet-controls {
@@ -846,7 +823,6 @@
             height: 70px;
             border-radius: 40px;
             font-size: 28px;
-            margin: 0;
             background: var(--bg-elevated);
             border: none;
             color: #fff;
@@ -866,6 +842,19 @@
             text-align: center;
             color: var(--primary);
             font-weight: 800;
+        }
+
+        .dice {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: black;
+            box-shadow: 0 8px 0 #aaa;
         }
 
         /* ===== RETIRO ===== */
@@ -920,7 +909,6 @@
 
         .withdraw-btn:disabled {
             opacity: 0.3;
-            box-shadow: 0 6px 0 #1F7B3E;
             cursor: not-allowed;
         }
 
@@ -937,7 +925,6 @@
             width: 100%;
             background: var(--glass-bg);
             backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             border-top: 1px solid var(--glass-border);
             display: flex;
             justify-content: space-around;
@@ -972,15 +959,6 @@
             margin: 12px 0;
         }
 
-        .badge {
-            background: var(--primary);
-            color: #000;
-            padding: 6px 16px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 13px;
-        }
-
         .text-win {
             color: var(--accent-green);
             font-weight: 700;
@@ -991,20 +969,21 @@
             font-weight: 700;
         }
 
-        .close-btn {
+        .progress-bar {
             background: var(--bg-elevated);
-            border: none;
-            color: #fff;
-            padding: 18px;
-            border-radius: 24px;
-            font-weight: 600;
-            width: 100%;
-            margin-top: 20px;
-            cursor: pointer;
-            font-size: 16px;
+            height: 12px;
+            border-radius: 30px;
+            overflow: hidden;
+            margin: 16px 0;
         }
 
-        /* ===== AMIGOS ===== */
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
         .referral-box {
             background: var(--bg-elevated);
             border-radius: 24px;
@@ -1043,7 +1022,6 @@
             box-shadow: none;
         }
 
-        /* ===== DIARIO ===== */
         .daily-calendar {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -1069,7 +1047,6 @@
             border: 2px solid var(--primary);
         }
 
-        /* ===== EVENTO ===== */
         .event-multiplier-info {
             display: flex;
             justify-content: center;
@@ -1092,38 +1069,31 @@
             margin-top: 8px;
         }
 
-        .progress-bar {
-            background: var(--bg-elevated);
-            height: 12px;
-            border-radius: 30px;
-            overflow: hidden;
-            margin: 16px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--primary);
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        /* ===== ANUNCIOS ===== */
         .ads-loading {
             display: inline-block;
             width: 24px;
             height: 24px;
-            border: 3px solid rgba(255,255,255,0.3);
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             border-top-color: var(--primary);
             animation: spin 1s linear infinite;
             margin-right: 10px;
         }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 480px) {
+            .balance-value { font-size: 36px; }
+            .building-card { padding: 16px 12px; }
+            .building-icon { width: 52px; height: 52px; font-size: 28px; }
+            .game-area { padding: 20px 16px; }
+            .number-display { font-size: 48px; padding: 20px; }
+            .bet-controls button { width: 55px; height: 55px; font-size: 24px; }
+            .bet-controls span { font-size: 28px; min-width: 70px; }
+        }
     </style>
 </head>
 <body>
-    <!-- BACK BUTTON (controlado por Telegram) -->
-
-    <!-- ===== HEADER ===== -->
+    <!-- HEADER -->
     <div class="app-header">
         <div class="user-greeting">
             <span class="greeting-label">HOLA,</span>
@@ -1134,7 +1104,7 @@
         </div>
     </div>
 
-    <!-- ===== BALANCE CARD ===== -->
+    <!-- BALANCE CARD -->
     <div class="balance-card">
         <div class="balance-info">
             <span class="balance-label">TUS DIAMANTES</span>
@@ -1149,7 +1119,7 @@
         </div>
     </div>
 
-    <!-- ===== BANNERS ===== -->
+    <!-- BANNERS -->
     <div id="daily-banner" class="action-banner" onclick="openDailyReward()">
         <div class="banner-icon"><i class="fa-solid fa-calendar-check"></i></div>
         <div class="banner-content">
@@ -1168,7 +1138,7 @@
         <i class="fa-solid fa-chevron-right" style="color: var(--text-secondary);"></i>
     </div>
 
-    <!-- ===== SECCIÓN: EDIFICIOS ===== -->
+    <!-- SECCIÓN: EDIFICIOS -->
     <div class="section-title">
         <i class="fa-solid fa-building"></i>
         <span>Edificios</span>
@@ -1236,10 +1206,10 @@
         </div>
     </div>
 
-    <!-- ===== OVERLAY ===== -->
+    <!-- OVERLAY -->
     <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
-    <!-- ===== MODAL CENTRAL ===== -->
+    <!-- ========== MODAL CENTRAL ========== -->
     <div class="modal" id="centralModal">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1248,40 +1218,38 @@
         
         <div class="building-stats">
             <div class="stat-row">
-                <span class="stat-label">Piscina</span>
-                <span class="stat-value" id="s_piscina">0 💎/h</span>
+                <span>Tu Rango</span>
+                <span class="badge" id="user-rank-display">Ciudadano</span>
             </div>
             <div class="stat-row">
-                <span class="stat-label">Fábrica</span>
-                <span class="stat-value" id="s_fabrica">0 💎/h</span>
+                <span>Posición</span>
+                <span class="stat-value" id="user-position">#--</span>
             </div>
             <div class="stat-row">
-                <span class="stat-label">Escuela</span>
-                <span class="stat-value" id="s_escuela">0 💎/h</span>
+                <span>Proyección Semanal</span>
+                <span class="stat-value" id="projected-reward-display">0 TON</span>
             </div>
             <div class="stat-row">
-                <span class="stat-label">Hospital</span>
-                <span class="stat-value" id="s_hospital">0 💎/h</span>
-            </div>
-            <div class="stat-row" style="border-top: 2px solid var(--glass-border); padding-top: 16px; margin-top: 8px;">
-                <span class="stat-label">TOTAL</span>
-                <span class="stat-value" id="s_total">0 💎/h</span>
+                <span>Pool Total</span>
+                <span class="stat-value" id="pool-total-display">0 TON</span>
             </div>
         </div>
-
-        <div style="background: var(--bg-elevated); border-radius: 20px; padding: 20px;">
-            <div class="stat-row">
-                <span>Tu rango</span>
-                <span class="badge" id="user-rank">Ciudadano</span>
-            </div>
-            <div class="stat-row">
-                <span>Proyección semanal</span>
-                <span class="stat-value" id="projected-reward">0 TON</span>
-            </div>
+        
+        <div class="building-stats" style="background: var(--bg-card);">
+            <div class="stat-row"><span>💎 Diamante (1-3)</span><span>40% del pool</span></div>
+            <div class="stat-row"><span>🥇 Oro (4-10)</span><span>25% del pool</span></div>
+            <div class="stat-row"><span>🥈 Plata (11-50)</span><span>20% del pool</span></div>
+            <div class="stat-row"><span>👥 Ciudadano (Resto)</span><span>15% del pool (proporcional)</span></div>
         </div>
+        
+        <div class="stat-row"><span>Piscina</span><span id="s_piscina">0</span></div>
+        <div class="stat-row"><span>Fábrica</span><span id="s_fabrica">0</span></div>
+        <div class="stat-row"><span>Escuela</span><span id="s_escuela">0</span></div>
+        <div class="stat-row"><span>Hospital</span><span id="s_hospital">0</span></div>
+        <div class="stat-row" style="border-top: 2px solid var(--glass-border); padding-top: 16px;"><span>TOTAL / h</span><span class="stat-value" id="s_total">0</span></div>
     </div>
 
-    <!-- ===== MODAL BANCO ===== -->
+    <!-- ========== MODAL BANCO ========== -->
     <div class="modal" id="modalBank">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1295,13 +1263,13 @@
                 <span>Wallet conectada</span>
                 <span class="badge" style="background: #34C759;">✓</span>
             </div>
-            <button onclick="disconnectWallet()" style="background: none; border: 2px solid var(--glass-border); color: white; padding: 15px; border-radius: 20px; width: 100%; margin-top: 16px; font-weight: 600; cursor: pointer;">Desconectar</button>
+            <button onclick="disconnectWallet()" style="background: none; border: 2px solid var(--glass-border); color: white; padding: 15px; border-radius: 20px; width: 100%; margin-top: 16px; cursor: pointer;">Desconectar</button>
         </div>
         
         <div id="bankList"></div>
     </div>
 
-    <!-- ===== MODAL TIENDA PREMIUM ===== -->
+    <!-- ========== MODAL TIENDA PREMIUM ========== -->
     <div class="modal" id="modalStore">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1309,24 +1277,15 @@
         </div>
         
         <div class="building-stats">
-            <div class="stat-row">
-                <span>✨ Multiplicador x2</span>
-                <span class="badge">PREMIUM</span>
-            </div>
-            <div class="stat-row">
-                <span>🚫 Sin anuncios</span>
-                <span class="badge">VIP</span>
-            </div>
-            <div class="stat-row">
-                <span>🎮 Juegos x2 base</span>
-                <span class="badge">BONUS</span>
-            </div>
+            <div class="stat-row"><span>✨ Multiplicador x2</span><span class="badge">PREMIUM</span></div>
+            <div class="stat-row"><span>🚫 Sin anuncios</span><span class="badge">VIP</span></div>
+            <div class="stat-row"><span>🎮 Juegos x2 base</span><span class="badge">BONUS</span></div>
         </div>
         
         <div id="premium-plans"></div>
     </div>
 
-    <!-- ===== MODAL HOSPITAL ===== -->
+    <!-- ========== MODAL HOSPITAL ========== -->
     <div class="modal modal-full" id="modalHospital">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1340,18 +1299,9 @@
 
         <div id="hospital-upgrade-panel">
             <div class="building-stats">
-                <div class="stat-row">
-                    <span>Nivel actual</span>
-                    <span class="stat-value" id="hospital-level">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Producción</span>
-                    <span class="stat-value" id="hospital-prod">0 💎/h</span>
-                </div>
-                <div class="stat-row">
-                    <span>Próxima mejora</span>
-                    <span class="stat-value" id="hospital-price">7500 💎</span>
-                </div>
+                <div class="stat-row"><span>Nivel actual</span><span class="stat-value" id="hospital-level">0</span></div>
+                <div class="stat-row"><span>Producción</span><span class="stat-value" id="hospital-prod">0 💎/h</span></div>
+                <div class="stat-row"><span>Próxima mejora</span><span class="stat-value" id="hospital-price">7500 💎</span></div>
             </div>
             <button class="upgrade-btn" id="hospital-btn" onclick="buyUpgradeFromBuilding('hospital', 7500)">MEJORAR NIVEL</button>
         </div>
@@ -1368,10 +1318,8 @@
                     <div class="health-fill" id="health-bar" style="width: 100%"></div>
                 </div>
 
-                <div class="patient-card">
-                    <div class="patient-emoji" id="patient-emoji">😷</div>
-                    <div class="symptom-text" id="symptom-text">Cargando síntomas...</div>
-                </div>
+                <div id="patient-emoji" style="font-size: 80px; text-align: center; margin: 20px 0;">😷</div>
+                <div id="symptom-text" style="text-align: center; font-size: 18px; margin: 16px 0;">Cargando...</div>
 
                 <div class="treatment-grid" id="treatment-buttons"></div>
 
@@ -1383,7 +1331,7 @@
         </div>
     </div>
 
-    <!-- ===== MODAL ESCUELA ===== -->
+    <!-- ========== MODAL ESCUELA ========== -->
     <div class="modal modal-full" id="modalEscuela">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1397,18 +1345,9 @@
 
         <div id="escuela-upgrade-panel">
             <div class="building-stats">
-                <div class="stat-row">
-                    <span>Nivel actual</span>
-                    <span class="stat-value" id="escuela-level">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Producción</span>
-                    <span class="stat-value" id="escuela-prod">0 💎/h</span>
-                </div>
-                <div class="stat-row">
-                    <span>Próxima mejora</span>
-                    <span class="stat-value" id="escuela-price">3000 💎</span>
-                </div>
+                <div class="stat-row"><span>Nivel actual</span><span class="stat-value" id="escuela-level">0</span></div>
+                <div class="stat-row"><span>Producción</span><span class="stat-value" id="escuela-prod">0 💎/h</span></div>
+                <div class="stat-row"><span>Próxima mejora</span><span class="stat-value" id="escuela-price">3000 💎</span></div>
             </div>
             <button class="upgrade-btn" id="escuela-btn" onclick="buyUpgradeFromBuilding('escuela', 3000)">MEJORAR NIVEL</button>
         </div>
@@ -1424,6 +1363,11 @@
                     <div class="basket" id="student-basket">🧺</div>
                 </div>
 
+                <div style="display: flex; gap: 20px; justify-content: center; margin: 16px 0;">
+                    <button onclick="moveBasket('left')" style="background: #3B8BFF; border: none; padding: 15px; border-radius: 40px; width: 100px; font-weight: bold; color: white;">← IZQ</button>
+                    <button onclick="moveBasket('right')" style="background: #3B8BFF; border: none; padding: 15px; border-radius: 40px; width: 100px; font-weight: bold; color: white;">DER →</button>
+                </div>
+
                 <div class="ad-options">
                     <div class="ad-btn" onclick="useAdMultiplier('escuela')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div>
                     <div class="ad-btn" onclick="useAdContinue('escuela')"><i class="fa-solid fa-play"></i> +30 SEGUNDOS</div>
@@ -1432,7 +1376,7 @@
         </div>
     </div>
 
-    <!-- ===== MODAL FÁBRICA ===== -->
+    <!-- ========== MODAL FÁBRICA ========== -->
     <div class="modal modal-full" id="modalFabrica">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1446,18 +1390,9 @@
 
         <div id="fabrica-upgrade-panel">
             <div class="building-stats">
-                <div class="stat-row">
-                    <span>Nivel actual</span>
-                    <span class="stat-value" id="fabrica-level">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Producción</span>
-                    <span class="stat-value" id="fabrica-prod">0 💎/h</span>
-                </div>
-                <div class="stat-row">
-                    <span>Próxima mejora</span>
-                    <span class="stat-value" id="fabrica-price">10000 💎</span>
-                </div>
+                <div class="stat-row"><span>Nivel actual</span><span class="stat-value" id="fabrica-level">0</span></div>
+                <div class="stat-row"><span>Producción</span><span class="stat-value" id="fabrica-prod">0 💎/h</span></div>
+                <div class="stat-row"><span>Próxima mejora</span><span class="stat-value" id="fabrica-price">10000 💎</span></div>
             </div>
             <button class="upgrade-btn" id="fabrica-btn" onclick="buyUpgradeFromBuilding('fabrica', 10000)">MEJORAR NIVEL</button>
         </div>
@@ -1481,7 +1416,7 @@
         </div>
     </div>
 
-    <!-- ===== MODAL PISCINA ===== -->
+    <!-- ========== MODAL PISCINA ========== -->
     <div class="modal modal-full" id="modalPiscina">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1495,18 +1430,9 @@
 
         <div id="piscina-upgrade-panel">
             <div class="building-stats">
-                <div class="stat-row">
-                    <span>Nivel actual</span>
-                    <span class="stat-value" id="piscina-level">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Producción</span>
-                    <span class="stat-value" id="piscina-prod">0 💎/h</span>
-                </div>
-                <div class="stat-row">
-                    <span>Próxima mejora</span>
-                    <span class="stat-value" id="piscina-price">5000 💎</span>
-                </div>
+                <div class="stat-row"><span>Nivel actual</span><span class="stat-value" id="piscina-level">0</span></div>
+                <div class="stat-row"><span>Producción</span><span class="stat-value" id="piscina-prod">0 💎/h</span></div>
+                <div class="stat-row"><span>Próxima mejora</span><span class="stat-value" id="piscina-price">5000 💎</span></div>
             </div>
             <button class="upgrade-btn" id="piscina-btn" onclick="buyUpgradeFromBuilding('piscina', 5000)">MEJORAR NIVEL</button>
         </div>
@@ -1535,7 +1461,7 @@
         </div>
     </div>
 
-    <!-- ===== MODAL CASINO ===== -->
+    <!-- ========== MODAL CASINO ========== -->
     <div class="modal" id="modalCasino">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1553,32 +1479,32 @@
             <div class="casino-card" onclick="abrirJuego('highlow')">
                 <i class="fa-solid fa-chart-simple"></i>
                 <div>High/Low</div>
-                <small>4 dígitos</small>
+                <small>Adivina si el número es alto o bajo</small>
             </div>
             <div class="casino-card" onclick="abrirJuego('ruleta')">
                 <i class="fa-solid fa-circle"></i>
                 <div>Ruleta</div>
-                <small>Clásica</small>
+                <small>Apuesta a color, par/impar o número exacto</small>
             </div>
             <div class="casino-card" onclick="abrirJuego('tragaperras')">
                 <i class="fa-solid fa-sliders"></i>
                 <div>Tragaperras</div>
-                <small>Cripto</small>
+                <small>Consigue 3 símbolos iguales</small>
             </div>
             <div class="casino-card" onclick="abrirJuego('dados')">
                 <i class="fa-solid fa-dice"></i>
                 <div>Dados</div>
-                <small>Mayor/Menor</small>
+                <small>Mayor, menor o exacto</small>
             </div>
             <div class="casino-card" onclick="abrirJuego('loteria')">
                 <i class="fa-solid fa-ticket"></i>
                 <div>Lotería</div>
-                <small>4 dígitos</small>
+                <small>Compra boletos de 4 dígitos</small>
             </div>
         </div>
     </div>
 
-    <!-- ===== MODAL HIGH/LOW ===== -->
+    <!-- ========== MODAL HIGH/LOW ========== -->
     <div class="modal" id="modalHighLow">
         <div class="modal-header">
             <div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1588,22 +1514,27 @@
         <div class="game-area">
             <div class="number-display" id="hl-number">0000</div>
             
+            <div class="flex-row">
+                <span>💰 Saldo: <span id="hl-balance">0</span> 💎</span>
+                <span>🎲 Apuesta: <span id="hl-bet">10</span> 💎</span>
+            </div>
+            
             <div class="bet-controls">
                 <button onclick="cambiarApuesta('hl', -10)">-10</button>
-                <span id="hl-bet">10</span>
+                <span id="hl-bet-display">10</span>
                 <button onclick="cambiarApuesta('hl', 10)">+10</button>
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <button onclick="jugarHighLow('low')" style="background: #3B8BFF; border: none; padding: 20px; border-radius: 20px; color: white; font-weight: 700; cursor: pointer; box-shadow: 0 5px 0 #123456;">LOW</button>
-                <button onclick="jugarHighLow('high')" style="background: #FF3B30; border: none; padding: 20px; border-radius: 20px; color: white; font-weight: 700; cursor: pointer; box-shadow: 0 5px 0 #991F1F;">HIGH</button>
+                <button onclick="jugarHighLow('low')" style="background: #3B8BFF; border: none; padding: 20px; border-radius: 20px; color: white; font-weight: 700; cursor: pointer;">LOW (0000-4999)</button>
+                <button onclick="jugarHighLow('high')" style="background: #FF3B30; border: none; padding: 20px; border-radius: 20px; color: white; font-weight: 700; cursor: pointer;">HIGH (5000-9999)</button>
             </div>
             
-            <div id="hl-result" style="text-align: center; margin: 20px; font-size: 20px; min-height: 40px;"></div>
+            <div id="hl-result" style="text-align: center; margin: 20px;"></div>
         </div>
     </div>
 
-    <!-- ===== MODAL RULETA ===== -->
+    <!-- ========== MODAL RULETA ========== -->
     <div class="modal" id="modalRuleta">
         <div class="modal-header">
             <div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1613,9 +1544,14 @@
         <div class="game-area">
             <div class="number-display" id="ruleta-number">0</div>
             
+            <div class="flex-row">
+                <span>💰 Saldo: <span id="ruleta-balance">0</span> 💎</span>
+                <span>🎲 Apuesta: <span id="ruleta-bet">10</span> 💎</span>
+            </div>
+            
             <div class="bet-controls">
                 <button onclick="cambiarApuesta('ruleta', -10)">-10</button>
-                <span id="ruleta-bet">10</span>
+                <span id="ruleta-bet-display">10</span>
                 <button onclick="cambiarApuesta('ruleta', 10)">+10</button>
             </div>
             
@@ -1629,11 +1565,11 @@
                 <button onclick="jugarRuleta('numero')" style="background: #FCCF47; border: none; padding: 16px; border-radius: 16px; color: black; grid-column: span 2;">🎯 NÚMERO EXACTO</button>
             </div>
             
-            <div id="ruleta-result" style="text-align: center; margin: 20px; font-size: 20px;"></div>
+            <div id="ruleta-result" style="text-align: center; margin: 20px;"></div>
         </div>
     </div>
 
-    <!-- ===== MODAL TRAGAPERRAS ===== -->
+    <!-- ========== MODAL TRAGAPERRAS ========== -->
     <div class="modal" id="modalTragaperras">
         <div class="modal-header">
             <div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1647,19 +1583,24 @@
                 <div style="width: 80px; height: 100px; background: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; color: black; box-shadow: 0 8px 0 #aaa;" id="slot3">💎</div>
             </div>
             
+            <div class="flex-row">
+                <span>💰 Saldo: <span id="tragaperras-balance">0</span> 💎</span>
+                <span>🎲 Apuesta: <span id="tragaperras-bet">5</span> 💎</span>
+            </div>
+            
             <div class="bet-controls">
                 <button onclick="cambiarApuesta('tragaperras', -5)">-5</button>
-                <span id="tragaperras-bet">5</span>
+                <span id="tragaperras-bet-display">5</span>
                 <button onclick="cambiarApuesta('tragaperras', 5)">+5</button>
             </div>
             
-            <button onclick="jugarTragaperras()" style="background: #FCCF47; color: black; border: none; padding: 20px; border-radius: 30px; width: 100%; font-weight: 700; font-size: 18px; margin: 20px 0; box-shadow: 0 6px 0 #B45F00; cursor: pointer;">🎰 GIRAR</button>
+            <button onclick="jugarTragaperras()" style="background: #FCCF47; color: black; border: none; padding: 20px; border-radius: 30px; width: 100%; font-weight: 700; margin: 20px 0; box-shadow: 0 6px 0 #B45F00; cursor: pointer;">🎰 GIRAR</button>
             
-            <div id="tragaperras-result" style="text-align: center; font-size: 18px;"></div>
+            <div id="tragaperras-result" style="text-align: center;"></div>
         </div>
     </div>
 
-    <!-- ===== MODAL DADOS ===== -->
+    <!-- ========== MODAL DADOS ========== -->
     <div class="modal" id="modalDados">
         <div class="modal-header">
             <div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1668,28 +1609,33 @@
         
         <div class="game-area">
             <div style="display: flex; justify-content: center; gap: 30px; margin: 20px 0;">
-                <div class="dice" id="dado1" style="width: 80px; height: 80px; background: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; color: black;">⚀</div>
-                <div class="dice" id="dado2" style="width: 80px; height: 80px; background: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; color: black;">⚀</div>
+                <div class="dice" id="dado1">⚀</div>
+                <div class="dice" id="dado2">⚀</div>
             </div>
             <div style="font-size: 24px; text-align: center; margin: 16px;" id="dados-suma">Suma: 2</div>
             
+            <div class="flex-row">
+                <span>💰 Saldo: <span id="dados-balance">0</span> 💎</span>
+                <span>🎲 Apuesta: <span id="dados-bet">10</span> 💎</span>
+            </div>
+            
             <div class="bet-controls">
                 <button onclick="cambiarApuesta('dados', -10)">-10</button>
-                <span id="dados-bet">10</span>
+                <span id="dados-bet-display">10</span>
                 <button onclick="cambiarApuesta('dados', 10)">+10</button>
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-                <button onclick="jugarDados('menor')" style="background: #3B8BFF; border: none; padding: 16px; border-radius: 16px; color: white;">⬇️ MENOR</button>
-                <button onclick="jugarDados('mayor')" style="background: #FF9F0A; border: none; padding: 16px; border-radius: 16px; color: white;">⬆️ MAYOR</button>
-                <button onclick="jugarDados('exacto')" style="background: #FCCF47; border: none; padding: 16px; border-radius: 16px; color: black;">🎯 EXACTO</button>
+                <button onclick="jugarDados('menor')" style="background: #3B8BFF; border: none; padding: 16px; border-radius: 16px; color: white; font-weight: 600;">⬇️ MENOR (2-6)</button>
+                <button onclick="jugarDados('mayor')" style="background: #FF9F0A; border: none; padding: 16px; border-radius: 16px; color: white; font-weight: 600;">⬆️ MAYOR (8-12)</button>
+                <button onclick="jugarDados('exacto')" style="background: #FCCF47; border: none; padding: 16px; border-radius: 16px; color: black; font-weight: 600;">🎯 EXACTO (7)</button>
             </div>
             
-            <div id="dados-result" style="text-align: center; margin: 20px; font-size: 20px;"></div>
+            <div id="dados-result" style="text-align: center; margin: 20px;"></div>
         </div>
     </div>
 
-    <!-- ===== MODAL LOTERÍA ===== -->
+    <!-- ========== MODAL LOTERÍA ========== -->
     <div class="modal" id="modalLoteria">
         <div class="modal-header">
             <div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1699,9 +1645,14 @@
         <div class="game-area">
             <div class="number-display" id="loteria-number">0000</div>
             
+            <div class="flex-row">
+                <span>💰 Saldo: <span id="loteria-balance">0</span> 💎</span>
+                <span>🎲 Boletos: <span id="loteria-bet">1</span> 💎 c/u</span>
+            </div>
+            
             <div class="bet-controls">
                 <button onclick="cambiarApuesta('loteria', -1)">-1</button>
-                <span id="loteria-bet">1</span>
+                <span id="loteria-bet-display">1</span>
                 <button onclick="cambiarApuesta('loteria', 1)">+1</button>
             </div>
             
@@ -1709,18 +1660,18 @@
             <button onclick="jugarLoteria()" style="background: #FCCF47; border: none; padding: 16px; border-radius: 20px; width: 100%; margin: 10px 0; font-weight: 700; box-shadow: 0 5px 0 #B45F00; cursor: pointer;">🎲 INICIAR SORTEO</button>
             
             <div id="loteria-boletos" style="margin: 20px 0;"></div>
-            <div id="loteria-result" style="text-align: center; font-size: 16px;"></div>
+            <div id="loteria-result" style="text-align: center;"></div>
         </div>
     </div>
 
-    <!-- ===== MODAL EVENTO ===== -->
+    <!-- ========== MODAL EVENTO ========== -->
     <div class="modal" id="modalEvent">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
             <div class="modal-title">Evento semanal</div>
         </div>
         
-        <div style="text-align: center; padding: 10px;">
+        <div style="text-align: center;">
             <div style="font-size: 72px; margin: 20px 0;" id="event-icon">
                 <i class="fa-solid fa-star" style="color: #FF9F0A;"></i>
             </div>
@@ -1760,7 +1711,7 @@
         </div>
     </div>
 
-    <!-- ===== MODAL AMIGOS ===== -->
+    <!-- ========== MODAL AMIGOS ========== -->
     <div class="modal" id="modalFriends">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1785,14 +1736,14 @@
         </div>
     </div>
 
-    <!-- ===== MODAL RECOMPENSA DIARIA ===== -->
+    <!-- ========== MODAL RECOMPENSA DIARIA ========== -->
     <div class="modal" id="modalDailyReward">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
             <div class="modal-title">Recompensa diaria</div>
         </div>
         
-        <div style="text-align: center; padding: 10px;">
+        <div style="text-align: center;">
             <div style="font-size: 64px; margin: 20px 0;">
                 <i class="fa-solid fa-calendar-check" style="color: #FF9F0A;"></i>
             </div>
@@ -1800,11 +1751,11 @@
             <div class="building-stats">
                 <div class="stat-row">
                     <span>Día actual</span>
-                    <span class="stat-value" id="current-day">0</span>
+                    <span id="current-day">0</span>
                 </div>
                 <div class="stat-row">
                     <span>Recompensa hoy</span>
-                    <span class="stat-value" id="today-reward">0 💎</span>
+                    <span id="today-reward">0 💎</span>
                 </div>
             </div>
             
@@ -1812,24 +1763,22 @@
                 Cargando...
             </div>
             
-            <div style="margin: 24px 0;">
-                <div class="daily-calendar" id="daily-calendar"></div>
-            </div>
+            <div class="daily-calendar" id="daily-calendar"></div>
             
-            <button onclick="claimDailyReward()" id="claim-daily-btn" style="background: #FF9F0A; border: none; border-radius: 30px; padding: 18px; width: 100%; font-weight: 700; font-size: 16px; color: black; box-shadow: 0 6px 0 #B45F00; cursor: pointer;">
+            <button onclick="claimDailyReward()" id="claim-daily-btn" style="background: #FF9F0A; border: none; border-radius: 30px; padding: 18px; width: 100%; font-weight: 700; font-size: 16px; color: black; margin: 16px 0; box-shadow: 0 6px 0 #B45F00; cursor: pointer;">
                 <i class="fa-solid fa-gift"></i> RECLAMAR
             </button>
         </div>
     </div>
 
-    <!-- ===== MODAL PARQUE (ANUNCIOS) ===== -->
+    <!-- ========== MODAL PARQUE (ANUNCIOS) ========== -->
     <div class="modal" id="modalAds">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
             <div class="modal-title">Parque</div>
         </div>
         
-        <div style="text-align: center; padding: 10px;">
+        <div style="text-align: center;">
             <div style="font-size: 64px; margin: 20px 0;">
                 <i class="fa-solid fa-tree" style="color: #34C759;"></i>
             </div>
@@ -1846,10 +1795,10 @@
             </div>
             
             <div id="ads-status" style="background: var(--bg-elevated); padding: 20px; border-radius: 20px; margin: 20px 0;">
-                <div class="ads-loading" style="display: inline-block;"></div> Cargando...
+                <div class="ads-loading"></div> Cargando...
             </div>
             
-            <div id="ads-timer-display" style="font-size: 20px; margin: 16px; color: #FF9F0A;"></div>
+            <div id="ads-timer-display" style="font-size: 20px; margin: 16px;"></div>
             
             <button onclick="showAd()" id="watch-ad-btn" style="background: #FF9F0A; border: none; border-radius: 30px; padding: 18px; width: 100%; font-weight: 700; font-size: 16px; color: black; box-shadow: 0 6px 0 #B45F00; cursor: pointer;" disabled>
                 <i class="fa-solid fa-circle-play"></i> VER ANUNCIO
@@ -1857,7 +1806,7 @@
         </div>
     </div>
 
-    <!-- ===== MODAL RETIRO (SIN NÚMERO DE SEMANA) ===== -->
+    <!-- ========== MODAL RETIRO ========== -->
     <div class="modal" id="modalWithdraw">
         <div class="modal-header">
             <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
@@ -1868,9 +1817,9 @@
             <div class="day-badge" id="withdraw-day-badge">CARGANDO</div>
             
             <div class="ton-balance" id="available-diamonds">0</div>
-            <div style="font-size: 16px; color: var(--text-secondary); margin-bottom: 24px;">diamantes disponibles</div>
+            <div style="margin-bottom: 24px;">diamantes disponibles</div>
 
-            <div class="building-stats" style="margin: 20px 0;">
+            <div class="building-stats">
                 <div class="stat-row">
                     <span>Pool total</span>
                     <span id="pool-total">0 TON</span>
@@ -1890,7 +1839,7 @@
         </div>
     </div>
 
-    <!-- ===== NAVBAR ===== -->
+    <!-- ========== NAVBAR ========== -->
     <div class="navbar">
         <div class="nav-item active" onclick="openCentral()">
             <i class="fa-solid fa-city"></i>
@@ -1910,7 +1859,7 @@
         </div>
     </div>
 
-    <!-- ===== SCRIPTS ===== -->
+    <!-- SCRIPTS -->
     <script src="game.js"></script>
 </body>
 </html>
