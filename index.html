@@ -3,32 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TON CITY · Juegos Profesionales</title>
+    <title>TON CITY · Minijuegos Profesionales</title>
     
-    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <!-- TON Connect -->
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    
-    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- AdsGram 2026 -->
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-    
-    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     
     <style>
-        /* ===== RESET Y VARIABLES ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         :root {
             --primary: #FCCF47;
             --primary-dark: #E5B82C;
@@ -46,1820 +30,367 @@
             --glass-border: rgba(255, 255, 255, 0.08);
             --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
         }
-
-        body {
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            padding-bottom: 90px;
-            overflow-x: hidden;
-            animation: fadeIn 0.5s ease;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 20% 30%, rgba(191, 90, 242, 0.15), transparent 50%),
-                        radial-gradient(circle at 80% 70%, rgba(252, 207, 71, 0.15), transparent 50%);
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        /* ===== HEADER ===== */
-        .app-header {
-            padding: 24px 20px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            animation: slideUp 0.4s ease;
-        }
-
-        .user-greeting {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .greeting-label {
-            font-size: 13px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        #user-display {
-            font-size: 20px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff, #FCCF47);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .premium-badge {
-            background: linear-gradient(135deg, #FCCF47, #F59E0B);
-            color: #000;
-            font-weight: 800;
-            padding: 6px 16px;
-            border-radius: 30px;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 4px 0 #B45F00;
-            animation: pulse 2s infinite;
-        }
-
-        .premium-badge i {
-            font-size: 14px;
-        }
-
-        /* ===== BALANCE CARD ===== */
-        .balance-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 28px;
-            margin: 8px 20px 20px;
-            padding: 24px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: var(--shadow-lg);
-            animation: slideUp 0.5s ease;
-        }
-
-        .balance-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .balance-label {
-            font-size: 13px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .balance-value {
-            font-size: 44px;
-            font-weight: 800;
-            color: var(--primary);
-            line-height: 1;
-            text-shadow: 0 4px 10px rgba(252, 207, 71, 0.3);
-        }
-
-        .balance-unit {
-            font-size: 18px;
-            color: var(--text-secondary);
-            margin-left: 4px;
-        }
-
-        .rate-badge {
-            background: rgba(52, 199, 89, 0.15);
-            border: 1px solid rgba(52, 199, 89, 0.3);
-            border-radius: 40px;
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            backdrop-filter: blur(5px);
-        }
-
-        .rate-badge i {
-            color: var(--accent-green);
-            font-size: 18px;
-        }
-
-        .rate-badge span {
-            font-weight: 700;
-            color: var(--accent-green);
-        }
-
-        /* ===== BANNERS ===== */
-        .action-banner {
-            background: linear-gradient(135deg, #1E2332, #141824);
-            border-radius: 20px;
-            margin: 0 20px 12px;
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            border-left: 4px solid var(--primary);
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 8px 0 #0A0C14;
-            animation: slideUp 0.6s ease;
-        }
-
-        .action-banner:active {
-            transform: translateY(4px);
-            box-shadow: 0 4px 0 #0A0C14;
-        }
-
-        .banner-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(252, 207, 71, 0.15);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-            font-size: 24px;
-        }
-
-        .banner-content {
-            flex: 1;
-        }
-
-        .banner-title {
-            font-weight: 700;
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
-
-        .banner-subtitle {
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-
-        /* ===== TÍTULOS DE SECCIÓN ===== */
-        .section-title {
-            margin: 24px 20px 16px;
-            font-size: 20px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: slideUp 0.7s ease;
-        }
-
-        .section-title i {
-            color: var(--primary);
-            font-size: 24px;
-        }
-
-        /* ===== GRID DE EDIFICIOS ===== */
-        .grid-4x2 {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            padding: 0 20px;
-            animation: slideUp 0.8s ease;
-        }
-
-        .building-card {
-            background: var(--bg-card);
-            border-radius: 24px;
-            padding: 20px 16px;
-            border: 1px solid var(--glass-border);
-            transition: all 0.2s;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 0 #0A0C14;
-        }
-
-        .building-card:active {
-            transform: translateY(5px);
-            box-shadow: 0 5px 0 #0A0C14;
-        }
-
-        .building-card.event-active {
-            border: 2px solid var(--primary);
-            box-shadow: 0 0 30px rgba(252, 207, 71, 0.4);
-        }
-
-        .building-icon {
-            width: 64px;
-            height: 64px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            margin-bottom: 12px;
-        }
-
-        .building-name {
-            font-weight: 700;
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
-
-        .building-level {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-
-        .building-badge {
-            background: var(--primary);
-            color: #000;
-            font-size: 11px;
-            font-weight: 800;
-            padding: 4px 12px;
-            border-radius: 30px;
-            margin-top: 4px;
-            letter-spacing: 0.5px;
-        }
-
-        /* ===== OVERLAY ===== */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
-            z-index: 90;
-            display: none;
-        }
-
-        /* ===== MODALES BASE ===== */
-        .modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: calc(100% - 32px);
-            max-width: 420px;
-            max-height: 85vh;
-            background: var(--bg-card);
-            border-radius: 32px;
-            padding: 24px 20px;
-            z-index: 100;
-            display: none;
-            overflow-y: auto;
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--shadow-lg);
-            animation: modalSlide 0.3s ease;
-        }
-
-        .modal-full {
-            width: 100%;
-            max-width: 100%;
-            height: 100%;
-            max-height: 100%;
-            top: 0;
-            left: 0;
-            transform: none;
-            border-radius: 0;
-            background: var(--bg-dark);
-            display: none;
-            padding: 70px 20px 20px;
-        }
-
-        @keyframes modalSlide {
-            from { opacity: 0; transform: translate(-50%, -40%); }
-            to { opacity: 1; transform: translate(-50%, -50%); }
-        }
-
-        .modal-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 24px;
-            position: sticky;
-            top: 0;
-            background: var(--bg-card);
-            z-index: 10;
-            padding: 10px 0;
-        }
-
-        .modal-full .modal-header {
-            background: var(--bg-dark);
-        }
-
-        .modal-back {
-            width: 44px;
-            height: 44px;
-            background: var(--bg-elevated);
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: all 0.2s;
-        }
-
-        .modal-back:active {
-            background: var(--bg-card);
-            transform: scale(0.94);
-        }
-
-        .modal-title {
-            font-size: 22px;
-            font-weight: 700;
-            flex: 1;
-            background: linear-gradient(135deg, #fff, var(--primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* ===== PESTAÑAS ===== */
-        .tabs {
-            display: flex;
-            gap: 8px;
-            background: var(--bg-elevated);
-            padding: 6px;
-            border-radius: 40px;
-            margin-bottom: 24px;
-        }
-
-        .tab {
-            flex: 1;
-            text-align: center;
-            padding: 12px;
-            border-radius: 40px;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: var(--text-secondary);
-        }
-
-        .tab.active {
-            background: var(--primary);
-            color: #000;
-        }
-
-        /* ===== ESTADÍSTICAS DE EDIFICIOS ===== */
-        .building-stats {
-            background: var(--bg-elevated);
-            border-radius: 24px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            font-size: 15px;
-        }
-
-        .stat-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .stat-label {
-            color: var(--text-secondary);
-        }
-
-        .stat-value {
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .badge {
-            background: var(--primary);
-            color: #000;
-            padding: 6px 16px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 13px;
-        }
-
-        /* ===== BOTÓN DE MEJORA ===== */
-        .upgrade-btn {
-            background: var(--primary);
-            color: #000;
-            border: none;
-            border-radius: 20px;
-            padding: 18px;
-            font-weight: 800;
-            font-size: 16px;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 8px;
-            box-shadow: 0 6px 0 #B45F00;
-        }
-
-        .upgrade-btn:active {
-            transform: translateY(6px);
-            box-shadow: none;
-        }
-
-        .upgrade-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: 0 6px 0 #B45F00;
-        }
-
-        /* ===== ÁREA DE JUEGOS ===== */
-        .game-area {
-            background: var(--bg-elevated);
-            border-radius: 28px;
-            padding: 24px 20px;
-            margin: 20px 0;
-            border: 2px solid rgba(252, 207, 71, 0.2);
-            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
-        }
-
-        /* ===== HOSPITAL ===== */
-        .health-bar {
-            height: 28px;
-            background: #2A2F45;
-            border-radius: 30px;
-            overflow: hidden;
-            margin: 16px 0;
-            border: 2px solid #000;
-        }
-
-        .health-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent-green), var(--accent-red));
-            width: 100%;
-            transition: width 0.3s ease;
-        }
-
-        .treatment-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin: 20px 0;
-        }
-
-        .treatment-btn {
-            background: var(--bg-card);
-            border: 2px solid var(--accent-red);
-            border-radius: 20px;
-            padding: 18px 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 5px 0 #5A1F1F;
-            color: #fff;
-            text-align: center;
-        }
-
-        .treatment-btn:active {
-            transform: translateY(5px);
-            box-shadow: none;
-        }
-
-        /* ===== ESCUELA ===== */
-        .catch-game {
-            position: relative;
-            height: 380px;
-            background: linear-gradient(180deg, #1E1F2C, #0A0C14);
-            border-radius: 28px;
-            overflow: hidden;
-            border: 3px solid var(--accent-purple);
-            margin: 16px 0;
-            box-shadow: 0 12px 0 #3B1F5A;
-        }
-
-        .falling-item {
-            position: absolute;
-            font-size: 48px;
-            cursor: pointer;
-            filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.8));
-            animation: fall linear forwards;
-            z-index: 5;
-            user-select: none;
-        }
-
-        @keyframes fall {
-            from { top: -60px; }
-            to { top: 380px; }
-        }
-
-        .basket {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 64px;
-            filter: drop-shadow(0 8px 0 #4A2C6B);
-            z-index: 10;
-            transition: left 0.05s;
-        }
-
-        /* ===== FÁBRICA ===== */
-        .product-display {
-            font-size: 80px;
-            text-align: center;
-            margin: 16px 0;
-            filter: drop-shadow(0 8px 0 #5B3E8C);
-            animation: float 2s infinite;
-        }
-
-        .assembly-line {
-            display: flex;
-            gap: 16px;
-            overflow-x: auto;
-            padding: 24px 16px;
-            background: var(--bg-card);
-            border-radius: 24px;
-            margin: 20px 0;
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary) var(--bg-elevated);
-        }
-
-        .assembly-line::-webkit-scrollbar {
-            height: 6px;
-        }
-
-        .assembly-line::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 10px;
-        }
-
-        .part {
-            min-width: 90px;
-            height: 90px;
-            background: var(--accent-purple);
-            border-radius: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 44px;
-            box-shadow: 0 8px 0 #4A2C6B;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .part:active {
-            transform: translateY(8px);
-            box-shadow: none;
-        }
-
-        /* ===== PISCINA ===== */
-        .swim-game {
-            position: relative;
-            height: 380px;
-            background: linear-gradient(180deg, #1A3B4E, #0C1A24);
-            border-radius: 28px;
-            overflow: hidden;
-            border: 3px solid var(--accent-blue);
-            box-shadow: 0 12px 0 #123456;
-            margin: 16px 0;
-            cursor: pointer;
-        }
-
-        .lane {
-            height: 95px;
-            border-bottom: 2px dashed rgba(59, 139, 255, 0.3);
-            position: relative;
-        }
-
-        .swimmer {
-            position: absolute;
-            font-size: 64px;
-            left: 20px;
-            transition: top 0.1s;
-            filter: drop-shadow(0 4px 0 #1E3B5A);
-            z-index: 10;
-        }
-
-        .obstacle {
-            position: absolute;
-            font-size: 48px;
-            color: var(--accent-red);
-            filter: drop-shadow(0 4px 4px black);
-        }
-
-        .timer-circle {
-            width: 80px;
-            height: 80px;
-            background: var(--bg-elevated);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            font-weight: 800;
-            border: 4px solid var(--primary);
-            margin: 16px auto;
-            box-shadow: 0 4px 0 #B45F00;
-        }
-
-        /* ===== BOTONES DE ANUNCIOS ===== */
-        .ad-options {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        .ad-btn {
-            flex: 1;
-            min-width: 130px;
-            background: var(--accent-orange);
-            border: none;
-            border-radius: 20px;
-            padding: 16px;
-            color: #000;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            cursor: pointer;
-            box-shadow: 0 6px 0 #B45F00;
-            transition: all 0.2s;
-            font-size: 14px;
-        }
-
-        .ad-btn:active {
-            transform: translateY(6px);
-            box-shadow: none;
-        }
-
-        .ad-btn i {
-            font-size: 16px;
-        }
-
-        /* ===== CASINO ===== */
-        .casino-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin: 20px 0;
-        }
-
-        .casino-card {
-            background: var(--bg-elevated);
-            border-radius: 24px;
-            padding: 24px 16px;
-            text-align: center;
-            border: 2px solid var(--glass-border);
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 8px 0 #0A0C14;
-        }
-
-        .casino-card:active {
-            transform: translateY(4px);
-            box-shadow: 0 4px 0 #0A0C14;
-        }
-
-        .casino-card i {
-            font-size: 36px;
-            color: var(--primary);
-            margin-bottom: 12px;
-        }
-
-        .casino-card div {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .casino-card small {
-            color: var(--text-secondary);
-            font-size: 12px;
-        }
-
-        /* ===== JUEGOS DE CASINO ===== */
-        .number-display {
-            font-size: 64px;
-            font-weight: 800;
-            font-family: monospace;
-            background: var(--bg-card);
-            padding: 30px;
-            border-radius: 28px;
-            margin: 16px 0;
-            text-align: center;
-            border: 2px solid var(--primary);
-        }
-
-        .bet-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            margin: 24px 0;
-        }
-
-        .bet-controls button {
-            width: 70px;
-            height: 70px;
-            border-radius: 40px;
-            font-size: 28px;
-            background: var(--bg-elevated);
-            border: none;
-            color: #fff;
-            font-weight: 700;
-            box-shadow: 0 5px 0 #0A0C14;
-            cursor: pointer;
-        }
-
-        .bet-controls button:active {
-            transform: translateY(5px);
-            box-shadow: none;
-        }
-
-        .bet-controls span {
-            font-size: 36px;
-            min-width: 100px;
-            text-align: center;
-            color: var(--primary);
-            font-weight: 800;
-        }
-
-        .dice {
-            width: 80px;
-            height: 80px;
-            background: white;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            color: black;
-            box-shadow: 0 8px 0 #aaa;
-        }
-
-        /* ===== RETIRO ===== */
-        .withdraw-card {
-            background: linear-gradient(145deg, #1E2332, #141824);
-            border-radius: 28px;
-            padding: 24px;
-            text-align: center;
-            margin: 16px 0;
-            border: 2px solid var(--primary);
-        }
-
-        .ton-balance {
-            font-size: 56px;
-            font-weight: 800;
-            color: var(--primary);
-            margin: 16px 0;
-        }
-
-        .day-badge {
-            display: inline-block;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-weight: 700;
-            margin: 16px 0;
-            font-size: 14px;
-        }
-
-        .day-sunday {
-            background: var(--primary);
-            color: #000;
-        }
-
-        .day-other {
-            background: var(--bg-elevated);
-            color: var(--text-secondary);
-        }
-
-        .withdraw-btn {
-            background: var(--accent-green);
-            color: #000;
-            border: none;
-            border-radius: 24px;
-            padding: 20px;
-            font-weight: 800;
-            font-size: 18px;
-            width: 100%;
-            margin: 10px 0;
-            box-shadow: 0 6px 0 #1F7B3E;
-            cursor: pointer;
-        }
-
-        .withdraw-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        .withdraw-btn.secondary {
-            background: var(--accent-blue);
-            box-shadow: 0 6px 0 #123456;
-        }
-
-        /* ===== NAVBAR ===== */
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid var(--glass-border);
-            display: flex;
-            justify-content: space-around;
-            padding: 16px 20px 24px;
-            z-index: 50;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            color: var(--text-secondary);
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .nav-item i {
-            font-size: 24px;
-        }
-
-        .nav-item.active {
-            color: var(--primary);
-        }
-
-        /* ===== UTILIDADES ===== */
-        .flex-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 12px 0;
-        }
-
-        .text-win {
-            color: var(--accent-green);
-            font-weight: 700;
-        }
-
-        .text-lose {
-            color: var(--accent-red);
-            font-weight: 700;
-        }
-
-        .progress-bar {
-            background: var(--bg-elevated);
-            height: 12px;
-            border-radius: 30px;
-            overflow: hidden;
-            margin: 16px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--primary);
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        .referral-box {
-            background: var(--bg-elevated);
-            border-radius: 24px;
-            padding: 24px;
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .referral-code {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--primary);
-            letter-spacing: 2px;
-            margin: 16px 0;
-            padding: 16px;
-            background: var(--bg-card);
-            border-radius: 20px;
-            border: 2px dashed var(--primary);
-        }
-
-        .copy-btn {
-            background: var(--accent-green);
-            color: #000;
-            border: none;
-            border-radius: 30px;
-            padding: 16px 30px;
-            font-weight: 700;
-            font-size: 16px;
-            margin-top: 16px;
-            box-shadow: 0 5px 0 #1F7B3E;
-            cursor: pointer;
-        }
-
-        .copy-btn:active {
-            transform: translateY(5px);
-            box-shadow: none;
-        }
-
-        .daily-calendar {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 8px;
-            margin: 20px 0;
-        }
-
-        .daily-day {
-            background: var(--bg-elevated);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 10px 4px;
-            text-align: center;
-            font-size: 12px;
-        }
-
-        .daily-day.completed {
-            background: var(--accent-green);
-            color: #000;
-        }
-
-        .daily-day.current {
-            border: 2px solid var(--primary);
-        }
-
-        .event-multiplier-info {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin: 20px 0;
-        }
-
-        .multiplier-card {
-            background: var(--bg-elevated);
-            padding: 20px;
-            border-radius: 20px;
-            text-align: center;
-            min-width: 120px;
-        }
-
-        .multiplier-value {
-            font-size: 48px;
-            font-weight: 800;
-            color: var(--primary);
-            margin-top: 8px;
-        }
-
-        .ads-loading {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: var(--primary);
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 480px) {
-            .balance-value { font-size: 36px; }
-            .building-card { padding: 16px 12px; }
-            .building-icon { width: 52px; height: 52px; font-size: 28px; }
-            .game-area { padding: 20px 16px; }
-            .number-display { font-size: 48px; padding: 20px; }
-            .bet-controls button { width: 55px; height: 55px; font-size: 24px; }
-            .bet-controls span { font-size: 28px; min-width: 70px; }
-        }
+        body { background: var(--bg-dark); color: var(--text-primary); min-height: 100vh; padding-bottom: 90px; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 20% 30%, rgba(191, 90, 242, 0.15), transparent 50%), radial-gradient(circle at 80% 70%, rgba(252, 207, 71, 0.15), transparent 50%); z-index: -1; pointer-events: none; }
+        .app-header { padding: 24px 20px 12px; display: flex; align-items: center; justify-content: space-between; }
+        .user-greeting { display: flex; flex-direction: column; gap: 2px; }
+        .greeting-label { font-size: 13px; color: var(--text-secondary); text-transform: uppercase; }
+        #user-display { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #fff, #FCCF47); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .premium-badge { background: linear-gradient(135deg, #FCCF47, #F59E0B); color: #000; font-weight: 800; padding: 6px 16px; border-radius: 30px; font-size: 13px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 0 #B45F00; animation: pulse 2s infinite; }
+        .balance-card { background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 28px; margin: 8px 20px 20px; padding: 24px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-lg); }
+        .balance-value { font-size: 44px; font-weight: 800; color: var(--primary); line-height: 1; text-shadow: 0 4px 10px rgba(252, 207, 71, 0.3); }
+        .balance-unit { font-size: 18px; color: var(--text-secondary); margin-left: 4px; }
+        .rate-badge { background: rgba(52, 199, 89, 0.15); border: 1px solid rgba(52, 199, 89, 0.3); border-radius: 40px; padding: 12px 20px; display: flex; align-items: center; gap: 10px; backdrop-filter: blur(5px); }
+        .rate-badge i { color: var(--accent-green); font-size: 18px; }
+        .rate-badge span { font-weight: 700; color: var(--accent-green); }
+        .action-banner { background: linear-gradient(135deg, #1E2332, #141824); border-radius: 20px; margin: 0 20px 12px; padding: 16px 20px; display: flex; align-items: center; gap: 16px; border-left: 4px solid var(--primary); cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 0 #0A0C14; }
+        .action-banner:active { transform: translateY(4px); box-shadow: 0 4px 0 #0A0C14; }
+        .section-title { margin: 24px 20px 16px; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .grid-4x2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 0 20px; }
+        .building-card { background: var(--bg-card); border-radius: 24px; padding: 20px 16px; border: 1px solid var(--glass-border); transition: all 0.2s; cursor: pointer; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 10px 0 #0A0C14; }
+        .building-card:active { transform: translateY(5px); box-shadow: 0 5px 0 #0A0C14; }
+        .building-card.event-active { border: 2px solid var(--primary); box-shadow: 0 0 30px rgba(252, 207, 71, 0.4); }
+        .building-icon { width: 64px; height: 64px; background: rgba(255, 255, 255, 0.05); border-radius: 32px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 12px; }
+        .building-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+        .building-level { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+        .building-badge { background: var(--primary); color: #000; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 30px; margin-top: 4px; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 90; display: none; }
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: calc(100% - 32px); max-width: 420px; max-height: 80vh; background: var(--bg-card); border-radius: 32px; padding: 24px 20px; z-index: 100; display: none; overflow-y: auto; border: 1px solid var(--glass-border); box-shadow: var(--shadow-lg); }
+        .modal-full { width: 100%; max-width: 100%; height: 100%; max-height: 100%; top: 0; left: 0; transform: none; border-radius: 0; background: var(--bg-dark); padding: 70px 20px 20px; }
+        .modal-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; position: sticky; top: 0; background: var(--bg-card); z-index: 10; padding: 10px 0; }
+        .modal-full .modal-header { background: var(--bg-dark); }
+        .modal-back { width: 44px; height: 44px; background: var(--bg-elevated); border-radius: 30px; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; color: var(--text-secondary); }
+        .modal-title { font-size: 22px; font-weight: 700; flex: 1; background: linear-gradient(135deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .tabs { display: flex; gap: 8px; background: var(--bg-elevated); padding: 6px; border-radius: 40px; margin-bottom: 24px; }
+        .tab { flex: 1; text-align: center; padding: 12px; border-radius: 40px; font-weight: 700; font-size: 14px; cursor: pointer; color: var(--text-secondary); transition: all 0.2s; }
+        .tab.active { background: var(--primary); color: #000; }
+        .building-stats { background: var(--bg-elevated); border-radius: 24px; padding: 20px; margin-bottom: 20px; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 15px; }
+        .stat-label { color: var(--text-secondary); }
+        .stat-value { font-weight: 700; color: var(--primary); }
+        .upgrade-btn { background: var(--primary); color: #000; border: none; border-radius: 20px; padding: 18px; font-weight: 800; font-size: 16px; width: 100%; cursor: pointer; box-shadow: 0 6px 0 #B45F00; transition: all 0.2s; }
+        .upgrade-btn:active { transform: translateY(6px); box-shadow: none; }
+        .game-area { background: var(--bg-elevated); border-radius: 28px; padding: 24px 20px; margin: 20px 0; border: 2px solid rgba(252, 207, 71, 0.2); }
+        .lives-container { display: flex; justify-content: center; gap: 12px; margin: 16px 0; }
+        .life { width: 32px; height: 32px; background: #334155; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .life.active { background: var(--accent-green); }
+        .revive-btn { background: var(--accent-orange); border: none; border-radius: 30px; padding: 12px; margin-top: 16px; font-weight: 700; cursor: pointer; width: 100%; }
+        .sequence-display { display: flex; justify-content: center; gap: 16px; margin: 20px 0; flex-wrap: wrap; }
+        .sequence-card { width: 80px; height: 80px; background: var(--bg-card); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; border: 2px solid var(--primary); transition: 0.2s; }
+        .sequence-card.highlight { background: var(--primary); color: #000; transform: scale(1.1); }
+        .pupitres-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
+        .pupitre { background: var(--bg-card); border-radius: 16px; padding: 20px; text-align: center; font-size: 28px; cursor: pointer; border: 2px solid var(--glass-border); transition: 0.1s; }
+        .pupitre:active { background: var(--primary); transform: scale(0.95); }
+        .conveyor-belt { position: relative; height: 150px; background: #2A2F45; border-radius: 20px; overflow: hidden; margin: 20px 0; }
+        .moving-piece { position: absolute; width: 80px; height: 80px; background: var(--accent-purple); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; top: 35px; transition: left 0.05s linear; }
+        .calibration-zone { position: absolute; left: 50%; transform: translateX(-50%); width: 100px; height: 100px; background: rgba(59, 139, 255, 0.3); border: 3px solid var(--accent-blue); border-radius: 20px; top: 25px; }
+        .defect-indicator { text-align: center; margin: 10px 0; font-size: 14px; color: var(--accent-red); }
+        .slingshot-area { position: relative; height: 300px; background: linear-gradient(180deg, #1A3B4E, #0C1A24); border-radius: 28px; overflow: hidden; margin: 20px 0; cursor: grab; touch-action: none; }
+        .diver { position: absolute; bottom: 30px; left: 30px; font-size: 64px; transition: transform 0.1s; z-index: 10; }
+        .target { position: absolute; bottom: 30px; right: 30px; width: 80px; height: 80px; background: rgba(252, 207, 71, 0.3); border: 3px solid var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; transition: all 0.05s linear; }
+        .power-bar { height: 100px; width: 30px; background: #334155; border-radius: 20px; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); overflow: hidden; }
+        .power-fill { width: 100%; background: var(--primary); position: absolute; bottom: 0; height: 0%; transition: height 0.02s; }
+        .surgery-area { position: relative; width: 100%; height: 300px; background: #F4E6D8; border-radius: 28px; margin: 20px 0; overflow: hidden; }
+        .virus { position: absolute; width: 50px; height: 50px; background: #8B5A2B; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: grab; z-index: 10; }
+        .time-bar { height: 8px; background: #334155; border-radius: 10px; margin: 16px 0; overflow: hidden; }
+        .time-fill { height: 100%; background: var(--accent-green); width: 100%; transition: width 0.1s linear; }
+        .ad-options { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .ad-btn { flex: 1; min-width: 130px; background: var(--accent-orange); border: none; border-radius: 20px; padding: 16px; color: #000; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 6px 0 #B45F00; }
+        .ad-btn:active { transform: translateY(6px); box-shadow: none; }
+        .casino-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 20px 0; }
+        .casino-card { background: var(--bg-elevated); border-radius: 24px; padding: 24px 16px; text-align: center; border: 2px solid var(--glass-border); cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 0 #0A0C14; }
+        .casino-card:active { transform: translateY(4px); box-shadow: 0 4px 0 #0A0C14; }
+        .casino-card i { font-size: 36px; color: var(--primary); margin-bottom: 12px; }
+        .casino-card div { font-weight: 600; margin-bottom: 4px; }
+        .casino-card small { color: var(--text-secondary); font-size: 12px; }
+        .number-display { font-size: 64px; font-weight: 800; font-family: monospace; background: var(--bg-card); padding: 30px; border-radius: 28px; margin: 16px 0; text-align: center; border: 2px solid var(--primary); }
+        .bet-controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 24px 0; }
+        .bet-controls button { width: 70px; height: 70px; border-radius: 40px; font-size: 28px; background: var(--bg-elevated); border: none; color: #fff; font-weight: 700; box-shadow: 0 5px 0 #0A0C14; cursor: pointer; }
+        .bet-controls span { font-size: 36px; min-width: 100px; text-align: center; color: var(--primary); font-weight: 800; }
+        .game-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .dice-display { display: flex; justify-content: center; gap: 30px; margin: 20px 0; }
+        .dice { width: 80px; height: 80px; background: white; color: black; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; box-shadow: 0 8px 0 #aaa; }
+        .slot-machine { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
+        .slot { width: 80px; height: 100px; background: white; color: black; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; box-shadow: 0 8px 0 #aaa; }
+        .withdraw-card { background: linear-gradient(145deg, #1E2332, #141824); border-radius: 28px; padding: 24px; text-align: center; margin: 16px 0; border: 2px solid var(--primary); }
+        .day-badge { display: inline-block; padding: 12px 24px; border-radius: 40px; font-weight: 700; margin: 16px 0; font-size: 14px; }
+        .day-sunday { background: var(--primary); color: #000; }
+        .day-other { background: var(--bg-elevated); color: var(--text-secondary); }
+        .withdraw-btn { background: var(--accent-green); color: #000; border: none; border-radius: 24px; padding: 20px; font-weight: 800; font-size: 18px; width: 100%; margin: 10px 0; box-shadow: 0 6px 0 #1F7B3E; cursor: pointer; }
+        .withdraw-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--glass-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--glass-border); display: flex; justify-content: space-around; padding: 16px 20px 24px; z-index: 50; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-secondary); font-size: 12px; cursor: pointer; transition: all 0.2s; }
+        .nav-item i { font-size: 24px; }
+        .nav-item.active { color: var(--primary); }
+        .flex-row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
+        .badge { background: var(--primary); color: #000; padding: 6px 16px; border-radius: 30px; font-weight: 700; font-size: 13px; }
+        .copy-btn { background: var(--accent-green); color: #000; border: none; border-radius: 30px; padding: 16px 30px; font-weight: 700; cursor: pointer; box-shadow: 0 5px 0 #1F7B3E; margin-top: 16px; }
+        .daily-calendar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: 20px 0; }
+        .daily-day { background: var(--bg-elevated); border: 1px solid var(--glass-border); border-radius: 12px; padding: 10px 4px; text-align: center; font-size: 12px; }
+        .daily-day.completed { background: var(--accent-green); color: #000; }
+        .daily-day.current { border: 2px solid var(--primary); }
+        .progress-bar { background: var(--bg-elevated); height: 12px; border-radius: 30px; overflow: hidden; margin: 16px 0; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+        .ads-loading { display: inline-block; width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--primary); animation: spin 1s linear infinite; margin-right: 10px; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
     </style>
 </head>
 <body>
-    <!-- HEADER -->
     <div class="app-header">
         <div class="user-greeting">
             <span class="greeting-label">HOLA,</span>
             <span id="user-display">Cargando...</span>
         </div>
-        <div id="premium-badge" class="premium-badge" style="display: none;">
-            <i class="fa-solid fa-crown"></i> PREMIUM
-        </div>
+        <div id="premium-badge" class="premium-badge" style="display: none;"><i class="fa-solid fa-crown"></i> PREMIUM</div>
     </div>
 
-    <!-- BALANCE CARD -->
     <div class="balance-card">
         <div class="balance-info">
-            <span class="balance-label">TUS DIAMANTES</span>
-            <div>
-                <span class="balance-value" id="diamonds">0</span>
-                <span class="balance-unit">💎</span>
-            </div>
+            <div><span class="balance-value" id="diamonds">0</span><span class="balance-unit">💎</span></div>
         </div>
-        <div class="rate-badge">
-            <i class="fa-solid fa-bolt"></i>
-            <span>+<span id="rate">0</span>/h</span>
-        </div>
+        <div class="rate-badge"><i class="fa-solid fa-bolt"></i><span>+<span id="rate">0</span>/h</span></div>
     </div>
 
-    <!-- BANNERS -->
     <div id="daily-banner" class="action-banner" onclick="openDailyReward()">
         <div class="banner-icon"><i class="fa-solid fa-calendar-check"></i></div>
-        <div class="banner-content">
-            <div class="banner-title">Recompensa diaria</div>
-            <div class="banner-subtitle" id="daily-subtitle">¡Reclama tus diamantes gratis!</div>
-        </div>
-        <i class="fa-solid fa-chevron-right" style="color: var(--text-secondary);"></i>
+        <div class="banner-content"><div class="banner-title">Recompensa diaria</div><div class="banner-subtitle" id="daily-subtitle">¡Reclama tus diamantes gratis!</div></div>
+        <i class="fa-solid fa-chevron-right"></i>
     </div>
 
     <div id="event-banner" class="action-banner" style="border-left-color: #FF9F0A; display: none;" onclick="openEventModal()">
         <div class="banner-icon" id="event-icon"><i class="fa-solid fa-star"></i></div>
-        <div class="banner-content">
-            <div class="banner-title" id="event-title">Evento semanal</div>
-            <div class="banner-subtitle" id="event-subtitle">¡Recompensas x2 activas!</div>
-        </div>
-        <i class="fa-solid fa-chevron-right" style="color: var(--text-secondary);"></i>
+        <div class="banner-content"><div class="banner-title" id="event-title">Evento semanal</div><div class="banner-subtitle" id="event-subtitle">¡Recompensas x2 activas!</div></div>
+        <i class="fa-solid fa-chevron-right"></i>
     </div>
 
-    <!-- SECCIÓN: EDIFICIOS -->
-    <div class="section-title">
-        <i class="fa-solid fa-building"></i>
-        <span>Edificios</span>
-    </div>
+    <div class="section-title"><i class="fa-solid fa-building"></i><span>Edificios</span></div>
 
     <div class="grid-4x2">
-        <!-- Banco -->
-        <div class="building-card" onclick="openBank()">
-            <div class="building-icon" style="color: #FCCF47;"><i class="fa-solid fa-building-columns"></i></div>
-            <div class="building-name">Banco</div>
-            <div class="building-level">Compra TON</div>
-        </div>
-        
-        <!-- Tienda Premium -->
-        <div class="building-card" onclick="openStore()">
-            <div class="building-icon" style="color: #BF5AF2;"><i class="fa-solid fa-crown"></i></div>
-            <div class="building-name">Premium</div>
-            <div class="building-level">Planes VIP</div>
-        </div>
-        
-        <!-- Casino -->
-        <div class="building-card" onclick="openCasino()">
-            <div class="building-icon" style="color: #FF9F0A;"><i class="fa-solid fa-dice"></i></div>
-            <div class="building-name">Casino</div>
-            <div class="building-level">5 juegos</div>
-        </div>
-        
-        <!-- Parque -->
-        <div class="building-card" onclick="showAdsModal()">
-            <div class="building-icon" style="color: #34C759;"><i class="fa-solid fa-tree"></i></div>
-            <div class="building-name">Parque</div>
-            <div class="building-level" id="park-status">Ver anuncios</div>
-        </div>
-        
-        <!-- Piscina -->
-        <div class="building-card" onclick="openBuilding('piscina')">
-            <div class="building-icon" style="color: #3B8BFF;"><i class="fa-solid fa-water-ladder"></i></div>
-            <div class="building-name">Piscina</div>
-            <div class="building-level">Nivel <span id="lvl_piscina">0</span></div>
-            <div class="building-badge">🏊 ENTRENAR</div>
-        </div>
-        
-        <!-- Fábrica -->
-        <div class="building-card" onclick="openBuilding('fabrica')">
-            <div class="building-icon" style="color: #BF5AF2;"><i class="fa-solid fa-industry"></i></div>
-            <div class="building-name">Fábrica</div>
-            <div class="building-level">Nivel <span id="lvl_fabrica">0</span></div>
-            <div class="building-badge">🏭 MONTAR</div>
-        </div>
-        
-        <!-- Escuela -->
-        <div class="building-card" onclick="openBuilding('escuela')">
-            <div class="building-icon" style="color: #FF9F0A;"><i class="fa-solid fa-school"></i></div>
-            <div class="building-name">Escuela</div>
-            <div class="building-level">Nivel <span id="lvl_escuela">0</span></div>
-            <div class="building-badge">📚 ATRAPAR</div>
-        </div>
-        
-        <!-- Hospital -->
-        <div class="building-card" onclick="openBuilding('hospital')">
-            <div class="building-icon" style="color: #FF3B30;"><i class="fa-solid fa-hospital"></i></div>
-            <div class="building-name">Hospital</div>
-            <div class="building-level">Nivel <span id="lvl_hospital">0</span></div>
-            <div class="building-badge">🏥 CURAR</div>
-        </div>
+        <div class="building-card" onclick="openBank()"><div class="building-icon"><i class="fa-solid fa-building-columns"></i></div><div class="building-name">Banco</div><div class="building-level">Compra TON</div></div>
+        <div class="building-card" onclick="openStore()"><div class="building-icon"><i class="fa-solid fa-crown"></i></div><div class="building-name">Premium</div><div class="building-level">Planes VIP</div></div>
+        <div class="building-card" onclick="openCasino()"><div class="building-icon"><i class="fa-solid fa-dice"></i></div><div class="building-name">Casino</div><div class="building-level">5 juegos</div></div>
+        <div class="building-card" onclick="showAdsModal()"><div class="building-icon"><i class="fa-solid fa-tree"></i></div><div class="building-name">Parque</div><div class="building-level">Anuncios</div></div>
+        <div class="building-card" onclick="openBuilding('escuela')"><div class="building-icon"><i class="fa-solid fa-school"></i></div><div class="building-name">Escuela</div><div class="building-level">Nivel <span id="lvl_escuela">0</span></div><div class="building-badge">🧠 Mente Maestra</div></div>
+        <div class="building-card" onclick="openBuilding('fabrica')"><div class="building-icon"><i class="fa-solid fa-industry"></i></div><div class="building-name">Fábrica</div><div class="building-level">Nivel <span id="lvl_fabrica">0</span></div><div class="building-badge">🏭 Ensamblaje</div></div>
+        <div class="building-card" onclick="openBuilding('piscina')"><div class="building-icon"><i class="fa-solid fa-water-ladder"></i></div><div class="building-name">Piscina</div><div class="building-level">Nivel <span id="lvl_piscina">0</span></div><div class="building-badge">🏊 Salto Precisión</div></div>
+        <div class="building-card" onclick="openBuilding('hospital')"><div class="building-icon"><i class="fa-solid fa-hospital"></i></div><div class="building-name">Hospital</div><div class="building-level">Nivel <span id="lvl_hospital">0</span></div><div class="building-badge">🏥 Cirugía</div></div>
     </div>
 
-    <!-- OVERLAY -->
     <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
-    <!-- ========== MODAL CENTRAL ========== -->
+    <!-- MODAL CENTRAL -->
     <div class="modal" id="centralModal">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Edificio Central</div>
-        </div>
-        
-        <div class="building-stats">
-            <div class="stat-row">
-                <span>Tu Rango</span>
-                <span class="badge" id="user-rank-display">Ciudadano</span>
-            </div>
-            <div class="stat-row">
-                <span>Posición</span>
-                <span class="stat-value" id="user-position">#--</span>
-            </div>
-            <div class="stat-row">
-                <span>Proyección Semanal</span>
-                <span class="stat-value" id="projected-reward-display">0 TON</span>
-            </div>
-            <div class="stat-row">
-                <span>Pool Total</span>
-                <span class="stat-value" id="pool-total-display">0 TON</span>
-            </div>
-        </div>
-        
-        <div class="building-stats" style="background: var(--bg-card);">
-            <div class="stat-row"><span>💎 Diamante (1-3)</span><span>40% del pool</span></div>
-            <div class="stat-row"><span>🥇 Oro (4-10)</span><span>25% del pool</span></div>
-            <div class="stat-row"><span>🥈 Plata (11-50)</span><span>20% del pool</span></div>
-            <div class="stat-row"><span>👥 Ciudadano (Resto)</span><span>15% del pool (proporcional)</span></div>
-        </div>
-        
-        <div class="stat-row"><span>Piscina</span><span id="s_piscina">0</span></div>
-        <div class="stat-row"><span>Fábrica</span><span id="s_fabrica">0</span></div>
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Edificio Central</div></div>
+        <div class="building-stats"><div class="stat-row"><span>Tu Rango</span><span class="badge" id="user-rank-display">Ciudadano</span></div><div class="stat-row"><span>Posición</span><span id="user-position">#--</span></div><div class="stat-row"><span>Proyección Semanal</span><span id="projected-reward-display">0 TON</span></div></div>
+        <div class="building-stats"><div class="stat-row"><span>💎 Diamante (1-3)</span><span>40% del pool</span></div><div class="stat-row"><span>🥇 Oro (4-10)</span><span>25% del pool</span></div><div class="stat-row"><span>🥈 Plata (11-50)</span><span>20% del pool</span></div><div class="stat-row"><span>👥 Ciudadano (Resto)</span><span>15% del pool (proporcional)</span></div></div>
         <div class="stat-row"><span>Escuela</span><span id="s_escuela">0</span></div>
+        <div class="stat-row"><span>Fábrica</span><span id="s_fabrica">0</span></div>
+        <div class="stat-row"><span>Piscina</span><span id="s_piscina">0</span></div>
         <div class="stat-row"><span>Hospital</span><span id="s_hospital">0</span></div>
-        <div class="stat-row" style="border-top: 2px solid var(--glass-border); padding-top: 16px;"><span>TOTAL / h</span><span class="stat-value" id="s_total">0</span></div>
+        <div class="stat-row"><span>TOTAL / h</span><span id="s_total">0</span></div>
     </div>
 
-    <!-- ========== MODAL BANCO ========== -->
+    <!-- MODAL BANCO -->
     <div class="modal" id="modalBank">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Banco TON</div>
-        </div>
-        
-        <div id="ton-connect-button" style="margin: 20px 0;"></div>
-        
-        <div id="wallet-info" style="display: none; background: var(--bg-elevated); padding: 20px; border-radius: 20px; margin: 20px 0;">
-            <div class="flex-row">
-                <span>Wallet conectada</span>
-                <span class="badge" style="background: #34C759;">✓</span>
-            </div>
-            <button onclick="disconnectWallet()" style="background: none; border: 2px solid var(--glass-border); color: white; padding: 15px; border-radius: 20px; width: 100%; margin-top: 16px; cursor: pointer;">Desconectar</button>
-        </div>
-        
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Banco TON</div></div>
+        <div id="ton-connect-button"></div>
+        <div id="wallet-info" style="display: none; background: var(--bg-elevated); padding: 20px; border-radius: 20px; margin: 20px 0;"><div class="flex-row"><span>Wallet conectada</span><span class="badge" style="background:#34C759;">✓</span></div><button onclick="disconnectWallet()" style="background:none; border:2px solid var(--glass-border); padding:15px; border-radius:20px; width:100%; margin-top:16px;">Desconectar</button></div>
         <div id="bankList"></div>
     </div>
 
-    <!-- ========== MODAL TIENDA PREMIUM ========== -->
+    <!-- MODAL TIENDA PREMIUM -->
     <div class="modal" id="modalStore">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Tienda Premium</div>
-        </div>
-        
-        <div class="building-stats">
-            <div class="stat-row"><span>✨ Multiplicador x2</span><span class="badge">PREMIUM</span></div>
-            <div class="stat-row"><span>🚫 Sin anuncios</span><span class="badge">VIP</span></div>
-            <div class="stat-row"><span>🎮 Juegos x2 base</span><span class="badge">BONUS</span></div>
-        </div>
-        
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Tienda Premium</div></div>
+        <div class="building-stats"><div class="stat-row"><span>✨ Multiplicador x2</span><span class="badge">PREMIUM</span></div><div class="stat-row"><span>🚫 Sin anuncios</span><span class="badge">VIP</span></div></div>
         <div id="premium-plans"></div>
     </div>
 
-    <!-- ========== MODAL HOSPITAL ========== -->
-    <div class="modal modal-full" id="modalHospital">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Hospital · Nivel <span id="hospital-level-display">1</span></div>
-        </div>
-
-        <div class="tabs">
-            <div class="tab active" onclick="switchHospitalTab('upgrade')">MEJORAS</div>
-            <div class="tab" onclick="switchHospitalTab('game')">JUEGO</div>
-        </div>
-
-        <div id="hospital-upgrade-panel">
-            <div class="building-stats">
-                <div class="stat-row"><span>Nivel actual</span><span class="stat-value" id="hospital-level">0</span></div>
-                <div class="stat-row"><span>Producción</span><span class="stat-value" id="hospital-prod">0 💎/h</span></div>
-                <div class="stat-row"><span>Próxima mejora</span><span class="stat-value" id="hospital-price">7500 💎</span></div>
-            </div>
-            <button class="upgrade-btn" id="hospital-btn" onclick="buyUpgradeFromBuilding('hospital', 7500)">MEJORAR NIVEL</button>
-        </div>
-
-        <div id="hospital-game-panel" style="display: none;">
-            <div class="game-area">
-                <div class="flex-row">
-                    <span>❤️ <span id="patient-health">100</span>%</span>
-                    <span>🔥 Racha <span id="hospital-game-streak">0</span></span>
-                    <span>🏆 Récord <span id="hospital-best">0</span></span>
-                </div>
-
-                <div class="health-bar">
-                    <div class="health-fill" id="health-bar" style="width: 100%"></div>
-                </div>
-
-                <div id="patient-emoji" style="font-size: 80px; text-align: center; margin: 20px 0;">😷</div>
-                <div id="symptom-text" style="text-align: center; font-size: 18px; margin: 16px 0;">Cargando...</div>
-
-                <div class="treatment-grid" id="treatment-buttons"></div>
-
-                <div class="ad-options">
-                    <div class="ad-btn" onclick="useAdMultiplier('hospital')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div>
-                    <div class="ad-btn" onclick="useAdRevive('hospital')"><i class="fa-solid fa-rotate-left"></i> REVIVIR</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== MODAL ESCUELA ========== -->
+    <!-- MODAL ESCUELA -->
     <div class="modal modal-full" id="modalEscuela">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Escuela · Nivel <span id="escuela-level-display">1</span></div>
-        </div>
-
-        <div class="tabs">
-            <div class="tab active" onclick="switchEscuelaTab('upgrade')">MEJORAS</div>
-            <div class="tab" onclick="switchEscuelaTab('game')">JUEGO</div>
-        </div>
-
-        <div id="escuela-upgrade-panel">
-            <div class="building-stats">
-                <div class="stat-row"><span>Nivel actual</span><span class="stat-value" id="escuela-level">0</span></div>
-                <div class="stat-row"><span>Producción</span><span class="stat-value" id="escuela-prod">0 💎/h</span></div>
-                <div class="stat-row"><span>Próxima mejora</span><span class="stat-value" id="escuela-price">3000 💎</span></div>
-            </div>
-            <button class="upgrade-btn" id="escuela-btn" onclick="buyUpgradeFromBuilding('escuela', 3000)">MEJORAR NIVEL</button>
-        </div>
-
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Escuela · Nivel <span id="escuela-game-level">1</span></div></div>
+        <div class="tabs"><div class="tab active" onclick="switchEscuelaTab('upgrade')">MEJORAS</div><div class="tab" onclick="switchEscuelaTab('game')">JUEGO</div></div>
+        <div id="escuela-upgrade-panel"><div class="building-stats"><div class="stat-row"><span>Nivel Edificio</span><span id="escuela-level">0</span></div><div class="stat-row"><span>Producción</span><span id="escuela-prod">0 💎/h</span></div><div class="stat-row"><span>Próxima mejora</span><span id="escuela-price">3000 💎</span></div></div><button class="upgrade-btn" id="escuela-btn" onclick="buyUpgradeFromBuilding('escuela', 3000)">MEJORAR</button></div>
         <div id="escuela-game-panel" style="display: none;">
-            <div class="game-area">
-                <div class="flex-row">
-                    <span>📚 Puntos <span id="catch-score">0</span></span>
-                    <span>🏆 Récord <span id="escuela-best">0</span></span>
-                </div>
-
-                <div class="catch-game" id="knowledge-rain">
-                    <div class="basket" id="student-basket">🧺</div>
-                </div>
-
-                <div style="display: flex; gap: 20px; justify-content: center; margin: 16px 0;">
-                    <button onclick="moveBasket('left')" style="background: #3B8BFF; border: none; padding: 15px; border-radius: 40px; width: 100px; font-weight: bold; color: white;">← IZQ</button>
-                    <button onclick="moveBasket('right')" style="background: #3B8BFF; border: none; padding: 15px; border-radius: 40px; width: 100px; font-weight: bold; color: white;">DER →</button>
-                </div>
-
-                <div class="ad-options">
-                    <div class="ad-btn" onclick="useAdMultiplier('escuela')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div>
-                    <div class="ad-btn" onclick="useAdContinue('escuela')"><i class="fa-solid fa-play"></i> +30 SEGUNDOS</div>
-                </div>
-            </div>
+            <div class="game-area"><div class="flex-row"><span>🎯 Nivel <span id="mem-level">1</span></span><span>🏆 Récord <span id="mem-best">0</span></span></div>
+            <div class="lives-container" id="escuela-lives"></div>
+            <div id="sequence-display" class="sequence-display"></div>
+            <div id="pupitres-grid" class="pupitres-grid"></div>
+            <div id="mem-result" class="game-result" style="text-align:center; margin:16px;"></div>
+            <div id="escuela-revive" class="revive-btn" style="display:none;" onclick="reviveGame('escuela')"><i class="fa-solid fa-heart-broken"></i> Revivir (Anuncio)</div>
+            <div class="ad-options"><div class="ad-btn" onclick="useAdMultiplier('escuela')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div></div></div>
         </div>
     </div>
 
-    <!-- ========== MODAL FÁBRICA ========== -->
+    <!-- MODAL FÁBRICA -->
     <div class="modal modal-full" id="modalFabrica">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Fábrica · Nivel <span id="fabrica-level-display">1</span></div>
-        </div>
-
-        <div class="tabs">
-            <div class="tab active" onclick="switchFabricaTab('upgrade')">MEJORAS</div>
-            <div class="tab" onclick="switchFabricaTab('game')">JUEGO</div>
-        </div>
-
-        <div id="fabrica-upgrade-panel">
-            <div class="building-stats">
-                <div class="stat-row"><span>Nivel actual</span><span class="stat-value" id="fabrica-level">0</span></div>
-                <div class="stat-row"><span>Producción</span><span class="stat-value" id="fabrica-prod">0 💎/h</span></div>
-                <div class="stat-row"><span>Próxima mejora</span><span class="stat-value" id="fabrica-price">10000 💎</span></div>
-            </div>
-            <button class="upgrade-btn" id="fabrica-btn" onclick="buyUpgradeFromBuilding('fabrica', 10000)">MEJORAR NIVEL</button>
-        </div>
-
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Fábrica · Nivel <span id="fabrica-game-level">1</span></div></div>
+        <div class="tabs"><div class="tab active" onclick="switchFabricaTab('upgrade')">MEJORAS</div><div class="tab" onclick="switchFabricaTab('game')">JUEGO</div></div>
+        <div id="fabrica-upgrade-panel"><div class="building-stats"><div class="stat-row"><span>Nivel Edificio</span><span id="fabrica-level">0</span></div><div class="stat-row"><span>Producción</span><span id="fabrica-prod">0 💎/h</span></div><div class="stat-row"><span>Próxima mejora</span><span id="fabrica-price">10000 💎</span></div></div><button class="upgrade-btn" id="fabrica-btn" onclick="buyUpgradeFromBuilding('fabrica', 10000)">MEJORAR</button></div>
         <div id="fabrica-game-panel" style="display: none;">
-            <div class="game-area">
-                <div class="flex-row">
-                    <span>🔧 Completados <span id="assembly-count">0</span></span>
-                    <span>🏆 Récord <span id="fabrica-best">0</span></span>
-                </div>
-
-                <div class="product-display" id="target-product">📱</div>
-
-                <div class="assembly-line" id="assembly-line"></div>
-
-                <div class="ad-options">
-                    <div class="ad-btn" onclick="useAdMultiplier('fabrica')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div>
-                    <div class="ad-btn" onclick="useAdHint('fabrica')"><i class="fa-solid fa-lightbulb"></i> PISTA</div>
-                </div>
-            </div>
+            <div class="game-area"><div class="flex-row"><span>🔧 Completados <span id="asm-completed">0</span>/<span id="asm-required">5</span></span><span>🏆 Récord <span id="asm-best">0</span></span></div>
+            <div class="lives-container" id="fabrica-lives"></div>
+            <div class="conveyor-belt" id="conveyor"><div class="moving-piece" id="moving-piece">🔧</div><div class="calibration-zone"></div></div>
+            <div id="defect-indicator" class="defect-indicator"></div>
+            <div id="asm-result" class="game-result" style="text-align:center; margin:16px;"></div>
+            <div id="fabrica-revive" class="revive-btn" style="display:none;" onclick="reviveGame('fabrica')"><i class="fa-solid fa-heart-broken"></i> Revivir (Anuncio)</div>
+            <div class="ad-options"><div class="ad-btn" onclick="useAdMultiplier('fabrica')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div></div></div>
         </div>
     </div>
 
-    <!-- ========== MODAL PISCINA ========== -->
+    <!-- MODAL PISCINA -->
     <div class="modal modal-full" id="modalPiscina">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Piscina · Nivel <span id="piscina-level-display">1</span></div>
-        </div>
-
-        <div class="tabs">
-            <div class="tab active" onclick="switchPiscinaTab('upgrade')">MEJORAS</div>
-            <div class="tab" onclick="switchPiscinaTab('game')">JUEGO</div>
-        </div>
-
-        <div id="piscina-upgrade-panel">
-            <div class="building-stats">
-                <div class="stat-row"><span>Nivel actual</span><span class="stat-value" id="piscina-level">0</span></div>
-                <div class="stat-row"><span>Producción</span><span class="stat-value" id="piscina-prod">0 💎/h</span></div>
-                <div class="stat-row"><span>Próxima mejora</span><span class="stat-value" id="piscina-price">5000 💎</span></div>
-            </div>
-            <button class="upgrade-btn" id="piscina-btn" onclick="buyUpgradeFromBuilding('piscina', 5000)">MEJORAR NIVEL</button>
-        </div>
-
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Piscina · Nivel <span id="piscina-game-level">1</span></div></div>
+        <div class="tabs"><div class="tab active" onclick="switchPiscinaTab('upgrade')">MEJORAS</div><div class="tab" onclick="switchPiscinaTab('game')">JUEGO</div></div>
+        <div id="piscina-upgrade-panel"><div class="building-stats"><div class="stat-row"><span>Nivel Edificio</span><span id="piscina-level">0</span></div><div class="stat-row"><span>Producción</span><span id="piscina-prod">0 💎/h</span></div><div class="stat-row"><span>Próxima mejora</span><span id="piscina-price">5000 💎</span></div></div><button class="upgrade-btn" id="piscina-btn" onclick="buyUpgradeFromBuilding('piscina', 5000)">MEJORAR</button></div>
         <div id="piscina-game-panel" style="display: none;">
-            <div class="game-area">
-                <div class="flex-row">
-                    <span>🏅 <span id="swim-distance">0</span>m</span>
-                    <div class="timer-circle" id="swim-timer-ring">30</div>
-                    <span>🏆 <span id="piscina-best">0</span></span>
-                </div>
-
-                <div class="swim-game" id="swim-lanes" onclick="cambiarCarril()">
-                    <div class="lane"></div>
-                    <div class="lane"></div>
-                    <div class="lane"></div>
-                    <div class="lane"></div>
-                    <div class="swimmer" id="swimmer">🏊</div>
-                </div>
-
-                <div class="ad-options">
-                    <div class="ad-btn" onclick="useAdMultiplier('piscina')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div>
-                    <div class="ad-btn" onclick="useAdExtraTime('piscina')"><i class="fa-solid fa-clock"></i> +10 SEGUNDOS</div>
-                </div>
-            </div>
+            <div class="game-area"><div class="flex-row"><span>🎯 Saltos perfectos <span id="jump-perfect">0</span>/<span id="jump-required">3</span></span><span>🏆 Récord <span id="jump-best">0</span></span></div>
+            <div class="lives-container" id="piscina-lives"></div>
+            <div class="slingshot-area" id="slingshot-area"><div class="diver" id="diver">🏊</div><div class="target" id="target">🎯</div><div class="power-bar"><div class="power-fill" id="power-fill"></div></div></div>
+            <div id="jump-result" class="game-result" style="text-align:center; margin:16px;"></div>
+            <div id="piscina-revive" class="revive-btn" style="display:none;" onclick="reviveGame('piscina')"><i class="fa-solid fa-heart-broken"></i> Revivir (Anuncio)</div>
+            <div class="ad-options"><div class="ad-btn" onclick="useAdMultiplier('piscina')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div></div></div>
         </div>
     </div>
 
-    <!-- ========== MODAL CASINO ========== -->
+    <!-- MODAL HOSPITAL -->
+    <div class="modal modal-full" id="modalHospital">
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Hospital · Nivel <span id="hospital-game-level">1</span></div></div>
+        <div class="tabs"><div class="tab active" onclick="switchHospitalTab('upgrade')">MEJORAS</div><div class="tab" onclick="switchHospitalTab('game')">JUEGO</div></div>
+        <div id="hospital-upgrade-panel"><div class="building-stats"><div class="stat-row"><span>Nivel Edificio</span><span id="hospital-level">0</span></div><div class="stat-row"><span>Producción</span><span id="hospital-prod">0 💎/h</span></div><div class="stat-row"><span>Próxima mejora</span><span id="hospital-price">7500 💎</span></div></div><button class="upgrade-btn" id="hospital-btn" onclick="buyUpgradeFromBuilding('hospital', 7500)">MEJORAR</button></div>
+        <div id="hospital-game-panel" style="display: none;">
+            <div class="game-area"><div class="flex-row"><span>🦠 Virus extraídos <span id="virus-extracted">0</span>/<span id="virus-total">3</span></span><span>🏆 Récord <span id="surgery-best">0</span></span></div>
+            <div class="lives-container" id="hospital-lives"></div>
+            <div class="time-bar"><div class="time-fill" id="time-fill"></div></div>
+            <div id="surgery-area" class="surgery-area"></div>
+            <div id="surgery-result" class="game-result" style="text-align:center; margin:16px;"></div>
+            <div id="hospital-revive" class="revive-btn" style="display:none;" onclick="reviveGame('hospital')"><i class="fa-solid fa-heart-broken"></i> Revivir (Anuncio)</div>
+            <div class="ad-options"><div class="ad-btn" onclick="useAdMultiplier('hospital')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div></div></div>
+        </div>
+    </div>
+
+    <!-- MODAL CASINO COMPLETO -->
     <div class="modal" id="modalCasino">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Casino</div>
-        </div>
-        
-        <div id="casino-rescue" style="background: var(--bg-elevated); padding: 20px; border-radius: 20px; margin: 20px 0; border: 2px solid #FF9F0A; display: none;">
-            <div class="flex-row">
-                <span>💎 ¿Sin diamantes?</span>
-                <button onclick="rescueWithAd()" style="background: #FF9F0A; border: none; border-radius: 30px; padding: 12px 24px; font-weight: 700; color: #000; cursor: pointer;">RESCATE +100</button>
-            </div>
-        </div>
-        
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Casino</div></div>
+        <div id="casino-rescue" style="background: var(--bg-elevated); padding: 20px; border-radius: 20px; margin: 20px 0; border: 2px solid #FF9F0A; display: none;"><div class="flex-row"><span>💎 ¿Sin diamantes?</span><button onclick="rescueWithAd()" style="background:#FF9F0A; border:none; border-radius:30px; padding:12px 24px; font-weight:700;">RESCATE +100</button></div></div>
         <div class="casino-grid">
-            <div class="casino-card" onclick="abrirJuego('highlow')">
-                <i class="fa-solid fa-chart-simple"></i>
-                <div>High/Low</div>
-                <small>Adivina si el número es alto o bajo</small>
-            </div>
-            <div class="casino-card" onclick="abrirJuego('ruleta')">
-                <i class="fa-solid fa-circle"></i>
-                <div>Ruleta</div>
-                <small>Apuesta a color, par/impar o número exacto</small>
-            </div>
-            <div class="casino-card" onclick="abrirJuego('tragaperras')">
-                <i class="fa-solid fa-sliders"></i>
-                <div>Tragaperras</div>
-                <small>Consigue 3 símbolos iguales</small>
-            </div>
-            <div class="casino-card" onclick="abrirJuego('dados')">
-                <i class="fa-solid fa-dice"></i>
-                <div>Dados</div>
-                <small>Mayor, menor o exacto</small>
-            </div>
-            <div class="casino-card" onclick="abrirJuego('loteria')">
-                <i class="fa-solid fa-ticket"></i>
-                <div>Lotería</div>
-                <small>Compra boletos de 4 dígitos</small>
-            </div>
+            <div class="casino-card" onclick="abrirJuego('highlow')"><i class="fa-solid fa-chart-simple"></i><div>High/Low</div><small>Adivina si el número es alto o bajo</small></div>
+            <div class="casino-card" onclick="abrirJuego('ruleta')"><i class="fa-solid fa-circle"></i><div>Ruleta</div><small>Apuesta a color, par/impar o número exacto</small></div>
+            <div class="casino-card" onclick="abrirJuego('tragaperras')"><i class="fa-solid fa-sliders"></i><div>Tragaperras</div><small>Consigue 3 símbolos iguales</small></div>
+            <div class="casino-card" onclick="abrirJuego('dados')"><i class="fa-solid fa-dice"></i><div>Dados</div><small>Mayor, menor o exacto</small></div>
+            <div class="casino-card" onclick="abrirJuego('loteria')"><i class="fa-solid fa-ticket"></i><div>Lotería</div><small>Compra boletos de 4 dígitos</small></div>
         </div>
     </div>
 
-    <!-- ========== MODAL HIGH/LOW ========== -->
+    <!-- MODAL HIGH/LOW -->
     <div class="modal" id="modalHighLow">
-        <div class="modal-header">
-            <div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">High/Low</div>
-        </div>
-        
-        <div class="game-area">
-            <div class="number-display" id="hl-number">0000</div>
-            
-            <div class="flex-row">
-                <span>💰 Saldo: <span id="hl-balance">0</span> 💎</span>
-                <span>🎲 Apuesta: <span id="hl-bet">10</span> 💎</span>
-            </div>
-            
-            <div class="bet-controls">
-                <button onclick="cambiarApuesta('hl', -10)">-10</button>
-                <span id="hl-bet-display">10</span>
-                <button onclick="cambiarApuesta('hl', 10)">+10</button>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <button onclick="jugarHighLow('low')" style="background: #3B8BFF; border: none; padding: 20px; border-radius: 20px; color: white; font-weight: 700; cursor: pointer;">LOW (0000-4999)</button>
-                <button onclick="jugarHighLow('high')" style="background: #FF3B30; border: none; padding: 20px; border-radius: 20px; color: white; font-weight: 700; cursor: pointer;">HIGH (5000-9999)</button>
-            </div>
-            
-            <div id="hl-result" style="text-align: center; margin: 20px;"></div>
-        </div>
+        <div class="modal-header"><div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">High/Low</div></div>
+        <div class="game-area"><div class="number-display" id="hl-number">0000</div>
+        <div class="flex-row"><span>💰 Saldo: <span id="hl-balance">0</span> 💎</span><span>🎲 Apuesta: <span id="hl-bet">10</span> 💎</span></div>
+        <div class="bet-controls"><button onclick="cambiarApuesta('hl', -10)">-10</button><span id="hl-bet-display">10</span><button onclick="cambiarApuesta('hl', 10)">+10</button></div>
+        <div class="game-buttons"><button onclick="jugarHighLow('low')" style="background:#3B8BFF; border:none; padding:20px; border-radius:20px; color:white; font-weight:700; cursor:pointer;">LOW (0000-4999)</button><button onclick="jugarHighLow('high')" style="background:#FF3B30; border:none; padding:20px; border-radius:20px; color:white; font-weight:700; cursor:pointer;">HIGH (5000-9999)</button></div>
+        <div id="hl-result" style="text-align:center; margin:20px;"></div></div>
     </div>
 
-    <!-- ========== MODAL RULETA ========== -->
+    <!-- MODAL RULETA -->
     <div class="modal" id="modalRuleta">
-        <div class="modal-header">
-            <div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Ruleta</div>
-        </div>
-        
-        <div class="game-area">
-            <div class="number-display" id="ruleta-number">0</div>
-            
-            <div class="flex-row">
-                <span>💰 Saldo: <span id="ruleta-balance">0</span> 💎</span>
-                <span>🎲 Apuesta: <span id="ruleta-bet">10</span> 💎</span>
-            </div>
-            
-            <div class="bet-controls">
-                <button onclick="cambiarApuesta('ruleta', -10)">-10</button>
-                <span id="ruleta-bet-display">10</span>
-                <button onclick="cambiarApuesta('ruleta', 10)">+10</button>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-                <button onclick="jugarRuleta('rojo')" style="background: #FF3B30; border: none; padding: 16px; border-radius: 16px; color: white; font-weight: 600;">🔴 ROJO</button>
-                <button onclick="jugarRuleta('negro')" style="background: #000; border: 2px solid white; padding: 16px; border-radius: 16px; color: white; font-weight: 600;">⚫ NEGRO</button>
-                <button onclick="jugarRuleta('par')" style="background: var(--bg-elevated); border: none; padding: 16px; border-radius: 16px; color: white;">PAR</button>
-                <button onclick="jugarRuleta('impar')" style="background: var(--bg-elevated); border: none; padding: 16px; border-radius: 16px; color: white;">IMPAR</button>
-                <button onclick="jugarRuleta('bajo')" style="background: #3B8BFF; border: none; padding: 16px; border-radius: 16px; color: white;">1-18</button>
-                <button onclick="jugarRuleta('alto')" style="background: #FF9F0A; border: none; padding: 16px; border-radius: 16px; color: white;">19-36</button>
-                <button onclick="jugarRuleta('numero')" style="background: #FCCF47; border: none; padding: 16px; border-radius: 16px; color: black; grid-column: span 2;">🎯 NÚMERO EXACTO</button>
-            </div>
-            
-            <div id="ruleta-result" style="text-align: center; margin: 20px;"></div>
-        </div>
+        <div class="modal-header"><div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Ruleta</div></div>
+        <div class="game-area"><div class="number-display" id="ruleta-number">0</div>
+        <div class="flex-row"><span>💰 Saldo: <span id="ruleta-balance">0</span> 💎</span><span>🎲 Apuesta: <span id="ruleta-bet">10</span> 💎</span></div>
+        <div class="bet-controls"><button onclick="cambiarApuesta('ruleta', -10)">-10</button><span id="ruleta-bet-display">10</span><button onclick="cambiarApuesta('ruleta', 10)">+10</button></div>
+        <div class="game-buttons"><button onclick="jugarRuleta('rojo')" style="background:#FF3B30;">🔴 ROJO</button><button onclick="jugarRuleta('negro')" style="background:#000;">⚫ NEGRO</button><button onclick="jugarRuleta('par')">🟢 PAR</button><button onclick="jugarRuleta('impar')">🟢 IMPAR</button><button onclick="jugarRuleta('bajo')">⬇️ 1-18</button><button onclick="jugarRuleta('alto')">⬆️ 19-36</button><button onclick="jugarRuleta('numero')" style="background:#FCCF47; color:black; grid-column:span 2;">🎯 NÚMERO EXACTO</button></div>
+        <div id="ruleta-result" style="text-align:center; margin:20px;"></div></div>
     </div>
 
-    <!-- ========== MODAL TRAGAPERRAS ========== -->
+    <!-- MODAL TRAGAPERRAS -->
     <div class="modal" id="modalTragaperras">
-        <div class="modal-header">
-            <div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Tragaperras</div>
-        </div>
-        
-        <div class="game-area">
-            <div style="display: flex; justify-content: center; gap: 20px; margin: 20px 0;">
-                <div style="width: 80px; height: 100px; background: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; color: black; box-shadow: 0 8px 0 #aaa;" id="slot1">💎</div>
-                <div style="width: 80px; height: 100px; background: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; color: black; box-shadow: 0 8px 0 #aaa;" id="slot2">💎</div>
-                <div style="width: 80px; height: 100px; background: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; color: black; box-shadow: 0 8px 0 #aaa;" id="slot3">💎</div>
-            </div>
-            
-            <div class="flex-row">
-                <span>💰 Saldo: <span id="tragaperras-balance">0</span> 💎</span>
-                <span>🎲 Apuesta: <span id="tragaperras-bet">5</span> 💎</span>
-            </div>
-            
-            <div class="bet-controls">
-                <button onclick="cambiarApuesta('tragaperras', -5)">-5</button>
-                <span id="tragaperras-bet-display">5</span>
-                <button onclick="cambiarApuesta('tragaperras', 5)">+5</button>
-            </div>
-            
-            <button onclick="jugarTragaperras()" style="background: #FCCF47; color: black; border: none; padding: 20px; border-radius: 30px; width: 100%; font-weight: 700; margin: 20px 0; box-shadow: 0 6px 0 #B45F00; cursor: pointer;">🎰 GIRAR</button>
-            
-            <div id="tragaperras-result" style="text-align: center;"></div>
-        </div>
+        <div class="modal-header"><div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Tragaperras</div></div>
+        <div class="game-area"><div class="slot-machine"><div class="slot" id="slot1">💎</div><div class="slot" id="slot2">💎</div><div class="slot" id="slot3">💎</div></div>
+        <div class="flex-row"><span>💰 Saldo: <span id="tragaperras-balance">0</span> 💎</span><span>🎲 Apuesta: <span id="tragaperras-bet">5</span> 💎</span></div>
+        <div class="bet-controls"><button onclick="cambiarApuesta('tragaperras', -5)">-5</button><span id="tragaperras-bet-display">5</span><button onclick="cambiarApuesta('tragaperras', 5)">+5</button></div>
+        <button onclick="jugarTragaperras()" style="background:#FCCF47; color:black; border:none; padding:20px; border-radius:30px; width:100%; font-weight:700; margin:20px 0;">🎰 GIRAR</button>
+        <div id="tragaperras-result" style="text-align:center;"></div></div>
     </div>
 
-    <!-- ========== MODAL DADOS ========== -->
+    <!-- MODAL DADOS -->
     <div class="modal" id="modalDados">
-        <div class="modal-header">
-            <div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Dados</div>
-        </div>
-        
-        <div class="game-area">
-            <div style="display: flex; justify-content: center; gap: 30px; margin: 20px 0;">
-                <div class="dice" id="dado1">⚀</div>
-                <div class="dice" id="dado2">⚀</div>
-            </div>
-            <div style="font-size: 24px; text-align: center; margin: 16px;" id="dados-suma">Suma: 2</div>
-            
-            <div class="flex-row">
-                <span>💰 Saldo: <span id="dados-balance">0</span> 💎</span>
-                <span>🎲 Apuesta: <span id="dados-bet">10</span> 💎</span>
-            </div>
-            
-            <div class="bet-controls">
-                <button onclick="cambiarApuesta('dados', -10)">-10</button>
-                <span id="dados-bet-display">10</span>
-                <button onclick="cambiarApuesta('dados', 10)">+10</button>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-                <button onclick="jugarDados('menor')" style="background: #3B8BFF; border: none; padding: 16px; border-radius: 16px; color: white; font-weight: 600;">⬇️ MENOR (2-6)</button>
-                <button onclick="jugarDados('mayor')" style="background: #FF9F0A; border: none; padding: 16px; border-radius: 16px; color: white; font-weight: 600;">⬆️ MAYOR (8-12)</button>
-                <button onclick="jugarDados('exacto')" style="background: #FCCF47; border: none; padding: 16px; border-radius: 16px; color: black; font-weight: 600;">🎯 EXACTO (7)</button>
-            </div>
-            
-            <div id="dados-result" style="text-align: center; margin: 20px;"></div>
-        </div>
+        <div class="modal-header"><div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Dados</div></div>
+        <div class="game-area"><div class="dice-display"><div class="dice" id="dado1">⚀</div><div class="dice" id="dado2">⚀</div></div><div style="font-size:24px; text-align:center;" id="dados-suma">Suma: 2</div>
+        <div class="flex-row"><span>💰 Saldo: <span id="dados-balance">0</span> 💎</span><span>🎲 Apuesta: <span id="dados-bet">10</span> 💎</span></div>
+        <div class="bet-controls"><button onclick="cambiarApuesta('dados', -10)">-10</button><span id="dados-bet-display">10</span><button onclick="cambiarApuesta('dados', 10)">+10</button></div>
+        <div class="game-buttons"><button onclick="jugarDados('menor')" style="background:#3B8BFF;">⬇️ MENOR (2-6)</button><button onclick="jugarDados('mayor')" style="background:#FF9F0A;">⬆️ MAYOR (8-12)</button><button onclick="jugarDados('exacto')" style="background:#FCCF47; color:black;">🎯 EXACTO (7)</button></div>
+        <div id="dados-result" style="text-align:center; margin:20px;"></div></div>
     </div>
 
-    <!-- ========== MODAL LOTERÍA ========== -->
+    <!-- MODAL LOTERÍA -->
     <div class="modal" id="modalLoteria">
-        <div class="modal-header">
-            <div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Lotería</div>
-        </div>
-        
-        <div class="game-area">
-            <div class="number-display" id="loteria-number">0000</div>
-            
-            <div class="flex-row">
-                <span>💰 Saldo: <span id="loteria-balance">0</span> 💎</span>
-                <span>🎲 Boletos: <span id="loteria-bet">1</span> 💎 c/u</span>
-            </div>
-            
-            <div class="bet-controls">
-                <button onclick="cambiarApuesta('loteria', -1)">-1</button>
-                <span id="loteria-bet-display">1</span>
-                <button onclick="cambiarApuesta('loteria', 1)">+1</button>
-            </div>
-            
-            <button onclick="comprarBoletos()" style="background: #34C759; border: none; padding: 16px; border-radius: 20px; width: 100%; margin: 10px 0; font-weight: 700; box-shadow: 0 5px 0 #1F7B3E; cursor: pointer;">🎫 COMPRAR BOLETOS</button>
-            <button onclick="jugarLoteria()" style="background: #FCCF47; border: none; padding: 16px; border-radius: 20px; width: 100%; margin: 10px 0; font-weight: 700; box-shadow: 0 5px 0 #B45F00; cursor: pointer;">🎲 INICIAR SORTEO</button>
-            
-            <div id="loteria-boletos" style="margin: 20px 0;"></div>
-            <div id="loteria-result" style="text-align: center;"></div>
-        </div>
+        <div class="modal-header"><div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Lotería</div></div>
+        <div class="game-area"><div class="number-display" id="loteria-number">0000</div>
+        <div class="flex-row"><span>💰 Saldo: <span id="loteria-balance">0</span> 💎</span><span>🎲 Boletos: <span id="loteria-bet">1</span> 💎 c/u</span></div>
+        <div class="bet-controls"><button onclick="cambiarApuesta('loteria', -1)">-1</button><span id="loteria-bet-display">1</span><button onclick="cambiarApuesta('loteria', 1)">+1</button></div>
+        <button onclick="comprarBoletos()" style="background:#34C759; border:none; padding:16px; border-radius:20px; width:100%; margin:10px 0;">🎫 COMPRAR BOLETOS</button>
+        <button onclick="jugarLoteria()" style="background:#FCCF47; color:black; border:none; padding:16px; border-radius:20px; width:100%; margin:10px 0;">🎲 INICIAR SORTEO</button>
+        <div id="loteria-boletos" style="margin:20px 0;"></div><div id="loteria-result" style="text-align:center;"></div></div>
     </div>
 
-    <!-- ========== MODAL EVENTO ========== -->
+    <!-- MODAL EVENTO -->
     <div class="modal" id="modalEvent">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Evento semanal</div>
-        </div>
-        
-        <div style="text-align: center;">
-            <div style="font-size: 72px; margin: 20px 0;" id="event-icon">
-                <i class="fa-solid fa-star" style="color: #FF9F0A;"></i>
-            </div>
-            
-            <h3 id="event-title" style="color: #FF9F0A; margin: 16px 0;">Cargando...</h3>
-            
-            <div class="event-multiplier-info">
-                <div class="multiplier-card">
-                    <div>Normal</div>
-                    <div class="multiplier-value" id="event-multiplier-normal">x2</div>
-                </div>
-                <div class="multiplier-card">
-                    <div>Premium</div>
-                    <div class="multiplier-value" id="event-multiplier-premium" style="color: #BF5AF2;">x4</div>
-                </div>
-            </div>
-            
-            <div style="background: var(--bg-elevated); padding: 20px; border-radius: 20px; margin: 20px 0;">
-                <p id="event-description" style="color: var(--text-secondary); line-height: 1.6;"></p>
-            </div>
-            
-            <div class="stat-row" style="justify-content: center;">
-                <span>Recompensa base</span>
-                <span class="badge" id="event-reward">0 💎</span>
-            </div>
-            
-            <div style="margin: 24px 0;">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="event-progress-bar"></div>
-                </div>
-                <p style="color: var(--text-secondary); margin-top: 8px;" id="event-progress-text">0/3 anuncios</p>
-            </div>
-            
-            <button onclick="startEventTask()" id="event-btn" style="background: #FF9F0A; border: none; border-radius: 30px; padding: 18px; width: 100%; font-weight: 700; font-size: 16px; color: black; margin: 16px 0; box-shadow: 0 6px 0 #B45F00; cursor: pointer;">
-                <i class="fa-solid fa-play"></i> PARTICIPAR
-            </button>
-        </div>
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Evento semanal</div></div>
+        <div style="text-align:center;"><div id="event-icon" style="font-size:72px; margin:20px 0;"><i class="fa-solid fa-star" style="color:#FF9F0A;"></i></div>
+        <h3 id="event-title">Cargando...</h3>
+        <div class="event-multiplier-info" style="display:flex; justify-content:center; gap:20px; margin:20px 0;"><div class="multiplier-card" style="background:var(--bg-elevated); padding:20px; border-radius:20px;"><div>Normal</div><div style="font-size:48px; color:var(--primary);" id="event-multiplier-normal">x2</div></div><div class="multiplier-card" style="background:var(--bg-elevated); padding:20px; border-radius:20px;"><div>Premium</div><div style="font-size:48px; color:#BF5AF2;" id="event-multiplier-premium">x4</div></div></div>
+        <div style="background:var(--bg-elevated); padding:20px; border-radius:20px; margin:20px 0;"><p id="event-description"></p></div>
+        <div class="stat-row" style="justify-content:center;"><span>Recompensa base</span><span class="badge" id="event-reward">0 💎</span></div>
+        <div style="margin:24px 0;"><div class="progress-bar"><div class="progress-fill" id="event-progress-bar"></div></div><p id="event-progress-text">0/3 anuncios</p></div>
+        <button onclick="startEventTask()" id="event-btn" style="background:#FF9F0A; border:none; border-radius:30px; padding:18px; width:100%; font-weight:700;">PARTICIPAR</button></div>
     </div>
 
-    <!-- ========== MODAL AMIGOS ========== -->
+    <!-- MODAL AMIGOS -->
     <div class="modal" id="modalFriends">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Amigos</div>
-        </div>
-        
-        <div class="referral-box">
-            <p style="color: var(--text-secondary); margin-bottom: 16px;">Tu código de referencia</p>
-            <div class="referral-code" id="referral-code">CARGANDO...</div>
-            <button class="copy-btn" onclick="copyReferralCode()">📋 COPIAR ENLACE</button>
-        </div>
-        
-        <div class="building-stats">
-            <div class="stat-row">
-                <span>Amigos referidos</span>
-                <span class="stat-value" id="ref-count">0</span>
-            </div>
-            <div class="stat-row">
-                <span>Ganancias (10%)</span>
-                <span class="stat-value" id="ref-total">0 💎</span>
-            </div>
-        </div>
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Amigos</div></div>
+        <div class="referral-box" style="background:var(--bg-elevated); border-radius:24px; padding:24px; text-align:center;"><p>Tu código de referencia</p><div class="referral-code" id="referral-code" style="font-size:28px; font-weight:800; color:var(--primary); margin:16px 0; padding:16px; background:var(--bg-card); border-radius:20px;">CARGANDO...</div><button class="copy-btn" onclick="copyReferralCode()">📋 COPIAR ENLACE</button></div>
+        <div class="building-stats"><div class="stat-row"><span>Amigos referidos</span><span id="ref-count">0</span></div><div class="stat-row"><span>Ganancias (10%)</span><span id="ref-total">0 💎</span></div></div>
     </div>
 
-    <!-- ========== MODAL RECOMPENSA DIARIA ========== -->
+    <!-- MODAL RECOMPENSA DIARIA -->
     <div class="modal" id="modalDailyReward">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Recompensa diaria</div>
-        </div>
-        
-        <div style="text-align: center;">
-            <div style="font-size: 64px; margin: 20px 0;">
-                <i class="fa-solid fa-calendar-check" style="color: #FF9F0A;"></i>
-            </div>
-            
-            <div class="building-stats">
-                <div class="stat-row">
-                    <span>Día actual</span>
-                    <span id="current-day">0</span>
-                </div>
-                <div class="stat-row">
-                    <span>Recompensa hoy</span>
-                    <span id="today-reward">0 💎</span>
-                </div>
-            </div>
-            
-            <div id="daily-status" style="background: var(--bg-elevated); padding: 16px; border-radius: 16px; margin: 20px 0;">
-                Cargando...
-            </div>
-            
-            <div class="daily-calendar" id="daily-calendar"></div>
-            
-            <button onclick="claimDailyReward()" id="claim-daily-btn" style="background: #FF9F0A; border: none; border-radius: 30px; padding: 18px; width: 100%; font-weight: 700; font-size: 16px; color: black; margin: 16px 0; box-shadow: 0 6px 0 #B45F00; cursor: pointer;">
-                <i class="fa-solid fa-gift"></i> RECLAMAR
-            </button>
-        </div>
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Recompensa diaria</div></div>
+        <div style="text-align:center;"><div style="font-size:64px; margin:20px 0;"><i class="fa-solid fa-calendar-check" style="color:#FF9F0A;"></i></div>
+        <div class="building-stats"><div class="stat-row"><span>Día actual</span><span id="current-day">0</span></div><div class="stat-row"><span>Recompensa hoy</span><span id="today-reward">0 💎</span></div></div>
+        <div id="daily-status" style="background:var(--bg-elevated); padding:16px; border-radius:16px; margin:20px 0;">Cargando...</div>
+        <div class="daily-calendar" id="daily-calendar"></div>
+        <button onclick="claimDailyReward()" id="claim-daily-btn" style="background:#FF9F0A; border:none; border-radius:30px; padding:18px; width:100%; font-weight:700;">RECLAMAR</button></div>
     </div>
 
-    <!-- ========== MODAL PARQUE (ANUNCIOS) ========== -->
+    <!-- MODAL ANUNCIOS (PARQUE) -->
     <div class="modal" id="modalAds">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Parque</div>
-        </div>
-        
-        <div style="text-align: center;">
-            <div style="font-size: 64px; margin: 20px 0;">
-                <i class="fa-solid fa-tree" style="color: #34C759;"></i>
-            </div>
-            
-            <div class="building-stats">
-                <div class="stat-row">
-                    <span>Disponible cada</span>
-                    <span>1 hora</span>
-                </div>
-                <div class="stat-row">
-                    <span>Recompensa</span>
-                    <span class="stat-value">30 💎</span>
-                </div>
-            </div>
-            
-            <div id="ads-status" style="background: var(--bg-elevated); padding: 20px; border-radius: 20px; margin: 20px 0;">
-                <div class="ads-loading"></div> Cargando...
-            </div>
-            
-            <div id="ads-timer-display" style="font-size: 20px; margin: 16px;"></div>
-            
-            <button onclick="showAd()" id="watch-ad-btn" style="background: #FF9F0A; border: none; border-radius: 30px; padding: 18px; width: 100%; font-weight: 700; font-size: 16px; color: black; box-shadow: 0 6px 0 #B45F00; cursor: pointer;" disabled>
-                <i class="fa-solid fa-circle-play"></i> VER ANUNCIO
-            </button>
-        </div>
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Parque</div></div>
+        <div style="text-align:center;"><div style="font-size:64px; margin:20px 0;"><i class="fa-solid fa-tree" style="color:#34C759;"></i></div>
+        <div class="building-stats"><div class="stat-row"><span>Disponible cada</span><span>1 hora</span></div><div class="stat-row"><span>Recompensa</span><span class="stat-value">30 💎</span></div></div>
+        <div id="ads-status" style="background:var(--bg-elevated); padding:20px; border-radius:20px; margin:20px 0;"><div class="ads-loading"></div> Cargando...</div>
+        <div id="ads-timer-display" style="font-size:20px; margin:16px;"></div>
+        <button onclick="showAd()" id="watch-ad-btn" style="background:#FF9F0A; border:none; border-radius:30px; padding:18px; width:100%; font-weight:700;" disabled>VER ANUNCIO</button></div>
     </div>
 
-    <!-- ========== MODAL RETIRO ========== -->
+    <!-- MODAL RETIRO -->
     <div class="modal" id="modalWithdraw">
-        <div class="modal-header">
-            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
-            <div class="modal-title">Retirar</div>
-        </div>
-
-        <div class="withdraw-card">
-            <div class="day-badge" id="withdraw-day-badge">CARGANDO</div>
-            
-            <div class="ton-balance" id="available-diamonds">0</div>
-            <div style="margin-bottom: 24px;">diamantes disponibles</div>
-
-            <div class="building-stats">
-                <div class="stat-row">
-                    <span>Pool total</span>
-                    <span id="pool-total">0 TON</span>
-                </div>
-                <div class="stat-row">
-                    <span>Tu proyección</span>
-                    <span id="withdraw-projection">0 TON</span>
-                </div>
-                <div class="stat-row">
-                    <span>Acumulado</span>
-                    <span id="accumulated-ton">0 TON</span>
-                </div>
-            </div>
-
-            <button class="withdraw-btn" id="exchange-btn" onclick="exchangeDiamonds()" disabled>CAMBIAR DIAMANTES</button>
-            <button class="withdraw-btn secondary" id="withdraw-ton-btn" onclick="withdrawTON()" disabled>RETIRAR TON</button>
-        </div>
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Retirar</div></div>
+        <div class="withdraw-card"><div class="day-badge" id="withdraw-day-badge">CARGANDO</div>
+        <div class="balance-value" id="available-diamonds" style="font-size:56px; margin:16px 0;">0</div>
+        <div style="margin-bottom:24px;">diamantes disponibles</div>
+        <div class="building-stats"><div class="stat-row"><span>Pool total</span><span id="pool-total">0 TON</span></div><div class="stat-row"><span>Tu proyección</span><span id="withdraw-projection">0 TON</span></div><div class="stat-row"><span>Acumulado</span><span id="accumulated-ton">0 TON</span></div></div>
+        <button class="withdraw-btn" id="exchange-btn" onclick="exchangeDiamonds()" disabled>CAMBIAR DIAMANTES</button>
+        <button class="withdraw-btn secondary" id="withdraw-ton-btn" onclick="withdrawTON()" disabled style="background:#3B8BFF;">RETIRAR TON</button></div>
     </div>
 
-    <!-- ========== NAVBAR ========== -->
     <div class="navbar">
-        <div class="nav-item active" onclick="openCentral()">
-            <i class="fa-solid fa-city"></i>
-            <span>Ciudad</span>
-        </div>
-        <div class="nav-item" onclick="openDailyReward()">
-            <i class="fa-solid fa-calendar-day"></i>
-            <span>Diario</span>
-        </div>
-        <div class="nav-item" onclick="openFriends()">
-            <i class="fa-solid fa-user-group"></i>
-            <span>Amigos</span>
-        </div>
-        <div class="nav-item" onclick="openWithdraw()">
-            <i class="fa-solid fa-money-bill-transfer"></i>
-            <span>Retirar</span>
-        </div>
+        <div class="nav-item active" onclick="openCentral()"><i class="fa-solid fa-city"></i><span>Ciudad</span></div>
+        <div class="nav-item" onclick="openDailyReward()"><i class="fa-solid fa-calendar-day"></i><span>Diario</span></div>
+        <div class="nav-item" onclick="openFriends()"><i class="fa-solid fa-user-group"></i><span>Amigos</span></div>
+        <div class="nav-item" onclick="openWithdraw()"><i class="fa-solid fa-money-bill-transfer"></i><span>Retirar</span></div>
     </div>
 
-    <!-- SCRIPTS -->
     <script src="game.js"></script>
 </body>
 </html>
