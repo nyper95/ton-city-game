@@ -1,17 +1,15 @@
 // ======================================================
 // TON CITY - VERSIÓN PROFESIONAL COMPLETA
 // ======================================================
-// ✅ Casino completo con 5 juegos (High/Low, Ruleta, Tragaperras, Dados, Lotería)
-// ✅ Todos los juegos muestran saldo de diamantes actualizado
-// ✅ Minijuegos: Escuela, Fábrica, Piscina, Hospital
-// ✅ Sistema de 3 vidas con revivir por anuncio
-// ✅ Fórmula de recompensa profesional
+// ✅ Todos los minijuegos funcionales con gráficos mejorados
+// ✅ Casino completo con 5 juegos y saldo visible
 // ✅ Sistema de rangos de 4 niveles
+// ✅ Guardado automático en Supabase
 // ✅ Producción pausada los domingos
-// ✅ Intercambio y retiro de TON
+// ✅ Sistema de retiros con comisiones reales
 // ======================================================
 
-console.log('🚀 TON CITY - Versión profesional completa');
+console.log('🚀 TON CITY - Inicializando...');
 
 const tg = window.Telegram.WebApp;
 tg.expand();
@@ -23,8 +21,8 @@ BackButton.hide();
 // ==========================================
 // CONFIGURACIÓN
 // ==========================================
-const RED_TON_FEE = 0.002;
-const RESERVA_POOL = 0.95;
+const RED_TON_FEE = 0.002; // k - comisión de red TON 2026
+const RESERVA_POOL = 0.95; // r - reserva para que el pool no quede vacío
 const BILLETERA_PROPIETARIO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw";
 const BILLETERA_POOL = "UQBuoEgT5DmcoEQ_nl6YwR0Q86fZWY4baACuX80EegWG49h2";
 const PRECIO_COMPRA = 0.008;
@@ -50,9 +48,9 @@ let userData = {
     id: null,
     username: "Cargando...",
     diamonds: 0,
-    lvl_escuela: 0,
-    lvl_fabrica: 0,
     lvl_piscina: 0,
+    lvl_fabrica: 0,
+    lvl_escuela: 0,
     lvl_hospital: 0,
     referral_code: null,
     referral_earnings: 0,
@@ -84,18 +82,16 @@ let userData = {
 };
 
 let globalPoolData = { pool_ton: 100, total_diamonds: 0, user_rankings: [] };
-let apuestaActual = { highlow: 10, ruleta: 10, tragaperras: 5, dados: 10, loteria: 1 };
-let boletosComprados = [];
 
 // ==========================================
 // CONSTANTES DE JUEGOS
 // ==========================================
 const MAX_LEVEL = 1000;
 const EVENTOS_SEMANALES = [
-    { nombre: "Escuela", edificio: "escuela", icono: "fa-school", color: "#FF9F0A", descripcion: "Semana del Saber - Conocimiento multiplicado", recompensa: 200, premium: 400, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 },
-    { nombre: "Fábrica", edificio: "fabrica", icono: "fa-industry", color: "#BF5AF2", descripcion: "Semana de Producción - Ensamblaje eficiente", recompensa: 150, premium: 300, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 },
-    { nombre: "Piscina", edificio: "piscina", icono: "fa-water-ladder", color: "#3B8BFF", descripcion: "Semana Olímpica - Entrenamiento especial", recompensa: 80, premium: 160, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 },
-    { nombre: "Hospital", edificio: "hospital", icono: "fa-hospital", color: "#FF3B30", descripcion: "Semana de la Salud - Tratamientos con bonificación", recompensa: 100, premium: 200, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 }
+    { nombre: "Escuela", edificio: "escuela", icono: "fa-school", color: "#a16207", descripcion: "Semana del Saber - Conocimiento multiplicado", recompensa: 200, premium: 400, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 },
+    { nombre: "Fábrica", edificio: "fabrica", icono: "fa-industry", color: "#a78bfa", descripcion: "Semana de Producción - Ensamblaje eficiente", recompensa: 150, premium: 300, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 },
+    { nombre: "Piscina", edificio: "piscina", icono: "fa-water-ladder", color: "#38bdf8", descripcion: "Semana Olímpica - Entrenamiento especial", recompensa: 80, premium: 160, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 },
+    { nombre: "Hospital", edificio: "hospital", icono: "fa-hospital", color: "#f87171", descripcion: "Semana de la Salud - Tratamientos con bonificación", recompensa: 100, premium: 200, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 }
 ];
 
 const PREMIUM_PLANS = [
@@ -104,45 +100,25 @@ const PREMIUM_PLANS = [
     { name: "30 días", days: 30, price: 3.00 }
 ];
 
-// Datos para Hospital (preguntas infinitas)
-const SINTOMAS_BASE = [
-    'Fiebre alta', 'Dolor de cabeza', 'Náuseas', 'Dificultad respiratoria', 'Dolor abdominal',
-    'Mareos', 'Fatiga extrema', 'Dolor en el pecho', 'Tos persistente', 'Dolor muscular',
-    'Pérdida de apetito', 'Insomnio', 'Palpitaciones', 'Hormigueo', 'Visión borrosa',
-    'Congestión nasal', 'Dolor de garganta', 'Erupción cutánea', 'Dolor articular', 'Vértigo'
-];
-const TRATAMIENTOS = [
-    '💊 Antibiótico', '💊 Analgésico', '💊 Antiácido', '💉 Inyección', '🧴 Crema',
-    '🍵 Té de hierbas', '🛌 Reposo absoluto', '💧 Hidratación', '🧘 Meditación',
-    '💊 Antihistamínico', '💊 Antivirales', '🩹 Venda', '💉 Vacuna', '🧴 Ungüento',
-    '💊 Antipirético', '💊 Antiinflamatorio', '💧 Suero', '🩺 Terapia', '💊 Broncodilatador'
-];
-
-// Datos para Fábrica
-const PRODUCTOS_FABRICA = [
-    { emoji: '📱', nombre: 'Teléfono', partes: ['📱', '🔋', '📷'] },
-    { emoji: '💻', nombre: 'Laptop', partes: ['💻', '🔋', '🖱️'] },
-    { emoji: '🎧', nombre: 'Auriculares', partes: ['🎧', '🔌', '📻'] },
-    { emoji: '⌚', nombre: 'Reloj', partes: ['⌚', '🔋', '⏱️'] },
-    { emoji: '📷', nombre: 'Cámara', partes: ['📷', '🔋', '💾'] },
-    { emoji: '🖨️', nombre: 'Impresora', partes: ['🖨️', '🔌', '📄'] },
-    { emoji: '🔊', nombre: 'Altavoz', partes: ['🔊', '🔌', '📻'] }
-];
+// ==========================================
+// APUESTAS CASINO
+// ==========================================
+let apuestaActual = { highlow: 10, ruleta: 10, tragaperras: 5, dados: 10, loteria: 1 };
+let boletosComprados = [];
 
 // ==========================================
-// VARIABLES DE MINIJUEGOS
+// ESTADO DE MINIJUEGOS
 // ==========================================
 let gameLives = { escuela: 3, fabrica: 3, piscina: 3, hospital: 3 };
 let gameActiveStates = { escuela: true, fabrica: true, piscina: true, hospital: true };
 
-// Escuela
+// Escuela - Mente Maestra
 let escuelaSequence = [];
 let escuelaUserInput = [];
 let escuelaLevel = 1;
 let escuelaBest = 0;
-let escuelaTimeout = null;
 
-// Fábrica
+// Fábrica - Línea de Ensamblaje
 let fabricaLevel = 1;
 let fabricaBest = 0;
 let fabricaCompleted = 0;
@@ -152,7 +128,7 @@ let fabricaIsDefect = false;
 let fabricaAnimInterval = null;
 let fabricaDefectInterval = null;
 
-// Piscina
+// Piscina - Salto de Precisión
 let piscinaLevel = 1;
 let piscinaBest = 0;
 let piscinaPerfect = 0;
@@ -161,7 +137,7 @@ let piscinaPower = 0;
 let piscinaIsDragging = false;
 let piscinaStartX = 0, piscinaStartY = 0;
 
-// Hospital
+// Hospital - Cirugía de Emergencia
 let hospitalLevel = 1;
 let hospitalBest = 0;
 let hospitalExtracted = 0;
@@ -180,6 +156,18 @@ function esPremium() {
 function actualizarPremiumUI() {
     const badge = document.getElementById('premium-badge');
     if (badge) badge.style.display = esPremium() ? 'flex' : 'none';
+    const timer = document.getElementById('premium-timer');
+    const timeLeft = document.getElementById('premium-time-left');
+    if (timer && timeLeft) {
+        if (esPremium()) {
+            timer.style.display = 'block';
+            const diff = new Date(userData.premium_expires) - new Date();
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            timeLeft.textContent = `${hours}h`;
+        } else {
+            timer.style.display = 'none';
+        }
+    }
 }
 
 function getEventoActual() {
@@ -220,7 +208,6 @@ function closeAll() {
     BackButton.hide();
     BackButton.offClick();
     
-    // Limpiar intervalos
     if (fabricaAnimInterval) clearInterval(fabricaAnimInterval);
     if (fabricaDefectInterval) clearInterval(fabricaDefectInterval);
     if (hospitalTimer) clearInterval(hospitalTimer);
@@ -232,9 +219,9 @@ function actualizarUI() {
     const rateElem = document.getElementById('rate');
     if (rateElem) rateElem.textContent = Math.floor(getTotalProduction());
     
-    document.getElementById('lvl_escuela').textContent = userData.lvl_escuela;
-    document.getElementById('lvl_fabrica').textContent = userData.lvl_fabrica;
     document.getElementById('lvl_piscina').textContent = userData.lvl_piscina;
+    document.getElementById('lvl_fabrica').textContent = userData.lvl_fabrica;
+    document.getElementById('lvl_escuela').textContent = userData.lvl_escuela;
     document.getElementById('lvl_hospital').textContent = userData.lvl_hospital;
     
     // Actualizar saldo en casinos
@@ -262,7 +249,7 @@ function calcularRecompensa(baseReward, building) {
         multiplier *= pendingMultiplier;
         pendingMultiplier = null;
     }
-    return baseReward * multiplier;
+    return Math.floor(baseReward * multiplier);
 }
 
 // ==========================================
@@ -326,7 +313,7 @@ function loseLife(game) {
     if (gameLives[game] === 0) {
         gameActiveStates[game] = false;
         const resultElem = document.getElementById(`${game}-result`);
-        if (resultElem) resultElem.innerHTML = '<span style="color:#FF3B30;">💀 GAME OVER</span>';
+        if (resultElem) resultElem.innerHTML = '<span style="color:#ef4444;">💀 GAME OVER</span>';
         return false;
     }
     return true;
@@ -344,6 +331,16 @@ function reviveGame(game) {
             else if (game === 'piscina') iniciarJuegoPiscina();
             else if (game === 'hospital') iniciarJuegoHospital();
             alert('❤️ Revivido!');
+            saveUserData();
+        }
+    });
+}
+
+function useAdMultiplier(game) {
+    showRewardedAd((s) => {
+        if (s) {
+            pendingMultiplier = 2;
+            alert('✨ Multiplicador x2 activado para tu próxima victoria!');
         }
     });
 }
@@ -359,6 +356,7 @@ function iniciarJuegoEscuela() {
     updateLivesUI('escuela');
     document.getElementById('mem-level').textContent = escuelaLevel;
     document.getElementById('mem-best').textContent = escuelaBest;
+    document.getElementById('escuela-game-level').textContent = escuelaLevel;
     nuevaSecuenciaEscuela();
 }
 
@@ -416,7 +414,7 @@ function seleccionarPupitre(num) {
         if (!loseLife('escuela')) return;
         escuelaUserInput = [];
         const resultElem = document.getElementById('mem-result');
-        if (resultElem) resultElem.innerHTML = '<span style="color:#FF3B30;">❌ Secuencia incorrecta</span>';
+        if (resultElem) resultElem.innerHTML = '<span style="color:#ef4444;">❌ Secuencia incorrecta</span>';
         setTimeout(() => {
             if (resultElem) resultElem.innerHTML = '';
             nuevaSecuenciaEscuela();
@@ -424,8 +422,7 @@ function seleccionarPupitre(num) {
         return;
     }
     if (escuelaUserInput.length === escuelaSequence.length) {
-        const baseReward = 50;
-        const reward = calcularRecompensa(baseReward, 'escuela');
+        const reward = calcularRecompensa(50, 'escuela');
         userData.diamonds += reward;
         escuelaLevel++;
         if (escuelaLevel > escuelaBest) {
@@ -437,8 +434,9 @@ function seleccionarPupitre(num) {
         userData.gameStats.escuela.totalWins = (userData.gameStats.escuela.totalWins || 0) + 1;
         userData.gameStats.escuela.lives = gameLives.escuela;
         document.getElementById('mem-level').textContent = escuelaLevel;
+        document.getElementById('escuela-game-level').textContent = escuelaLevel;
         const resultElem = document.getElementById('mem-result');
-        if (resultElem) resultElem.innerHTML = `<span style="color:#34C759;">✅ +${Math.floor(reward)} 💎! Nivel ${escuelaLevel}</span>`;
+        if (resultElem) resultElem.innerHTML = `<span style="color:#4ade80;">✅ +${reward} 💎! Nivel ${escuelaLevel}</span>`;
         actualizarUI();
         saveUserData();
         setTimeout(() => {
@@ -462,6 +460,7 @@ function iniciarJuegoFabrica() {
     document.getElementById('asm-completed').textContent = fabricaCompleted;
     document.getElementById('asm-required').textContent = fabricaRequired;
     document.getElementById('asm-best').textContent = fabricaBest;
+    document.getElementById('fabrica-game-level').textContent = fabricaLevel;
     iniciarCinta();
 }
 
@@ -481,8 +480,7 @@ function iniciarCinta() {
                 fabricaCompleted++;
                 document.getElementById('asm-completed').textContent = fabricaCompleted;
                 if (fabricaCompleted >= fabricaRequired) {
-                    const baseReward = 75;
-                    const reward = calcularRecompensa(baseReward, 'fabrica');
+                    const reward = calcularRecompensa(75, 'fabrica');
                     userData.diamonds += reward;
                     fabricaLevel++;
                     if (fabricaLevel > fabricaBest) {
@@ -493,7 +491,8 @@ function iniciarCinta() {
                     userData.gameStats.fabrica.currentLevel = fabricaLevel;
                     userData.gameStats.fabrica.totalWins = (userData.gameStats.fabrica.totalWins || 0) + 1;
                     userData.gameStats.fabrica.lives = gameLives.fabrica;
-                    document.getElementById('asm-result').innerHTML = `<span style="color:#34C759;">✅ Nivel completado! +${Math.floor(reward)} 💎</span>`;
+                    document.getElementById('fabrica-game-level').textContent = fabricaLevel;
+                    document.getElementById('asm-result').innerHTML = `<span style="color:#4ade80;">✅ Nivel completado! +${reward} 💎</span>`;
                     actualizarUI();
                     saveUserData();
                     clearInterval(fabricaAnimInterval);
@@ -528,17 +527,13 @@ function iniciarJuegoPiscina() {
     document.getElementById('jump-perfect').textContent = piscinaPerfect;
     document.getElementById('jump-required').textContent = piscinaRequired;
     document.getElementById('jump-best').textContent = piscinaBest;
+    document.getElementById('piscina-game-level').textContent = piscinaLevel;
     initSlingshot();
 }
 
 function initSlingshot() {
     const area = document.getElementById('slingshot-area');
     if (!area) return;
-    
-    const diver = document.getElementById('diver');
-    const target = document.getElementById('target');
-    if (diver) diver.style.left = '30px';
-    if (target) target.style.right = '30px';
     
     const powerFill = document.getElementById('power-fill');
     
@@ -561,7 +556,6 @@ function initSlingshot() {
         document.removeEventListener('mouseup', onMouseUp);
         
         const angle = 45 + (Math.random() - 0.5) * 20;
-        const wind = (Math.random() - 0.5) * (piscinaLevel / 100);
         const distance = piscinaPower * 1.5;
         const targetDistance = 200;
         const isPerfect = Math.abs(distance - targetDistance) < 25 && Math.abs(angle - 45) < 15;
@@ -570,8 +564,7 @@ function initSlingshot() {
             piscinaPerfect++;
             document.getElementById('jump-perfect').textContent = piscinaPerfect;
             if (piscinaPerfect >= piscinaRequired) {
-                const baseReward = 60;
-                const reward = calcularRecompensa(baseReward, 'piscina');
+                const reward = calcularRecompensa(60, 'piscina');
                 userData.diamonds += reward;
                 piscinaLevel++;
                 if (piscinaLevel > piscinaBest) {
@@ -582,17 +575,18 @@ function initSlingshot() {
                 userData.gameStats.piscina.currentLevel = piscinaLevel;
                 userData.gameStats.piscina.totalWins = (userData.gameStats.piscina.totalWins || 0) + 1;
                 userData.gameStats.piscina.lives = gameLives.piscina;
-                document.getElementById('jump-result').innerHTML = `<span style="color:#34C759;">✅ Nivel completado! +${Math.floor(reward)} 💎</span>`;
+                document.getElementById('piscina-game-level').textContent = piscinaLevel;
+                document.getElementById('jump-result').innerHTML = `<span style="color:#4ade80;">✅ Nivel completado! +${reward} 💎</span>`;
                 actualizarUI();
                 saveUserData();
                 setTimeout(() => iniciarJuegoPiscina(), 2000);
             } else {
-                document.getElementById('jump-result').innerHTML = '<span style="color:#34C759;">🎯 ¡Salto perfecto!</span>';
+                document.getElementById('jump-result').innerHTML = '<span style="color:#4ade80;">🎯 ¡Salto perfecto!</span>';
                 setTimeout(() => document.getElementById('jump-result').innerHTML = '', 1000);
             }
         } else {
             if (!loseLife('piscina')) return;
-            document.getElementById('jump-result').innerHTML = '<span style="color:#FF3B30;">💧 Salto fallido</span>';
+            document.getElementById('jump-result').innerHTML = '<span style="color:#ef4444;">💧 Salto fallido</span>';
             setTimeout(() => document.getElementById('jump-result').innerHTML = '', 1000);
         }
         piscinaPower = 0;
@@ -650,6 +644,7 @@ function iniciarJuegoHospital() {
     document.getElementById('virus-extracted').textContent = hospitalExtracted;
     document.getElementById('virus-total').textContent = hospitalTotal;
     document.getElementById('surgery-best').textContent = hospitalBest;
+    document.getElementById('hospital-game-level').textContent = hospitalLevel;
     
     hospitalTimeLeft = 30;
     document.getElementById('time-fill').style.width = '100%';
@@ -662,7 +657,7 @@ function iniciarJuegoHospital() {
         if (hospitalTimeLeft <= 0) {
             clearInterval(hospitalTimer);
             if (!loseLife('hospital')) return;
-            document.getElementById('surgery-result').innerHTML = '<span style="color:#FF3B30;">⏰ Tiempo agotado</span>';
+            document.getElementById('surgery-result').innerHTML = '<span style="color:#ef4444;">⏰ Tiempo agotado</span>';
             setTimeout(() => iniciarJuegoHospital(), 2000);
         }
     }, 100);
@@ -690,6 +685,56 @@ function crearVirusHospital() {
         let isDragging = false;
         let startX, startY, virusX, virusY;
         
+        const onMouseMove = (moveEvent) => {
+            if (!isDragging) return;
+            const dx = moveEvent.clientX - startX;
+            const dy = moveEvent.clientY - startY;
+            let newX = virusX + dx;
+            let newY = virusY + dy;
+            newX = Math.min(width, Math.max(0, newX));
+            newY = Math.min(height, Math.max(0, newY));
+            virus.style.left = newX + 'px';
+            virus.style.top = newY + 'px';
+            if (newX <= 0 || newX >= width || newY <= 0 || newY >= height) {
+                isDragging = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                if (!loseLife('hospital')) return;
+                virus.remove();
+                document.getElementById('surgery-result').innerHTML = '<span style="color:#ef4444;">⚠️ Tocaste la pared</span>';
+                setTimeout(() => document.getElementById('surgery-result').innerHTML = '', 1000);
+            }
+        };
+        const onMouseUp = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            virus.style.cursor = 'grab';
+            hospitalExtracted++;
+            document.getElementById('virus-extracted').textContent = hospitalExtracted;
+            virus.remove();
+            if (hospitalExtracted >= hospitalTotal) {
+                clearInterval(hospitalTimer);
+                const reward = calcularRecompensa(80, 'hospital');
+                userData.diamonds += reward;
+                hospitalLevel++;
+                if (hospitalLevel > hospitalBest) {
+                    hospitalBest = hospitalLevel;
+                    userData.gameStats.hospital.bestLevel = hospitalBest;
+                    document.getElementById('surgery-best').textContent = hospitalBest;
+                }
+                userData.gameStats.hospital.currentLevel = hospitalLevel;
+                userData.gameStats.hospital.totalWins = (userData.gameStats.hospital.totalWins || 0) + 1;
+                userData.gameStats.hospital.lives = gameLives.hospital;
+                document.getElementById('hospital-game-level').textContent = hospitalLevel;
+                document.getElementById('surgery-result').innerHTML = `<span style="color:#4ade80;">✅ Cirugía exitosa! +${reward} 💎</span>`;
+                actualizarUI();
+                saveUserData();
+                setTimeout(() => iniciarJuegoHospital(), 2000);
+            }
+        };
+        
         virus.onmousedown = (e) => {
             e.stopPropagation();
             if (!gameActiveStates.hospital) return;
@@ -699,56 +744,6 @@ function crearVirusHospital() {
             virusX = parseInt(virus.style.left);
             virusY = parseInt(virus.style.top);
             virus.style.cursor = 'grabbing';
-            
-            const onMouseMove = (moveEvent) => {
-                if (!isDragging) return;
-                const dx = moveEvent.clientX - startX;
-                const dy = moveEvent.clientY - startY;
-                let newX = virusX + dx;
-                let newY = virusY + dy;
-                newX = Math.min(width, Math.max(0, newX));
-                newY = Math.min(height, Math.max(0, newY));
-                virus.style.left = newX + 'px';
-                virus.style.top = newY + 'px';
-                if (newX <= 0 || newX >= width || newY <= 0 || newY >= height) {
-                    isDragging = false;
-                    document.removeEventListener('mousemove', onMouseMove);
-                    document.removeEventListener('mouseup', onMouseUp);
-                    if (!loseLife('hospital')) return;
-                    virus.remove();
-                    document.getElementById('surgery-result').innerHTML = '<span style="color:#FF3B30;">⚠️ Tocaste la pared</span>';
-                    setTimeout(() => document.getElementById('surgery-result').innerHTML = '', 1000);
-                }
-            };
-            const onMouseUp = () => {
-                if (!isDragging) return;
-                isDragging = false;
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-                virus.style.cursor = 'grab';
-                hospitalExtracted++;
-                document.getElementById('virus-extracted').textContent = hospitalExtracted;
-                virus.remove();
-                if (hospitalExtracted >= hospitalTotal) {
-                    clearInterval(hospitalTimer);
-                    const baseReward = 80;
-                    const reward = calcularRecompensa(baseReward, 'hospital');
-                    userData.diamonds += reward;
-                    hospitalLevel++;
-                    if (hospitalLevel > hospitalBest) {
-                        hospitalBest = hospitalLevel;
-                        userData.gameStats.hospital.bestLevel = hospitalBest;
-                        document.getElementById('surgery-best').textContent = hospitalBest;
-                    }
-                    userData.gameStats.hospital.currentLevel = hospitalLevel;
-                    userData.gameStats.hospital.totalWins = (userData.gameStats.hospital.totalWins || 0) + 1;
-                    userData.gameStats.hospital.lives = gameLives.hospital;
-                    document.getElementById('surgery-result').innerHTML = `<span style="color:#34C759;">✅ Cirugía exitosa! +${Math.floor(reward)} 💎</span>`;
-                    actualizarUI();
-                    saveUserData();
-                    setTimeout(() => iniciarJuegoHospital(), 2000);
-                }
-            };
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
         };
@@ -764,7 +759,6 @@ function crearVirusHospital() {
             virusX = parseInt(virus.style.left);
             virusY = parseInt(virus.style.top);
             virus.style.cursor = 'grabbing';
-            
             const onTouchMove = (moveEvent) => {
                 if (!isDragging) return;
                 const touch = moveEvent.touches[0];
@@ -782,7 +776,7 @@ function crearVirusHospital() {
                     document.removeEventListener('touchend', onTouchEnd);
                     if (!loseLife('hospital')) return;
                     virus.remove();
-                    document.getElementById('surgery-result').innerHTML = '<span style="color:#FF3B30;">⚠️ Tocaste la pared</span>';
+                    document.getElementById('surgery-result').innerHTML = '<span style="color:#ef4444;">⚠️ Tocaste la pared</span>';
                     setTimeout(() => document.getElementById('surgery-result').innerHTML = '', 1000);
                 }
             };
@@ -797,8 +791,7 @@ function crearVirusHospital() {
                 virus.remove();
                 if (hospitalExtracted >= hospitalTotal) {
                     clearInterval(hospitalTimer);
-                    const baseReward = 80;
-                    const reward = calcularRecompensa(baseReward, 'hospital');
+                    const reward = calcularRecompensa(80, 'hospital');
                     userData.diamonds += reward;
                     hospitalLevel++;
                     if (hospitalLevel > hospitalBest) {
@@ -809,7 +802,8 @@ function crearVirusHospital() {
                     userData.gameStats.hospital.currentLevel = hospitalLevel;
                     userData.gameStats.hospital.totalWins = (userData.gameStats.hospital.totalWins || 0) + 1;
                     userData.gameStats.hospital.lives = gameLives.hospital;
-                    document.getElementById('surgery-result').innerHTML = `<span style="color:#34C759;">✅ Cirugía exitosa! +${Math.floor(reward)} 💎</span>`;
+                    document.getElementById('hospital-game-level').textContent = hospitalLevel;
+                    document.getElementById('surgery-result').innerHTML = `<span style="color:#4ade80;">✅ Cirugía exitosa! +${reward} 💎</span>`;
                     actualizarUI();
                     saveUserData();
                     setTimeout(() => iniciarJuegoHospital(), 2000);
@@ -904,15 +898,6 @@ function switchHospitalTab(tab) {
         tabs[0].classList.add('active');
         tabs[1].classList.remove('active');
     }
-}
-
-function useAdMultiplier(game) {
-    showRewardedAd((s) => {
-        if (s) {
-            pendingMultiplier = 2;
-            alert('✨ Multiplicador x2 activado para tu próxima victoria!');
-        }
-    });
 }
 
 function buyUpgradeFromBuilding(building, price) {
@@ -1010,9 +995,9 @@ function jugarHighLow(eleccion) {
     if (gana) {
         const ganancia = apuesta * 2;
         userData.diamonds += ganancia;
-        document.getElementById('hl-result').innerHTML = '<span style="color:#34C759;">🎉 ¡GANASTE!</span>';
+        document.getElementById('hl-result').innerHTML = '<span style="color:#4ade80;">🎉 ¡GANASTE!</span>';
     } else {
-        document.getElementById('hl-result').innerHTML = '<span style="color:#FF3B30;">😞 Perdiste</span>';
+        document.getElementById('hl-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
     }
     
     actualizarUI();
@@ -1052,9 +1037,9 @@ function jugarRuleta(tipo) {
     let ganancia = (tipo === 'numero' && gana) ? apuesta * 36 : apuesta * 2;
     if (gana) {
         userData.diamonds += ganancia;
-        document.getElementById('ruleta-result').innerHTML = '<span style="color:#34C759;">🎉 ¡GANASTE!</span>';
+        document.getElementById('ruleta-result').innerHTML = '<span style="color:#4ade80;">🎉 ¡GANASTE!</span>';
     } else {
-        document.getElementById('ruleta-result').innerHTML = '<span style="color:#FF3B30;">😞 Perdiste</span>';
+        document.getElementById('ruleta-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
     }
     
     actualizarUI();
@@ -1095,9 +1080,9 @@ function jugarTragaperras() {
         let mult = r[0].mult;
         if (esPremium()) mult *= 2;
         userData.diamonds += apuesta * mult;
-        document.getElementById('tragaperras-result').innerHTML = `<span style="color:#34C759;">🎉 ¡JACKPOT! x${mult}</span>`;
+        document.getElementById('tragaperras-result').innerHTML = `<span style="color:#4ade80;">🎉 ¡JACKPOT! x${mult}</span>`;
     } else {
-        document.getElementById('tragaperras-result').innerHTML = '<span style="color:#FF3B30;">😞 Perdiste</span>';
+        document.getElementById('tragaperras-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
     }
     
     actualizarUI();
@@ -1128,9 +1113,9 @@ function jugarDados(eleccion) {
         let ganancia = eleccion === 'exacto' ? apuesta * 5 : apuesta * 2;
         if (esPremium()) ganancia *= 2;
         userData.diamonds += ganancia;
-        document.getElementById('dados-result').innerHTML = '<span style="color:#34C759;">🎉 ¡GANASTE!</span>';
+        document.getElementById('dados-result').innerHTML = '<span style="color:#4ade80;">🎉 ¡GANASTE!</span>';
     } else {
-        document.getElementById('dados-result').innerHTML = '<span style="color:#FF3B30;">😞 Perdiste</span>';
+        document.getElementById('dados-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
     }
     
     actualizarUI();
@@ -1151,9 +1136,9 @@ function comprarBoletos() {
         boletosComprados.push(Math.floor(Math.random() * 10000).toString().padStart(4, '0'));
     }
     
-    let html = '<p style="color:#8E9AB5;">Tus boletos:</p><div style="display:flex; flex-wrap:wrap; gap:5px;">';
+    let html = '<p style="color:#94a3b8;">Tus boletos:</p><div style="display:flex; flex-wrap:wrap; gap:5px;">';
     boletosComprados.forEach(b => {
-        html += `<span style="background:#1E2332; padding:5px 10px; border-radius:5px; border:1px solid #FCCF47;">${b}</span>`;
+        html += `<span style="background:#1e293b; padding:5px 10px; border-radius:5px; border:1px solid #facc15;">${b}</span>`;
     });
     html += '</div>';
     document.getElementById('loteria-boletos').innerHTML = html;
@@ -1180,9 +1165,9 @@ function jugarLoteria() {
     
     if (premioTotal > 0) {
         userData.diamonds += premioTotal;
-        document.getElementById('loteria-result').innerHTML = `<span style="color:#34C759;">🎉 +${premioTotal} 💎</span>`;
+        document.getElementById('loteria-result').innerHTML = `<span style="color:#4ade80;">🎉 +${premioTotal} 💎</span>`;
     } else {
-        document.getElementById('loteria-result').innerHTML = '<span style="color:#FF3B30;">😞 No ganaste</span>';
+        document.getElementById('loteria-result').innerHTML = '<span style="color:#ef4444;">😞 No ganaste</span>';
     }
     
     boletosComprados = [];
@@ -1241,10 +1226,19 @@ async function updateRankingAndPool() {
         userData.rank = rank;
         userData.weekly_rank = pos;
         
-        const rankDisplay = document.getElementById('user-rank-display');
-        if (rankDisplay) rankDisplay.textContent = `${rank} #${pos}`;
-        const positionDisplay = document.getElementById('user-position');
-        if (positionDisplay) positionDisplay.textContent = `#${pos}`;
+        const rankDisplay = document.getElementById('user-rank');
+        const rankDesc = document.getElementById('rank-description');
+        if (rankDisplay) rankDisplay.innerHTML = `<span class="${rank.toLowerCase()}-text">${rank}</span> (#${pos})`;
+        if (rankDesc) {
+            let desc = "";
+            switch(rank) {
+                case "Diamante": desc = "💎 Top 1-3: 40% del pool"; break;
+                case "Oro": desc = "🥇 Top 4-10: 25% del pool"; break;
+                case "Plata": desc = "🥈 Top 11-50: 20% del pool"; break;
+                default: desc = "👥 Resto: 15% del pool (proporcional)";
+            }
+            rankDesc.textContent = desc;
+        }
         
         await calculateProjectedReward();
     } catch(e) {
@@ -1257,7 +1251,7 @@ async function calculateProjectedReward() {
         const poolUsuarios = globalPoolData.pool_ton * 0.8 * RESERVA_POOL;
         if (poolUsuarios <= 0 || globalPoolData.user_rankings.length === 0 || userData.diamonds <= 0) {
             userData.projectedReward = 0;
-            document.getElementById('projected-reward-display').textContent = '0 TON';
+            document.getElementById('projected-reward').textContent = '0 TON';
             return;
         }
         
@@ -1279,8 +1273,7 @@ async function calculateProjectedReward() {
         }
         
         userData.projectedReward = recompensa;
-        document.getElementById('projected-reward-display').textContent = recompensa.toFixed(4) + ' TON';
-        document.getElementById('pool-total-display').textContent = globalPoolData.pool_ton.toFixed(2) + ' TON';
+        document.getElementById('projected-reward').textContent = recompensa.toFixed(4) + ' TON';
     } catch(e) { console.error(e); }
 }
 
@@ -1355,18 +1348,23 @@ async function openWithdraw() {
     await updateRankingAndPool();
     
     const esDomingo = enVentanaRetiro();
-    const badge = document.getElementById('withdraw-day-badge');
-    const dias = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+    const sundayMsg = document.getElementById('sunday-message');
+    const notSundayMsg = document.getElementById('not-sunday-message');
+    const withdrawRank = document.getElementById('withdraw-rank');
+    
     if (esDomingo) {
-        badge.textContent = 'DOMINGO · INTERCAMBIO DISPONIBLE';
-        badge.className = 'day-badge day-sunday';
+        if (sundayMsg) sundayMsg.style.display = 'block';
+        if (notSundayMsg) notSundayMsg.style.display = 'none';
+        if (withdrawRank) withdrawRank.textContent = `${userData.rank} (#${userData.weekly_rank})`;
     } else {
-        badge.textContent = `${dias[new Date().getDay()]} · SIN INTERCAMBIO`;
-        badge.className = 'day-badge day-other';
+        if (sundayMsg) sundayMsg.style.display = 'none';
+        if (notSundayMsg) notSundayMsg.style.display = 'block';
+        if (withdrawRank) withdrawRank.textContent = `${userData.rank} (#${userData.weekly_rank}) - Espera al domingo`;
     }
     
     document.getElementById('available-diamonds').textContent = Math.floor(userData.diamonds);
     document.getElementById('pool-total').textContent = globalPoolData.pool_ton.toFixed(2) + ' TON';
+    document.getElementById('pool-users').textContent = (globalPoolData.pool_ton * 0.8).toFixed(2) + ' TON';
     document.getElementById('withdraw-projection').textContent = userData.projectedReward.toFixed(4) + ' TON';
     document.getElementById('accumulated-ton').textContent = (userData.accumulated_ton || 0).toFixed(4) + ' TON';
     document.getElementById('exchange-btn').disabled = !esDomingo || userData.diamonds === 0;
@@ -1445,9 +1443,9 @@ function openEventModal() {
     document.getElementById('event-icon').innerHTML = `<i class="fa-solid ${evento.icono}" style="color: ${evento.color}; font-size: 48px;"></i>`;
     document.getElementById('event-title').textContent = evento.nombre;
     document.getElementById('event-description').textContent = evento.descripcion;
-    document.getElementById('event-multiplier-normal').textContent = `x${evento.gameMultiplier}`;
-    document.getElementById('event-multiplier-premium').textContent = `x${evento.gameMultiplier * 2}`;
     document.getElementById('event-reward').textContent = evento.recompensa + ' 💎';
+    document.getElementById('event-reward-premium').textContent = evento.premium + ' 💎';
+    document.getElementById('event-reward-normal').textContent = evento.recompensa + ' 💎';
     showModal('modalEvent');
 }
 
@@ -1495,9 +1493,9 @@ function openBank() {
         { ton: 2.00, diamonds: 2000 }, { ton: 5.00, diamonds: 5000 }, { ton: 10.00, diamonds: 10000 }
     ];
     document.getElementById('bankList').innerHTML = packs.map(p => `
-        <div style="background:var(--bg-elevated); border-radius:12px; padding:16px; margin:8px 0; display:flex; justify-content:space-between;">
-            <div><strong>${p.ton.toFixed(2)} TON</strong><div style="font-size:12px;">+${p.diamonds} 💎</div></div>
-            <button onclick="comprarTON(${p.ton})" style="background:${isConnected ? '#34C759' : '#334155'}; border:none; padding:10px 20px; border-radius:30px;" ${!isConnected ? 'disabled' : ''}>${isConnected ? 'COMPRAR' : 'CONECTAR'}</button>
+        <div style="background:#0f172a; border-radius:12px; padding:16px; margin:8px 0; display:flex; justify-content:space-between; align-items:center;">
+            <div><strong>${p.ton.toFixed(2)} TON</strong><div style="font-size:12px; color:#94a3b8;">+${p.diamonds} 💎</div></div>
+            <button onclick="comprarTON(${p.ton})" style="background:${isConnected ? '#4ade80' : '#334155'}; border:none; padding:10px 20px; border-radius:30px; color:white; font-weight:700; cursor:pointer;" ${!isConnected ? 'disabled' : ''}>${isConnected ? 'COMPRAR' : 'CONECTAR'}</button>
         </div>
     `).join('');
 }
@@ -1518,9 +1516,9 @@ function openStore() {
     showModal('modalStore');
     const isConnected = !!currentWallet;
     document.getElementById('premium-plans').innerHTML = PREMIUM_PLANS.map(p => `
-        <div style="background:var(--bg-elevated); border-radius:16px; padding:16px; margin:10px 0;">
-            <div style="display:flex; justify-content:space-between;"><strong>${p.name}</strong><span style="color:#FCCF47;">${p.price} TON</span></div>
-            <button onclick="comprarPremium(${JSON.stringify(p).replace(/"/g, '&quot;')})" style="background:${isConnected ? '#BF5AF2' : '#334155'}; border:none; border-radius:30px; padding:12px; width:100%; margin-top:12px;" ${!isConnected ? 'disabled' : ''}>${isConnected ? 'COMPRAR' : 'CONECTAR'}</button>
+        <div style="background:#0f172a; border-radius:16px; padding:16px; margin:10px 0;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><strong>${p.name}</strong><span style="color:#facc15;">${p.price} TON</span></div>
+            <button onclick="comprarPremium(${JSON.stringify(p).replace(/"/g, '&quot;')})" style="background:${isConnected ? '#8b5cf6' : '#334155'}; border:none; border-radius:30px; padding:12px; width:100%; color:white; font-weight:700; cursor:pointer;" ${!isConnected ? 'disabled' : ''}>${isConnected ? 'COMPRAR' : 'CONECTAR'}</button>
         </div>
     `).join('');
 }
@@ -1629,12 +1627,12 @@ function startProduction() {
 
 function updateCentralStats() {
     const prod = {
-        escuela: (userData.lvl_escuela || 0) * 40,
-        fabrica: (userData.lvl_fabrica || 0) * 120,
         piscina: (userData.lvl_piscina || 0) * 60,
+        fabrica: (userData.lvl_fabrica || 0) * 120,
+        escuela: (userData.lvl_escuela || 0) * 40,
         hospital: (userData.lvl_hospital || 0) * 80
     };
-    const total = prod.escuela + prod.fabrica + prod.piscina + prod.hospital;
+    const total = prod.piscina + prod.fabrica + prod.escuela + prod.hospital;
     Object.keys(prod).forEach(k => {
         const el = document.getElementById(`s_${k}`);
         if (el) el.textContent = prod[k];
@@ -1661,10 +1659,10 @@ async function initTONConnect() {
         currentWallet = wallet;
         if (wallet) {
             document.getElementById('ton-connect-button').style.display = 'none';
-            document.getElementById('wallet-info').style.display = 'block';
+            document.getElementById('wallet-info').classList.remove('hidden');
         } else {
             document.getElementById('ton-connect-button').style.display = 'block';
-            document.getElementById('wallet-info').style.display = 'none';
+            document.getElementById('wallet-info').classList.add('hidden');
         }
     });
 }
@@ -1673,7 +1671,7 @@ async function disconnectWallet() {
     if (tonConnectUI) await tonConnectUI.disconnect();
     currentWallet = null;
     document.getElementById('ton-connect-button').style.display = 'block';
-    document.getElementById('wallet-info').style.display = 'none';
+    document.getElementById('wallet-info').classList.add('hidden');
 }
 
 // ==========================================
@@ -1684,9 +1682,9 @@ async function saveUserData() {
     try {
         await _supabase.from('game_data').update({
             diamonds: Math.floor(userData.diamonds),
-            lvl_escuela: userData.lvl_escuela,
-            lvl_fabrica: userData.lvl_fabrica,
             lvl_piscina: userData.lvl_piscina,
+            lvl_fabrica: userData.lvl_fabrica,
+            lvl_escuela: userData.lvl_escuela,
             lvl_hospital: userData.lvl_hospital,
             last_online: new Date().toISOString(),
             last_production_update: new Date().toISOString(),
@@ -1701,7 +1699,8 @@ async function saveUserData() {
             accumulated_ton: userData.accumulated_ton,
             gameStats: userData.gameStats
         }).eq('telegram_id', userData.id);
-    } catch(e) { console.error(e); }
+        console.log('✅ Datos guardados:', new Date().toLocaleTimeString());
+    } catch(e) { console.error('Error guardando:', e); }
 }
 
 async function loadUserFromDB(tgId) {
@@ -1709,11 +1708,17 @@ async function loadUserFromDB(tgId) {
     if (error) { console.error(error); return; }
     if (!data) {
         const nuevo = {
-            telegram_id: tgId.toString(), username: userData.username, diamonds: 0,
-            lvl_escuela: 0, lvl_fabrica: 0, lvl_piscina: 0, lvl_hospital: 0,
+            telegram_id: tgId.toString(),
+            username: userData.username,
+            diamonds: 0,
+            lvl_piscina: 0, lvl_fabrica: 0, lvl_escuela: 0, lvl_hospital: 0,
             referral_code: 'REF' + tgId.toString().slice(-6),
-            last_online: new Date().toISOString(), last_production_update: new Date().toISOString(),
-            haInvertido: false, event_progress: {}, accumulated_ton: 0, last_withdraw_week: null,
+            last_online: new Date().toISOString(),
+            last_production_update: new Date().toISOString(),
+            haInvertido: false,
+            event_progress: {},
+            accumulated_ton: 0,
+            last_withdraw_week: null,
             gameStats: {
                 escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
                 fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
@@ -1727,9 +1732,9 @@ async function loadUserFromDB(tgId) {
         userData = {
             ...userData, ...data, id: tgId.toString(),
             diamonds: Number(data.diamonds) || 0,
-            lvl_escuela: Number(data.lvl_escuela) || 0,
-            lvl_fabrica: Number(data.lvl_fabrica) || 0,
             lvl_piscina: Number(data.lvl_piscina) || 0,
+            lvl_fabrica: Number(data.lvl_fabrica) || 0,
+            lvl_escuela: Number(data.lvl_escuela) || 0,
             lvl_hospital: Number(data.lvl_hospital) || 0,
             referral_earnings: Number(data.referral_earnings) || 0,
             referred_users: data.referred_users || [],
@@ -1753,6 +1758,7 @@ async function loadUserFromDB(tgId) {
     }
     userData.last_production_update = new Date().toISOString();
     actualizarUI();
+    actualizarPremiumUI();
 }
 
 // ==========================================
