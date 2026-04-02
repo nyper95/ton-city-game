@@ -1,12 +1,13 @@
 // ======================================================
-// TON CITY - VERSIÓN PROFESIONAL COMPLETA
+// TON CITY - VERSIÓN PROFESIONAL COMPLETA CORREGIDA
 // ======================================================
 // ✅ Todos los minijuegos funcionales con gráficos mejorados
 // ✅ Casino completo con 5 juegos y saldo visible
-// ✅ Sistema de rangos de 4 niveles
-// ✅ Guardado automático en Supabase
+// ✅ Sistema de rangos de 4 niveles (movido a sección propia)
+// ✅ Guardado automático en Supabase (corregido)
 // ✅ Producción pausada los domingos
-// ✅ Sistema de retiros con comisiones reales
+// ✅ Sistema de retiros profesional sin número de semana
+// ✅ Eventos semanales con multiplicadores x2/x4 y brillo en edificios
 // ======================================================
 
 console.log('🚀 TON CITY - Inicializando...');
@@ -175,15 +176,46 @@ function getEventoActual() {
     return EVENTOS_SEMANALES[semana];
 }
 
-function enVentanaRetiro() {
-    return new Date().getDay() === 0;
+function actualizarEventosUI() {
+    const evento = getEventoActual();
+    const edificios = ['escuela', 'fabrica', 'piscina', 'hospital'];
+    
+    // Limpiar clase event-card de todos los edificios
+    document.querySelectorAll('.card').forEach(card => {
+        card.classList.remove('event-card');
+    });
+    
+    // Añadir clase event-card al edificio del evento
+    const edificioCard = document.querySelector(`.card[onclick*="${evento.edificio}"]`);
+    if (edificioCard) {
+        edificioCard.classList.add('event-card');
+    }
+    
+    // Actualizar badge en modales
+    edificios.forEach(ed => {
+        const badge = document.getElementById(`${ed}-event-badge`);
+        if (badge) {
+            if (ed === evento.edificio) {
+                badge.style.display = 'inline-block';
+                badge.textContent = esPremium() ? '🎉 EVENTO x4' : '🎉 EVENTO x2';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    });
+    
+    // Actualizar banner de evento
+    const eventBanner = document.getElementById('event-banner');
+    const eventText = document.getElementById('event-text');
+    if (eventBanner && eventText) {
+        eventBanner.style.display = 'flex';
+        eventBanner.style.borderLeftColor = evento.color;
+        eventText.innerHTML = `🎉 Evento: ${evento.nombre} - ¡Gana x${evento.gameMultiplier} (x${esPremium() ? evento.gameMultiplier * 2 : evento.gameMultiplier} Premium)! 🎉`;
+    }
 }
 
-function getNumeroSemana() {
-    const ahora = new Date();
-    const inicio = new Date(ahora.getFullYear(), 0, 1);
-    const dias = Math.floor((ahora - inicio) / (24 * 60 * 60 * 1000));
-    return Math.ceil(dias / 7);
+function enVentanaRetiro() {
+    return new Date().getDay() === 0;
 }
 
 function showModal(id) {
@@ -230,6 +262,12 @@ function actualizarUI() {
         const balanceSpan = document.getElementById(`${game}-balance`);
         if (balanceSpan) balanceSpan.textContent = Math.floor(userData.diamonds);
     });
+    
+    // Actualizar rango en UI
+    const rankDisplay = document.getElementById('user-rank-display');
+    if (rankDisplay) rankDisplay.textContent = `${userData.rank} #${userData.weekly_rank}`;
+    const projDisplay = document.getElementById('projected-reward-display');
+    if (projDisplay) projDisplay.textContent = userData.projectedReward.toFixed(4) + ' TON';
 }
 
 function getTotalProduction() {
@@ -907,7 +945,19 @@ function buyUpgradeFromBuilding(building, price) {
     saveUserData();
     actualizarUI();
     alert(`✅ ${building} nivel ${userData[`lvl_${building}`]}`);
-    closeAll();
+    // No cerrar el modal, solo actualizar la UI
+    const levelSpan = document.getElementById(`${building}-level`);
+    const prodSpan = document.getElementById(`${building}-prod`);
+    if (levelSpan) levelSpan.textContent = userData[`lvl_${building}`];
+    if (prodSpan) {
+        const producciones = { escuela: 40, fabrica: 120, piscina: 60, hospital: 80 };
+        prodSpan.textContent = (userData[`lvl_${building}`] * producciones[building]) + ' 💎/h';
+    }
+    const priceSpan = document.getElementById(`${building}-price`);
+    const precios = { escuela: 3000, fabrica: 10000, piscina: 5000, hospital: 7500 };
+    if (priceSpan) priceSpan.textContent = precios[building].toLocaleString() + ' 💎';
+    const btn = document.getElementById(`${building}-btn`);
+    if (btn) btn.disabled = userData.diamonds < precios[building];
 }
 
 // ==========================================
@@ -1226,20 +1276,6 @@ async function updateRankingAndPool() {
         userData.rank = rank;
         userData.weekly_rank = pos;
         
-        const rankDisplay = document.getElementById('user-rank');
-        const rankDesc = document.getElementById('rank-description');
-        if (rankDisplay) rankDisplay.innerHTML = `<span class="${rank.toLowerCase()}-text">${rank}</span> (#${pos})`;
-        if (rankDesc) {
-            let desc = "";
-            switch(rank) {
-                case "Diamante": desc = "💎 Top 1-3: 40% del pool"; break;
-                case "Oro": desc = "🥇 Top 4-10: 25% del pool"; break;
-                case "Plata": desc = "🥈 Top 11-50: 20% del pool"; break;
-                default: desc = "👥 Resto: 15% del pool (proporcional)";
-            }
-            rankDesc.textContent = desc;
-        }
-        
         await calculateProjectedReward();
     } catch(e) {
         console.error("Error ranking:", e);
@@ -1251,7 +1287,6 @@ async function calculateProjectedReward() {
         const poolUsuarios = globalPoolData.pool_ton * 0.8 * RESERVA_POOL;
         if (poolUsuarios <= 0 || globalPoolData.user_rankings.length === 0 || userData.diamonds <= 0) {
             userData.projectedReward = 0;
-            document.getElementById('projected-reward').textContent = '0 TON';
             return;
         }
         
@@ -1273,7 +1308,6 @@ async function calculateProjectedReward() {
         }
         
         userData.projectedReward = recompensa;
-        document.getElementById('projected-reward').textContent = recompensa.toFixed(4) + ' TON';
     } catch(e) { console.error(e); }
 }
 
@@ -1294,14 +1328,13 @@ async function updateRealPoolBalance() {
 }
 
 // ==========================================
-// RETIROS
+// RETIROS PROFESIONALES (SIN NÚMERO DE SEMANA)
 // ==========================================
 async function exchangeDiamonds() {
     if (!tonConnectUI?.connected) return alert("❌ Conecta tu wallet primero");
     if (!enVentanaRetiro()) return alert("❌ El intercambio solo está disponible los DOMINGOS");
     
-    const semanaActual = getNumeroSemana();
-    if (userData.last_withdraw_week === semanaActual) return alert("❌ Ya intercambiaste tus diamantes esta semana");
+    if (userData.last_withdraw_week === getNumeroSemana()) return alert("❌ Ya intercambiaste tus diamantes esta semana");
     if (userData.diamonds <= 0) return alert("❌ No tienes diamantes para intercambiar");
     
     await updateRankingAndPool();
@@ -1315,7 +1348,7 @@ async function exchangeDiamonds() {
     if (!confirm(`¿Intercambiar ${Math.floor(userData.diamonds).toLocaleString()} 💎 por ${tonARecibir.toFixed(4)} TON?\n\nRango: ${userData.rank} #${userData.weekly_rank}\n\n⚠️ Los diamantes no intercambiados se queman al final del domingo`)) return;
     
     userData.accumulated_ton = (userData.accumulated_ton || 0) + tonARecibir;
-    userData.last_withdraw_week = semanaActual;
+    userData.last_withdraw_week = getNumeroSemana();
     userData.diamonds = 0;
     await saveUserData();
     
@@ -1343,28 +1376,32 @@ async function withdrawTON() {
     } catch(e) { alert("❌ Error en transacción"); console.error(e); }
 }
 
+function getNumeroSemana() {
+    const ahora = new Date();
+    const inicio = new Date(ahora.getFullYear(), 0, 1);
+    const dias = Math.floor((ahora - inicio) / (24 * 60 * 60 * 1000));
+    return Math.ceil(dias / 7);
+}
+
 async function openWithdraw() {
     await updateRealPoolBalance();
     await updateRankingAndPool();
     
     const esDomingo = enVentanaRetiro();
-    const sundayMsg = document.getElementById('sunday-message');
-    const notSundayMsg = document.getElementById('not-sunday-message');
-    const withdrawRank = document.getElementById('withdraw-rank');
+    const badge = document.getElementById('withdraw-day-badge');
+    const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+    const today = days[new Date().getDay()];
     
     if (esDomingo) {
-        if (sundayMsg) sundayMsg.style.display = 'block';
-        if (notSundayMsg) notSundayMsg.style.display = 'none';
-        if (withdrawRank) withdrawRank.textContent = `${userData.rank} (#${userData.weekly_rank})`;
+        badge.textContent = `${today} · INTERCAMBIO DISPONIBLE`;
+        badge.className = 'withdraw-day-badge withdraw-day-sunday';
     } else {
-        if (sundayMsg) sundayMsg.style.display = 'none';
-        if (notSundayMsg) notSundayMsg.style.display = 'block';
-        if (withdrawRank) withdrawRank.textContent = `${userData.rank} (#${userData.weekly_rank}) - Espera al domingo`;
+        badge.textContent = `${today} · SIN INTERCAMBIO`;
+        badge.className = 'withdraw-day-badge withdraw-day-other';
     }
     
     document.getElementById('available-diamonds').textContent = Math.floor(userData.diamonds);
     document.getElementById('pool-total').textContent = globalPoolData.pool_ton.toFixed(2) + ' TON';
-    document.getElementById('pool-users').textContent = (globalPoolData.pool_ton * 0.8).toFixed(2) + ' TON';
     document.getElementById('withdraw-projection').textContent = userData.projectedReward.toFixed(4) + ' TON';
     document.getElementById('accumulated-ton').textContent = (userData.accumulated_ton || 0).toFixed(4) + ' TON';
     document.getElementById('exchange-btn').disabled = !esDomingo || userData.diamonds === 0;
@@ -1554,19 +1591,23 @@ function showAdsModal() {
 function actualizarEstadoAnuncio() {
     const puede = (!userData.last_ad_watch || (new Date() - new Date(userData.last_ad_watch)) > 3600000);
     const btn = document.getElementById('watch-ad-btn');
+    const statusDiv = document.getElementById('ads-status');
     if (!btn) return;
     if (esPremium()) {
         btn.disabled = true;
         btn.textContent = '⭐ PREMIUM - SIN ANUNCIOS';
+        if (statusDiv) statusDiv.innerHTML = '⭐ Premium: sin anuncios';
         return;
     }
     if (puede && adsReady) {
         btn.disabled = false;
         btn.textContent = 'VER ANUNCIO +30 💎';
+        if (statusDiv) statusDiv.innerHTML = '✅ Anuncio disponible';
     } else {
         btn.disabled = true;
         const restante = userData.last_ad_watch ? Math.ceil((3600000 - (new Date() - new Date(userData.last_ad_watch))) / 60000) : 0;
         btn.textContent = `⏳ ${restante} min`;
+        if (statusDiv) statusDiv.innerHTML = `⏳ Próximo anuncio en ${restante} min`;
     }
 }
 
@@ -1641,7 +1682,6 @@ function updateCentralStats() {
 }
 
 function openCentral() {
-    updateRankingAndPool();
     updateCentralStats();
     showModal('centralModal');
 }
@@ -1778,7 +1818,14 @@ async function initApp() {
     await updateRealPoolBalance();
     await updateRankingAndPool();
     startProduction();
+    actualizarEventosUI();
     setInterval(saveUserData, 30000);
+    setInterval(() => {
+        actualizarEventosUI();
+        if (document.getElementById('modalWithdraw')?.style.display === 'block') {
+            openWithdraw();
+        }
+    }, 60000);
     window.addEventListener('beforeunload', () => saveUserData());
     setInterval(() => {
         if (enVentanaRetiro() && new Date().getHours() === 23 && new Date().getMinutes() === 59) {
@@ -1834,4 +1881,4 @@ window.switchFabricaTab = switchFabricaTab;
 window.switchPiscinaTab = switchPiscinaTab;
 window.switchHospitalTab = switchHospitalTab;
 
-console.log('✅ TON CITY - Versión profesional completa');
+console.log('✅ TON CITY - Versión profesional completa corregida');
