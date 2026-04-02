@@ -105,7 +105,7 @@
         .premium { color: var(--premium); }
         .event { color: var(--event); }
         
-        .event-card { border: 2px solid #f97316 !important; animation: event-pulse 2s infinite; }
+        .event-card { border: 2px solid #f97316 !important; animation: event-pulse 2s infinite; box-shadow: 0 0 20px rgba(249, 115, 22, 0.5); }
         
         .overlay, .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; }
         .overlay { background: rgba(0, 0, 0, .7); z-index: 10; backdrop-filter: blur(5px); }
@@ -114,7 +114,8 @@
         
         .modal-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; position: sticky; top: 0; background: #020617; z-index: 10; padding: 10px 0; }
         .modal-full .modal-header { background: #020617; }
-        .modal-back { width: 44px; height: 44px; background: #1e293b; border-radius: 30px; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; color: #94a3b8; }
+        .modal-back { width: 44px; height: 44px; background: #1e293b; border-radius: 30px; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; color: #94a3b8; transition: all 0.2s; }
+        .modal-back:hover { background: #334155; color: white; }
         .modal-title { font-size: 22px; font-weight: 700; flex: 1; background: linear-gradient(135deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         
         .stat { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #0f172a; border-radius: 12px; margin: 8px 0; border: 1px solid rgba(255, 255, 255, .1); }
@@ -127,6 +128,7 @@
         .nav-item { text-align: center; font-size: 0.8rem; color: #94a3b8; font-weight: bold; cursor: pointer; padding: 8px 12px; border-radius: 10px; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-item:hover { background: #1e293b; color: white; }
         .nav-item i { font-size: 20px; }
+        .nav-item.active { color: var(--primary); }
         
         #ton-connect-button { margin: 15px 0; display: flex; justify-content: center; }
         #wallet-info { background: #0f172a; padding: 12px; border-radius: 12px; margin: 15px 0; border: 2px solid #10b981; text-align: center; }
@@ -138,7 +140,7 @@
         .building-upgrade { background: #2563eb; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
         
         .tabs { display: flex; gap: 8px; background: #1e293b; padding: 6px; border-radius: 40px; margin-bottom: 24px; }
-        .tab { flex: 1; text-align: center; padding: 12px; border-radius: 40px; font-weight: 700; font-size: 14px; cursor: pointer; color: #94a3b8; }
+        .tab { flex: 1; text-align: center; padding: 12px; border-radius: 40px; font-weight: 700; font-size: 14px; cursor: pointer; color: #94a3b8; transition: all 0.2s; }
         .tab.active { background: var(--primary); color: #000; }
         
         .building-stats { background: #0f172a; border-radius: 20px; padding: 16px; margin-bottom: 20px; }
@@ -151,7 +153,8 @@
         .lives-container { display: flex; justify-content: center; gap: 12px; margin: 16px 0; }
         .life { width: 36px; height: 36px; background: #334155; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
         .life.active { background: #ef4444; }
-        .revive-btn { background: #f97316; border: none; border-radius: 30px; padding: 12px; margin-top: 16px; font-weight: 700; cursor: pointer; width: 100%; color: white; }
+        .revive-btn { background: #f97316; border: none; border-radius: 30px; padding: 12px; margin-top: 16px; font-weight: 700; cursor: pointer; width: 100%; color: white; transition: all 0.2s; }
+        .revive-btn:active { transform: translateY(2px); }
         
         .game-instructions { background: #1e293b; border-left: 4px solid var(--primary); padding: 12px; border-radius: 12px; margin: 16px 0; font-size: 13px; color: #94a3b8; }
         .game-instructions i { color: var(--primary); margin-right: 8px; }
@@ -160,6 +163,7 @@
         .ad-btn { flex: 1; background: #f97316; border: none; border-radius: 20px; padding: 12px; color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 0 #B45F00; transition: all 0.2s; }
         .ad-btn:active { transform: translateY(4px); box-shadow: none; }
         
+        /* ESCUELA */
         .sequence-display { display: flex; justify-content: center; gap: 12px; margin: 20px 0; flex-wrap: wrap; }
         .sequence-card { width: 70px; height: 70px; background: #0f172a; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 2px solid #a16207; transition: 0.2s; }
         .sequence-card.highlight { background: #a16207; color: white; transform: scale(1.1); }
@@ -167,22 +171,27 @@
         .pupitre { background: #0f172a; border-radius: 16px; padding: 16px; text-align: center; font-size: 24px; cursor: pointer; border: 2px solid #a16207; transition: 0.1s; }
         .pupitre:active { background: #a16207; transform: scale(0.95); }
         
+        /* FÁBRICA */
         .conveyor-belt { position: relative; height: 120px; background: #2d2f3a; border-radius: 60px; overflow: hidden; margin: 20px 0; border: 2px solid #a78bfa; }
         .moving-piece { position: absolute; width: 80px; height: 80px; background: #a78bfa; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 48px; top: 20px; transition: left 0.05s linear; box-shadow: 0 5px 0 #6b21a5; }
         .calibration-zone { position: absolute; left: 50%; transform: translateX(-50%); width: 100px; height: 100px; background: rgba(167, 139, 250, 0.3); border: 3px solid #a78bfa; border-radius: 20px; top: 10px; }
         .defect-indicator { text-align: center; margin: 10px 0; font-size: 14px; color: #ef4444; font-weight: bold; }
         
+        /* PISCINA */
         .slingshot-area { position: relative; height: 300px; background: linear-gradient(180deg, #0f4c81, #0b2a4a); border-radius: 28px; overflow: hidden; margin: 20px 0; cursor: grab; touch-action: none; border: 2px solid #38bdf8; }
         .diver { position: absolute; bottom: 30px; left: 30px; font-size: 64px; transition: transform 0.1s; z-index: 10; filter: drop-shadow(0 5px 0 #1e3a5f); }
         .target { position: absolute; bottom: 30px; right: 30px; width: 80px; height: 80px; background: rgba(56, 189, 248, 0.3); border: 3px solid #38bdf8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; transition: all 0.05s linear; animation: pulse 1s infinite; }
         .power-bar { height: 120px; width: 35px; background: #334155; border-radius: 20px; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); overflow: hidden; border: 2px solid #facc15; }
         .power-fill { width: 100%; background: linear-gradient(180deg, #facc15, #f97316); position: absolute; bottom: 0; height: 0%; transition: height 0.02s; }
         
+        /* HOSPITAL */
         .surgery-area { position: relative; width: 100%; height: 300px; background: #f4e6d8; border-radius: 28px; margin: 20px 0; overflow: hidden; border: 3px solid #f87171; }
-        .virus { position: absolute; width: 55px; height: 55px; background: #8b4513; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; cursor: grab; z-index: 10; box-shadow: 0 5px 0 #5a2a0a; }
+        .virus { position: absolute; width: 55px; height: 55px; background: #8b4513; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; cursor: grab; z-index: 10; box-shadow: 0 5px 0 #5a2a0a; transition: all 0.05s linear; }
+        .virus:active { cursor: grabbing; }
         .time-bar { height: 10px; background: #334155; border-radius: 10px; margin: 16px 0; overflow: hidden; }
         .time-fill { height: 100%; background: #4ade80; width: 100%; transition: width 0.1s linear; }
         
+        /* CASINO */
         .casino-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0; }
         .casino-card { background: #0f172a; border-radius: 20px; padding: 20px; text-align: center; border: 2px solid #f97316; cursor: pointer; transition: 0.2s; box-shadow: 0 5px 0 #7b341e; }
         .casino-card:active { transform: translateY(5px); box-shadow: none; }
@@ -192,31 +201,68 @@
         
         .number-display { font-size: 56px; font-weight: 800; font-family: monospace; background: #0f172a; padding: 25px; border-radius: 20px; margin: 16px 0; text-align: center; border: 2px solid #f97316; letter-spacing: 8px; }
         .bet-controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 20px 0; }
-        .bet-controls button { width: 60px; height: 60px; border-radius: 30px; font-size: 24px; background: #1e293b; border: none; color: white; font-weight: 700; cursor: pointer; box-shadow: 0 3px 0 #0f172a; margin: 0; }
+        .bet-controls button { width: 60px; height: 60px; border-radius: 30px; font-size: 24px; background: #1e293b; border: none; color: white; font-weight: 700; cursor: pointer; box-shadow: 0 3px 0 #0f172a; margin: 0; transition: all 0.1s; }
+        .bet-controls button:active { transform: translateY(3px); box-shadow: none; }
         .bet-controls span { font-size: 32px; min-width: 80px; text-align: center; color: #facc15; font-weight: 800; }
         .game-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
         .dice-display { display: flex; justify-content: center; gap: 30px; margin: 20px 0; }
-        .dice { width: 80px; height: 80px; background: white; color: black; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; box-shadow: 0 8px 0 #aaa; }
+        .dice { width: 80px; height: 80px; background: white; color: black; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; box-shadow: 0 8px 0 #aaa; transition: all 0.1s; }
         .slot-machine { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
-        .slot { width: 80px; height: 100px; background: white; color: black; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; box-shadow: 0 8px 0 #aaa; }
+        .slot { width: 80px; height: 100px; background: white; color: black; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; box-shadow: 0 8px 0 #aaa; transition: all 0.1s; }
         
+        /* RANKING */
+        .ranking-section {
+            background: linear-gradient(145deg, #0b1225, #020617);
+            border-radius: 22px;
+            margin: 12px;
+            padding: 18px;
+            border: 1px solid rgba(255, 255, 255, .06);
+        }
+        .ranking-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: var(--primary); }
+        .rank-list { display: flex; flex-direction: column; gap: 8px; }
+        .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #0f172a; border-radius: 12px; border-left: 4px solid; }
+        .rank-item.diamond { border-left-color: #60a5fa; }
+        .rank-item.gold { border-left-color: #fbbf24; }
+        .rank-item.silver { border-left-color: #94a3b8; }
+        .rank-item.citizen { border-left-color: #4ade80; }
+        .rank-name { font-weight: 700; }
+        .rank-percent { font-size: 14px; color: #94a3b8; }
+        .rank-value { font-weight: 700; color: var(--primary); }
+        
+        /* RETIRO PROFESIONAL */
         .withdraw-card { background: linear-gradient(145deg, #1e293b, #0f172a); border-radius: 28px; padding: 24px; text-align: center; margin: 16px 0; border: 2px solid var(--primary); }
-        .day-badge { display: inline-block; padding: 12px 24px; border-radius: 40px; font-weight: 700; margin: 16px 0; font-size: 14px; }
-        .day-sunday { background: var(--primary); color: #000; }
-        .day-other { background: #1e293b; color: #94a3b8; }
-        .withdraw-btn { background: #4ade80; color: #000; border: none; border-radius: 24px; padding: 18px; font-weight: 800; font-size: 18px; width: 100%; margin: 10px 0; cursor: pointer; box-shadow: 0 5px 0 #1f7b3e; }
-        .withdraw-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .withdraw-day-badge { display: inline-block; padding: 12px 24px; border-radius: 40px; font-weight: 700; margin: 16px 0; font-size: 14px; }
+        .withdraw-day-sunday { background: linear-gradient(135deg, #f97316, #c2410c); color: white; animation: pulse 2s infinite; }
+        .withdraw-day-other { background: #1e293b; color: #94a3b8; }
+        .withdraw-balance { font-size: 56px; font-weight: 800; color: var(--primary); margin: 16px 0; text-shadow: 0 0 20px rgba(250, 204, 21, 0.5); }
+        .withdraw-btn { background: #4ade80; color: #000; border: none; border-radius: 24px; padding: 18px; font-weight: 800; font-size: 18px; width: 100%; margin: 10px 0; cursor: pointer; box-shadow: 0 5px 0 #1f7b3e; transition: all 0.2s; }
+        .withdraw-btn:active { transform: translateY(5px); box-shadow: none; }
+        .withdraw-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+        .withdraw-btn.exchange { background: linear-gradient(135deg, #f97316, #c2410c); box-shadow: 0 5px 0 #7b341e; }
         
         .flex-row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
         .badge { background: var(--primary); color: #000; padding: 6px 16px; border-radius: 30px; font-weight: 700; font-size: 13px; }
-        .copy-btn { background: #4ade80; color: #000; border: none; border-radius: 30px; padding: 16px 30px; font-weight: 700; cursor: pointer; margin-top: 16px; }
+        .copy-btn { background: #4ade80; color: #000; border: none; border-radius: 30px; padding: 16px 30px; font-weight: 700; cursor: pointer; margin-top: 16px; box-shadow: 0 4px 0 #1f7b3e; transition: all 0.2s; }
+        .copy-btn:active { transform: translateY(4px); box-shadow: none; }
         .daily-calendar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: 20px 0; }
         .daily-day { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 10px 4px; text-align: center; font-size: 11px; }
         .daily-day.completed { background: #4ade80; color: #000; }
         .daily-day.current { border: 2px solid var(--primary); }
         .progress-bar { background: #1e293b; height: 12px; border-radius: 30px; overflow: hidden; margin: 16px 0; }
         .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
-        .referral-code { font-size: 24px; font-weight: 800; color: var(--primary); background: #0f172a; padding: 16px; border-radius: 16px; text-align: center; margin: 16px 0; }
+        .referral-code { font-size: 24px; font-weight: 800; color: var(--primary); background: #0f172a; padding: 16px; border-radius: 16px; text-align: center; margin: 16px 0; letter-spacing: 2px; }
+        
+        /* ANIMACIONES EXTRA */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.3s ease-in-out; }
     </style>
 </head>
 <body>
@@ -234,11 +280,11 @@
         <div id="premium-timer" style="display: none; margin-top: 5px; font-size: 12px; background: #8b5cf6; color: white; padding: 4px 8px; border-radius: 20px;">⭐ Premium: <span id="premium-time-left">0</span></div>
     </div>
 
-    <!-- EDIFICIO CENTRAL -->
+    <!-- EDIFICIO CENTRAL (AHORA SOLO ESTADÍSTICAS) -->
     <div class="central" onclick="openCentral()">
         <i class="fa-solid fa-city"></i>
-        <h2>Edificio Central</h2>
-        <small>Estadísticas de producción y rango</small>
+        <h2>Estadísticas</h2>
+        <small>Producción y progreso</small>
         <div id="central-sunday-indicator" style="display: none; margin-top: 8px; font-size: 12px; background: #f97316; color: white; padding: 4px; border-radius: 20px;">⏸️ Producción pausada - 🎁 DOMINGO DE RECOMPENSAS</div>
     </div>
 
@@ -254,25 +300,29 @@
         <div class="card" style="border: 1px solid #f87171;" onclick="openBuilding('hospital')"><i class="fa-solid fa-hospital hospital"></i><h3>Hospital</h3><small>Lvl: <span id="lvl_hospital" style="color: #f87171;">0</span></small><div style="font-size: 10px; color: #f59e0b; margin-top: 3px;">🎮 Cirugía</div></div>
     </div>
 
+    <!-- SECCIÓN DE RANKING (NUEVA) -->
+    <div class="ranking-section">
+        <div class="ranking-title"><i class="fa-solid fa-trophy" style="color: var(--primary);"></i> Sistema de Rangos</div>
+        <div class="rank-list">
+            <div class="rank-item diamond"><span class="rank-name">💎 Diamante</span><span class="rank-percent">Top 1-3</span><span class="rank-value">40% del pool</span></div>
+            <div class="rank-item gold"><span class="rank-name">🥇 Oro</span><span class="rank-percent">Top 4-10</span><span class="rank-value">25% del pool</span></div>
+            <div class="rank-item silver"><span class="rank-name">🥈 Plata</span><span class="rank-percent">Top 11-50</span><span class="rank-value">20% del pool</span></div>
+            <div class="rank-item citizen"><span class="rank-name">👥 Ciudadano</span><span class="rank-percent">Resto</span><span class="rank-value">15% del pool (proporcional)</span></div>
+        </div>
+        <div class="stat-row" style="margin-top: 12px;"><span>Tu rango actual:</span><span class="badge" id="user-rank-display">Ciudadano</span></div>
+        <div class="stat-row"><span>Proyección semanal:</span><span id="projected-reward-display" style="color: var(--primary); font-weight: bold;">0 TON</span></div>
+    </div>
+
     <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
-    <!-- MODAL CENTRAL -->
+    <!-- MODAL CENTRAL (SOLO ESTADÍSTICAS) -->
     <div class="modal" id="centralModal">
-        <h3>🏛 Edificio Central</h3>
-        <div class="rank-indicator" style="background:#0f172a; padding:15px; border-radius:12px; margin:15px 0; border:2px solid var(--primary);">
-            <div class="rank-position" id="user-rank">Cargando...</div>
-            <div id="rank-description"></div>
-            <div class="rank-projection" style="background:#022c22; padding:10px; border-radius:8px; margin-top:10px;">Proyectado: <span id="projected-reward">0</span> TON</div>
-        </div>
+        <h3>📊 Estadísticas de Producción</h3>
         <div class="stat"><span style="color: #38bdf8;">Piscina</span><span id="s_piscina">0</span></div>
         <div class="stat"><span style="color: #a78bfa;">Fábrica</span><span id="s_fabrica">0</span></div>
         <div class="stat"><span style="color: #a16207;">Escuela</span><span id="s_escuela">0</span></div>
         <div class="stat"><span style="color: #f87171;">Hospital</span><span id="s_hospital">0</span></div>
         <div class="stat" style="background:#022c22"><b>Total / hr</b><b id="s_total">0</b></div>
-        <div class="rank-card diamond-rank" style="background:#0f172a; padding:15px; border-radius:12px; margin:10px 0; border-left:4px solid #60a5fa;"><div class="rank-name diamond-text">💎 Diamante (Top 1-3)</div><div>40% del pool (reparto equitativo)</div></div>
-        <div class="rank-card gold-rank" style="background:#0f172a; padding:15px; border-radius:12px; margin:10px 0; border-left:4px solid #fbbf24;"><div class="rank-name gold-text">🥇 Oro (Top 4-10)</div><div>25% del pool (reparto equitativo)</div></div>
-        <div class="rank-card silver-rank" style="background:#0f172a; padding:15px; border-radius:12px; margin:10px 0; border-left:4px solid #94a3b8;"><div class="rank-name silver-text">🥈 Plata (Top 11-50)</div><div>20% del pool (reparto equitativo)</div></div>
-        <div class="rank-card citizen-rank" style="background:#0f172a; padding:15px; border-radius:12px; margin:10px 0; border-left:4px solid #4ade80;"><div class="rank-name citizen-text">👥 Ciudadano (Resto)</div><div>15% del pool (proporcional a diamantes)</div></div>
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
@@ -296,7 +346,7 @@
 
     <!-- MODAL ESCUELA -->
     <div class="modal modal-full" id="modalEscuela">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Escuela · Nivel <span id="escuela-game-level">1</span></div></div>
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Escuela · Nivel <span id="escuela-game-level">1</span></div><div class="event-multiplier-badge" id="escuela-event-badge" style="display: none; background: #f97316; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px;">🎉 EVENTO x2</div></div>
         <div class="tabs"><div class="tab active" onclick="switchEscuelaTab('upgrade')">MEJORAS</div><div class="tab" onclick="switchEscuelaTab('game')">JUEGO</div></div>
         <div id="escuela-upgrade-panel">
             <div class="building-detail"><div class="building-header"><span class="building-level">Nivel <span id="escuela-level">0</span></span><span style="color: #facc15;">+<span id="escuela-prod">0</span> 💎/h</span></div><div class="stat"><span>Mejorar al nivel <span id="escuela-next">1</span></span><span id="escuela-price">3000 💎</span></div><button onclick="buyUpgradeFromBuilding('escuela', 3000)" class="building-upgrade" id="escuela-btn">MEJORAR</button></div>
@@ -318,7 +368,7 @@
 
     <!-- MODAL FÁBRICA -->
     <div class="modal modal-full" id="modalFabrica">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Fábrica · Nivel <span id="fabrica-game-level">1</span></div></div>
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Fábrica · Nivel <span id="fabrica-game-level">1</span></div><div class="event-multiplier-badge" id="fabrica-event-badge" style="display: none; background: #f97316; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px;">🎉 EVENTO x2</div></div>
         <div class="tabs"><div class="tab active" onclick="switchFabricaTab('upgrade')">MEJORAS</div><div class="tab" onclick="switchFabricaTab('game')">JUEGO</div></div>
         <div id="fabrica-upgrade-panel">
             <div class="building-detail"><div class="building-header"><span class="building-level">Nivel <span id="fabrica-level">0</span></span><span style="color: #facc15;">+<span id="fabrica-prod">0</span> 💎/h</span></div><div class="stat"><span>Mejorar al nivel <span id="fabrica-next">1</span></span><span id="fabrica-price">10000 💎</span></div><button onclick="buyUpgradeFromBuilding('fabrica', 10000)" class="building-upgrade" id="fabrica-btn">MEJORAR</button></div>
@@ -340,7 +390,7 @@
 
     <!-- MODAL PISCINA -->
     <div class="modal modal-full" id="modalPiscina">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Piscina · Nivel <span id="piscina-game-level">1</span></div></div>
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Piscina · Nivel <span id="piscina-game-level">1</span></div><div class="event-multiplier-badge" id="piscina-event-badge" style="display: none; background: #f97316; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px;">🎉 EVENTO x2</div></div>
         <div class="tabs"><div class="tab active" onclick="switchPiscinaTab('upgrade')">MEJORAS</div><div class="tab" onclick="switchPiscinaTab('game')">JUEGO</div></div>
         <div id="piscina-upgrade-panel">
             <div class="building-detail"><div class="building-header"><span class="building-level">Nivel <span id="piscina-level">0</span></span><span style="color: #facc15;">+<span id="piscina-prod">0</span> 💎/h</span></div><div class="stat"><span>Mejorar al nivel <span id="piscina-next">1</span></span><span id="piscina-price">5000 💎</span></div><button onclick="buyUpgradeFromBuilding('piscina', 5000)" class="building-upgrade" id="piscina-btn">MEJORAR</button></div>
@@ -361,7 +411,7 @@
 
     <!-- MODAL HOSPITAL -->
     <div class="modal modal-full" id="modalHospital">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Hospital · Nivel <span id="hospital-game-level">1</span></div></div>
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Hospital · Nivel <span id="hospital-game-level">1</span></div><div class="event-multiplier-badge" id="hospital-event-badge" style="display: none; background: #f97316; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px;">🎉 EVENTO x2</div></div>
         <div class="tabs"><div class="tab active" onclick="switchHospitalTab('upgrade')">MEJORAS</div><div class="tab" onclick="switchHospitalTab('game')">JUEGO</div></div>
         <div id="hospital-upgrade-panel">
             <div class="building-detail"><div class="building-header"><span class="building-level">Nivel <span id="hospital-level">0</span></span><span style="color: #facc15;">+<span id="hospital-prod">0</span> 💎/h</span></div><div class="stat"><span>Mejorar al nivel <span id="hospital-next">1</span></span><span id="hospital-price">7500 💎</span></div><button onclick="buyUpgradeFromBuilding('hospital', 7500)" class="building-upgrade" id="hospital-btn">MEJORAR</button></div>
@@ -497,7 +547,7 @@
 
     <!-- MODAL RECOMPENSA DIARIA -->
     <div class="modal" id="modalDailyReward">
-        <h3>📅 Recompensa Diaria <span class="withdraw-sunday-badge">30 DÍAS</span></h3>
+        <h3>📅 Recompensa Diaria <span class="badge">30 DÍAS</span></h3>
         <div style="text-align: center; margin: 15px 0;"><i class="fa-solid fa-calendar-check" style="font-size: 48px; color: #f59e0b;"></i></div>
         <div class="stat"><span>Día actual</span><span id="current-day" style="color: #f59e0b; font-weight: bold;">0</span></div>
         <div class="stat"><span>Recompensa de hoy</span><span id="today-reward" style="color: #facc15; font-weight: bold;">0 💎</span></div>
@@ -514,33 +564,34 @@
         <div style="text-align: center; margin-bottom: 15px;"><i class="fa-solid fa-tree" style="font-size: 48px; color: #10b981;"></i></div>
         <div class="stat"><span>Disponible cada</span><span>1 hora</span></div>
         <div class="stat"><span>Recompensa</span><span style="color: #facc15; font-weight: bold;">30 💎</span></div>
-        <div id="ads-status" class="info-text" style="margin: 15px 0; padding: 15px; background: #0f172a; border-radius: 12px;"><div class="ads-loading"></div> Cargando...</div>
+        <div id="ads-status" class="info-text" style="margin: 15px 0; padding: 15px; background: #0f172a; border-radius: 12px;">Cargando anuncios...</div>
         <div id="ads-timer-display" style="text-align: center; font-size: 1.2rem; margin: 15px 0; color: #f97316;"></div>
         <button onclick="showAd()" id="watch-ad-btn" style="background: #f97316;" disabled><i class="fa-solid fa-circle-play"></i> VER ANUNCIO +30 💎</button>
         <button class="close" onclick="closeAll()">Cerrar</button>
     </div>
 
-    <!-- MODAL RETIRO -->
+    <!-- MODAL RETIRO PROFESIONAL -->
     <div class="modal" id="modalWithdraw">
-        <h3>💰 Retiro Semanal <span class="withdraw-sunday-badge">DOMINGOS</span></h3>
-        <div style="text-align: center; margin-bottom: 10px;"><span class="week-indicator" id="week-indicator">Semana #0</span></div>
-        <div id="sunday-message" class="withdraw-important" style="display: none;">🎉 HOY ES DOMINGO - DÍA DE RECOMPENSAS 🎉</div>
-        <div id="not-sunday-message" class="withdraw-important" style="background: #334155; display: block;">⏳ HOY NO ES DOMINGO - Vuelve el domingo para intercambiar</div>
-        <div class="balance-display"><span id="available-diamonds" style="font-size: 36px;">0</span> 💎</div>
-        <div class="stat"><span>Pool total</span><span id="pool-total" style="color: #10b981;">0 TON</span></div>
-        <div class="stat"><span>Pool usuarios (80%)</span><span id="pool-users" style="color: #facc15;">0 TON</span></div>
-        <div class="stat" style="background: #1e293b;"><span>Tu rango</span><span id="withdraw-rank" style="color: #facc15;">Cargando...</span></div>
-        <div class="stat"><span>Tu recompensa estimada</span><span id="withdraw-projection" style="color: #4ade80;">0 TON</span></div>
-        <div class="stat"><span>TON acumulados</span><span id="accumulated-ton" style="color: #f97316;">0 TON</span></div>
-        <div id="withdraw-status" class="withdraw-info-sunday"><i class="fa-solid fa-circle-info"></i> Verificando disponibilidad...</div>
-        <div class="two-buttons"><button onclick="exchangeDiamonds()" id="exchange-btn" class="exchange-btn" disabled><i class="fa-solid fa-arrows-spin"></i> CAMBIAR DIAMANTES POR TON</button><button onclick="withdrawTON()" id="withdraw-ton-btn" class="withdraw-btn" disabled><i class="fa-solid fa-money-bill-transfer"></i> RETIRAR TON (mín. 1 TON)</button></div>
-        <div class="withdraw-limit-info" id="exchange-info"><i class="fa-solid fa-clock"></i> <strong>Intercambio disponible solo los domingos</strong></div>
-        <div class="withdraw-limit-info" id="withdraw-info" style="border-color: #ef4444;"><i class="fa-solid fa-fire"></i> <strong>Los diamantes no intercambiados se queman al final del domingo</strong></div>
+        <h3>💰 Retiro Semanal</h3>
+        <div class="withdraw-card">
+            <div id="withdraw-day-badge" class="withdraw-day-badge withdraw-day-other">CARGANDO</div>
+            <div class="withdraw-balance" id="available-diamonds">0</div>
+            <div style="margin-bottom: 24px; color: #94a3b8;">diamantes disponibles</div>
+            <div class="building-stats" style="margin: 20px 0;">
+                <div class="stat-row"><span>Pool total</span><span id="pool-total" style="color: #10b981;">0 TON</span></div>
+                <div class="stat-row"><span>Tu proyección</span><span id="withdraw-projection" style="color: #facc15;">0 TON</span></div>
+                <div class="stat-row"><span>Acumulado</span><span id="accumulated-ton" style="color: #f97316;">0 TON</span></div>
+            </div>
+            <button class="withdraw-btn exchange" id="exchange-btn" onclick="exchangeDiamonds()" disabled><i class="fa-solid fa-arrows-spin"></i> CAMBIAR DIAMANTES POR TON</button>
+            <button class="withdraw-btn" id="withdraw-ton-btn" onclick="withdrawTON()" disabled><i class="fa-solid fa-money-bill-transfer"></i> RETIRAR TON (mín. 1 TON)</button>
+            <div class="info-text" style="margin-top: 16px;"><i class="fa-solid fa-clock"></i> Intercambio disponible solo los domingos</div>
+            <div class="info-text" style="color: #ef4444;"><i class="fa-solid fa-fire"></i> Los diamantes no intercambiados se queman al final del domingo</div>
+        </div>
         <button class="close" onclick="closeAll()">Cancelar</button>
     </div>
 
     <div class="nav-bar">
-        <div class="nav-item" onclick="openCentral()"><i class="fa-solid fa-city"></i><span>CIUDAD</span></div>
+        <div class="nav-item active" onclick="openCentral()"><i class="fa-solid fa-city"></i><span>CIUDAD</span></div>
         <div class="nav-item" onclick="openDailyReward()"><i class="fa-solid fa-calendar-day"></i><span>DIARIO</span></div>
         <div class="nav-item" onclick="openFriends()"><i class="fa-solid fa-user-group"></i><span>AMIGOS</span></div>
         <div class="nav-item" onclick="openWithdraw()"><i class="fa-solid fa-money-bill-transfer"></i><span>RETIRAR</span></div>
