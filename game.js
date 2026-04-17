@@ -1,16 +1,15 @@
 // ======================================================
-// TON CITY - VERSIÓN PROFESIONAL COMPLETA CORREGIDA
+// TON CITY - VERSIÓN ULTRA PROFESIONAL CON ANIMACIONES
 // ======================================================
-// ✅ Todos los minijuegos funcionales con gráficos mejorados
+// ✅ Todos los minijuegos con animaciones fluidas
 // ✅ Casino completo con 5 juegos y saldo visible
-// ✅ Sistema de rangos de 4 niveles (movido a sección propia)
-// ✅ Guardado automático en Supabase (corregido)
-// ✅ Producción pausada los domingos
-// ✅ Sistema de retiros profesional sin número de semana
-// ✅ Eventos semanales con multiplicadores x2/x4 y brillo en edificios
+// ✅ Sistema de rangos de 4 niveles
+// ✅ Guardado automático en Supabase
+// ✅ Eventos semanales con multiplicadores x2/x4
+// ✅ Animaciones y efectos visuales profesionales
 // ======================================================
 
-console.log('🚀 TON CITY - Inicializando...');
+console.log('🚀 TON CITY - Versión Ultra Profesional');
 
 const tg = window.Telegram.WebApp;
 tg.expand();
@@ -22,8 +21,8 @@ BackButton.hide();
 // ==========================================
 // CONFIGURACIÓN
 // ==========================================
-const RED_TON_FEE = 0.002; // k - comisión de red TON 2026
-const RESERVA_POOL = 0.95; // r - reserva para que el pool no quede vacío
+const RED_TON_FEE = 0.002;
+const RESERVA_POOL = 0.95;
 const BILLETERA_PROPIETARIO = "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw";
 const BILLETERA_POOL = "UQBuoEgT5DmcoEQ_nl6YwR0Q86fZWY4baACuX80EegWG49h2";
 const PRECIO_COMPRA = 0.008;
@@ -113,13 +112,13 @@ let boletosComprados = [];
 let gameLives = { escuela: 3, fabrica: 3, piscina: 3, hospital: 3 };
 let gameActiveStates = { escuela: true, fabrica: true, piscina: true, hospital: true };
 
-// Escuela - Mente Maestra
+// Escuela
 let escuelaSequence = [];
 let escuelaUserInput = [];
 let escuelaLevel = 1;
 let escuelaBest = 0;
 
-// Fábrica - Línea de Ensamblaje
+// Fábrica
 let fabricaLevel = 1;
 let fabricaBest = 0;
 let fabricaCompleted = 0;
@@ -129,7 +128,7 @@ let fabricaIsDefect = false;
 let fabricaAnimInterval = null;
 let fabricaDefectInterval = null;
 
-// Piscina - Salto de Precisión
+// Piscina
 let piscinaLevel = 1;
 let piscinaBest = 0;
 let piscinaPerfect = 0;
@@ -138,7 +137,7 @@ let piscinaPower = 0;
 let piscinaIsDragging = false;
 let piscinaStartX = 0, piscinaStartY = 0;
 
-// Hospital - Cirugía de Emergencia
+// Hospital
 let hospitalLevel = 1;
 let hospitalBest = 0;
 let hospitalExtracted = 0;
@@ -180,18 +179,13 @@ function actualizarEventosUI() {
     const evento = getEventoActual();
     const edificios = ['escuela', 'fabrica', 'piscina', 'hospital'];
     
-    // Limpiar clase event-card de todos los edificios
-    document.querySelectorAll('.card').forEach(card => {
-        card.classList.remove('event-card');
+    document.querySelectorAll('.building-card').forEach(card => {
+        card.classList.remove('event-active');
     });
     
-    // Añadir clase event-card al edificio del evento
-    const edificioCard = document.querySelector(`.card[onclick*="${evento.edificio}"]`);
-    if (edificioCard) {
-        edificioCard.classList.add('event-card');
-    }
+    const edificioCard = document.querySelector(`.building-card[onclick*="${evento.edificio}"]`);
+    if (edificioCard) edificioCard.classList.add('event-active');
     
-    // Actualizar badge en modales
     edificios.forEach(ed => {
         const badge = document.getElementById(`${ed}-event-badge`);
         if (badge) {
@@ -204,7 +198,6 @@ function actualizarEventosUI() {
         }
     });
     
-    // Actualizar banner de evento
     const eventBanner = document.getElementById('event-banner');
     const eventText = document.getElementById('event-text');
     if (eventBanner && eventText) {
@@ -216,6 +209,13 @@ function actualizarEventosUI() {
 
 function enVentanaRetiro() {
     return new Date().getDay() === 0;
+}
+
+function getNumeroSemana() {
+    const ahora = new Date();
+    const inicio = new Date(ahora.getFullYear(), 0, 1);
+    const dias = Math.floor((ahora - inicio) / (24 * 60 * 60 * 1000));
+    return Math.ceil(dias / 7);
 }
 
 function showModal(id) {
@@ -256,14 +256,12 @@ function actualizarUI() {
     document.getElementById('lvl_escuela').textContent = userData.lvl_escuela;
     document.getElementById('lvl_hospital').textContent = userData.lvl_hospital;
     
-    // Actualizar saldo en casinos
     const casinoGames = ['highlow', 'ruleta', 'tragaperras', 'dados', 'loteria'];
     casinoGames.forEach(game => {
         const balanceSpan = document.getElementById(`${game}-balance`);
         if (balanceSpan) balanceSpan.textContent = Math.floor(userData.diamonds);
     });
     
-    // Actualizar rango en UI
     const rankDisplay = document.getElementById('user-rank-display');
     if (rankDisplay) rankDisplay.textContent = `${userData.rank} #${userData.weekly_rank}`;
     const projDisplay = document.getElementById('projected-reward-display');
@@ -316,16 +314,9 @@ function showRewardedAd(callback) {
         return;
     }
     AdController.show()
-        .then((result) => {
-            callback(result.done === true);
-        })
-        .catch((error) => {
-            console.log('Ad error:', error);
-            callback(false);
-        })
-        .finally(() => {
-            console.log('Ad attempt finished');
-        });
+        .then((result) => { callback(result.done === true); })
+        .catch((error) => { console.log('Ad error:', error); callback(false); })
+        .finally(() => { console.log('Ad attempt finished'); });
 }
 
 // ==========================================
@@ -352,8 +343,10 @@ function loseLife(game) {
         gameActiveStates[game] = false;
         const resultElem = document.getElementById(`${game}-result`);
         if (resultElem) resultElem.innerHTML = '<span style="color:#ef4444;">💀 GAME OVER</span>';
+        if (navigator.vibrate) navigator.vibrate(200);
         return false;
     }
+    if (navigator.vibrate) navigator.vibrate(50);
     return true;
 }
 
@@ -378,7 +371,7 @@ function useAdMultiplier(game) {
     showRewardedAd((s) => {
         if (s) {
             pendingMultiplier = 2;
-            alert('✨ Multiplicador x2 activado para tu próxima victoria!');
+            alert('✨ Multiplicador x2 activado!');
         }
     });
 }
@@ -453,6 +446,8 @@ function seleccionarPupitre(num) {
         escuelaUserInput = [];
         const resultElem = document.getElementById('mem-result');
         if (resultElem) resultElem.innerHTML = '<span style="color:#ef4444;">❌ Secuencia incorrecta</span>';
+        if (resultElem) resultElem.classList.add('shake');
+        setTimeout(() => { if (resultElem) resultElem.classList.remove('shake'); }, 500);
         setTimeout(() => {
             if (resultElem) resultElem.innerHTML = '';
             nuevaSecuenciaEscuela();
@@ -474,9 +469,14 @@ function seleccionarPupitre(num) {
         document.getElementById('mem-level').textContent = escuelaLevel;
         document.getElementById('escuela-game-level').textContent = escuelaLevel;
         const resultElem = document.getElementById('mem-result');
-        if (resultElem) resultElem.innerHTML = `<span style="color:#4ade80;">✅ +${reward} 💎! Nivel ${escuelaLevel}</span>`;
+        if (resultElem) {
+            resultElem.innerHTML = `<span style="color:#4ade80;">✅ +${reward} 💎! Nivel ${escuelaLevel}</span>`;
+            resultElem.style.animation = 'winPulse 0.5s ease';
+            setTimeout(() => { resultElem.style.animation = ''; }, 500);
+        }
         actualizarUI();
         saveUserData();
+        if (navigator.vibrate) navigator.vibrate(50);
         setTimeout(() => {
             if (resultElem) resultElem.innerHTML = '';
             nuevaSecuenciaEscuela();
@@ -530,12 +530,31 @@ function iniciarCinta() {
                     userData.gameStats.fabrica.totalWins = (userData.gameStats.fabrica.totalWins || 0) + 1;
                     userData.gameStats.fabrica.lives = gameLives.fabrica;
                     document.getElementById('fabrica-game-level').textContent = fabricaLevel;
-                    document.getElementById('asm-result').innerHTML = `<span style="color:#4ade80;">✅ Nivel completado! +${reward} 💎</span>`;
+                    const resultElem = document.getElementById('asm-result');
+                    if (resultElem) {
+                        resultElem.innerHTML = `<span style="color:#4ade80;">✅ Nivel completado! +${reward} 💎</span>`;
+                        resultElem.style.animation = 'winPulse 0.5s ease';
+                        setTimeout(() => { resultElem.style.animation = ''; }, 500);
+                    }
                     actualizarUI();
                     saveUserData();
+                    if (navigator.vibrate) navigator.vibrate(100);
                     clearInterval(fabricaAnimInterval);
                     clearInterval(fabricaDefectInterval);
                     setTimeout(() => iniciarJuegoFabrica(), 2000);
+                } else {
+                    const resultElem = document.getElementById('asm-result');
+                    if (resultElem) {
+                        resultElem.innerHTML = '<span style="color:#4ade80;">✅ +1 pieza!</span>';
+                        setTimeout(() => { if (resultElem) resultElem.innerHTML = ''; }, 500);
+                    }
+                    if (navigator.vibrate) navigator.vibrate(30);
+                }
+            } else {
+                const resultElem = document.getElementById('asm-result');
+                if (resultElem) {
+                    resultElem.innerHTML = '<span style="color:#ef4444;">⚠️ Pieza defectuosa!</span>';
+                    setTimeout(() => { if (resultElem) resultElem.innerHTML = ''; }, 500);
                 }
             }
         }
@@ -601,6 +620,11 @@ function initSlingshot() {
         if (isPerfect) {
             piscinaPerfect++;
             document.getElementById('jump-perfect').textContent = piscinaPerfect;
+            const targetElem = document.getElementById('target');
+            if (targetElem) {
+                targetElem.style.animation = 'bounce 0.3s ease';
+                setTimeout(() => { if (targetElem) targetElem.style.animation = ''; }, 300);
+            }
             if (piscinaPerfect >= piscinaRequired) {
                 const reward = calcularRecompensa(60, 'piscina');
                 userData.diamonds += reward;
@@ -614,18 +638,31 @@ function initSlingshot() {
                 userData.gameStats.piscina.totalWins = (userData.gameStats.piscina.totalWins || 0) + 1;
                 userData.gameStats.piscina.lives = gameLives.piscina;
                 document.getElementById('piscina-game-level').textContent = piscinaLevel;
-                document.getElementById('jump-result').innerHTML = `<span style="color:#4ade80;">✅ Nivel completado! +${reward} 💎</span>`;
+                const resultElem = document.getElementById('jump-result');
+                if (resultElem) {
+                    resultElem.innerHTML = `<span style="color:#4ade80;">✅ Nivel completado! +${reward} 💎</span>`;
+                    resultElem.style.animation = 'winPulse 0.5s ease';
+                    setTimeout(() => { resultElem.style.animation = ''; }, 500);
+                }
                 actualizarUI();
                 saveUserData();
+                if (navigator.vibrate) navigator.vibrate(100);
                 setTimeout(() => iniciarJuegoPiscina(), 2000);
             } else {
-                document.getElementById('jump-result').innerHTML = '<span style="color:#4ade80;">🎯 ¡Salto perfecto!</span>';
-                setTimeout(() => document.getElementById('jump-result').innerHTML = '', 1000);
+                const resultElem = document.getElementById('jump-result');
+                if (resultElem) {
+                    resultElem.innerHTML = '<span style="color:#4ade80;">🎯 ¡Salto perfecto!</span>';
+                    setTimeout(() => { if (resultElem) resultElem.innerHTML = ''; }, 1000);
+                }
+                if (navigator.vibrate) navigator.vibrate(50);
             }
         } else {
             if (!loseLife('piscina')) return;
-            document.getElementById('jump-result').innerHTML = '<span style="color:#ef4444;">💧 Salto fallido</span>';
-            setTimeout(() => document.getElementById('jump-result').innerHTML = '', 1000);
+            const resultElem = document.getElementById('jump-result');
+            if (resultElem) {
+                resultElem.innerHTML = '<span style="color:#ef4444;">💧 Salto fallido</span>';
+                setTimeout(() => { if (resultElem) resultElem.innerHTML = ''; }, 1000);
+            }
         }
         piscinaPower = 0;
         if (powerFill) powerFill.style.height = '0%';
@@ -695,7 +732,8 @@ function iniciarJuegoHospital() {
         if (hospitalTimeLeft <= 0) {
             clearInterval(hospitalTimer);
             if (!loseLife('hospital')) return;
-            document.getElementById('surgery-result').innerHTML = '<span style="color:#ef4444;">⏰ Tiempo agotado</span>';
+            const resultElem = document.getElementById('surgery-result');
+            if (resultElem) resultElem.innerHTML = '<span style="color:#ef4444;">⏰ Tiempo agotado</span>';
             setTimeout(() => iniciarJuegoHospital(), 2000);
         }
     }, 100);
@@ -739,8 +777,12 @@ function crearVirusHospital() {
                 document.removeEventListener('mouseup', onMouseUp);
                 if (!loseLife('hospital')) return;
                 virus.remove();
-                document.getElementById('surgery-result').innerHTML = '<span style="color:#ef4444;">⚠️ Tocaste la pared</span>';
-                setTimeout(() => document.getElementById('surgery-result').innerHTML = '', 1000);
+                const resultElem = document.getElementById('surgery-result');
+                if (resultElem) {
+                    resultElem.innerHTML = '<span style="color:#ef4444;">⚠️ Tocaste la pared</span>';
+                    setTimeout(() => { if (resultElem) resultElem.innerHTML = ''; }, 1000);
+                }
+                if (navigator.vibrate) navigator.vibrate(100);
             }
         };
         const onMouseUp = () => {
@@ -752,6 +794,7 @@ function crearVirusHospital() {
             hospitalExtracted++;
             document.getElementById('virus-extracted').textContent = hospitalExtracted;
             virus.remove();
+            if (navigator.vibrate) navigator.vibrate(30);
             if (hospitalExtracted >= hospitalTotal) {
                 clearInterval(hospitalTimer);
                 const reward = calcularRecompensa(80, 'hospital');
@@ -766,9 +809,15 @@ function crearVirusHospital() {
                 userData.gameStats.hospital.totalWins = (userData.gameStats.hospital.totalWins || 0) + 1;
                 userData.gameStats.hospital.lives = gameLives.hospital;
                 document.getElementById('hospital-game-level').textContent = hospitalLevel;
-                document.getElementById('surgery-result').innerHTML = `<span style="color:#4ade80;">✅ Cirugía exitosa! +${reward} 💎</span>`;
+                const resultElem = document.getElementById('surgery-result');
+                if (resultElem) {
+                    resultElem.innerHTML = `<span style="color:#4ade80;">✅ Cirugía exitosa! +${reward} 💎</span>`;
+                    resultElem.style.animation = 'winPulse 0.5s ease';
+                    setTimeout(() => { resultElem.style.animation = ''; }, 500);
+                }
                 actualizarUI();
                 saveUserData();
+                if (navigator.vibrate) navigator.vibrate(100);
                 setTimeout(() => iniciarJuegoHospital(), 2000);
             }
         };
@@ -814,8 +863,12 @@ function crearVirusHospital() {
                     document.removeEventListener('touchend', onTouchEnd);
                     if (!loseLife('hospital')) return;
                     virus.remove();
-                    document.getElementById('surgery-result').innerHTML = '<span style="color:#ef4444;">⚠️ Tocaste la pared</span>';
-                    setTimeout(() => document.getElementById('surgery-result').innerHTML = '', 1000);
+                    const resultElem = document.getElementById('surgery-result');
+                    if (resultElem) {
+                        resultElem.innerHTML = '<span style="color:#ef4444;">⚠️ Tocaste la pared</span>';
+                        setTimeout(() => { if (resultElem) resultElem.innerHTML = ''; }, 1000);
+                    }
+                    if (navigator.vibrate) navigator.vibrate(100);
                 }
             };
             const onTouchEnd = () => {
@@ -827,6 +880,7 @@ function crearVirusHospital() {
                 hospitalExtracted++;
                 document.getElementById('virus-extracted').textContent = hospitalExtracted;
                 virus.remove();
+                if (navigator.vibrate) navigator.vibrate(30);
                 if (hospitalExtracted >= hospitalTotal) {
                     clearInterval(hospitalTimer);
                     const reward = calcularRecompensa(80, 'hospital');
@@ -841,9 +895,15 @@ function crearVirusHospital() {
                     userData.gameStats.hospital.totalWins = (userData.gameStats.hospital.totalWins || 0) + 1;
                     userData.gameStats.hospital.lives = gameLives.hospital;
                     document.getElementById('hospital-game-level').textContent = hospitalLevel;
-                    document.getElementById('surgery-result').innerHTML = `<span style="color:#4ade80;">✅ Cirugía exitosa! +${reward} 💎</span>`;
+                    const resultElem = document.getElementById('surgery-result');
+                    if (resultElem) {
+                        resultElem.innerHTML = `<span style="color:#4ade80;">✅ Cirugía exitosa! +${reward} 💎</span>`;
+                        resultElem.style.animation = 'winPulse 0.5s ease';
+                        setTimeout(() => { resultElem.style.animation = ''; }, 500);
+                    }
                     actualizarUI();
                     saveUserData();
+                    if (navigator.vibrate) navigator.vibrate(100);
                     setTimeout(() => iniciarJuegoHospital(), 2000);
                 }
             };
@@ -945,7 +1005,6 @@ function buyUpgradeFromBuilding(building, price) {
     saveUserData();
     actualizarUI();
     alert(`✅ ${building} nivel ${userData[`lvl_${building}`]}`);
-    // No cerrar el modal, solo actualizar la UI
     const levelSpan = document.getElementById(`${building}-level`);
     const prodSpan = document.getElementById(`${building}-prod`);
     if (levelSpan) levelSpan.textContent = userData[`lvl_${building}`];
@@ -1046,6 +1105,7 @@ function jugarHighLow(eleccion) {
         const ganancia = apuesta * 2;
         userData.diamonds += ganancia;
         document.getElementById('hl-result').innerHTML = '<span style="color:#4ade80;">🎉 ¡GANASTE!</span>';
+        if (navigator.vibrate) navigator.vibrate(50);
     } else {
         document.getElementById('hl-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
     }
@@ -1088,6 +1148,7 @@ function jugarRuleta(tipo) {
     if (gana) {
         userData.diamonds += ganancia;
         document.getElementById('ruleta-result').innerHTML = '<span style="color:#4ade80;">🎉 ¡GANASTE!</span>';
+        if (navigator.vibrate) navigator.vibrate(50);
     } else {
         document.getElementById('ruleta-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
     }
@@ -1104,39 +1165,47 @@ function jugarTragaperras() {
     userData.diamonds -= apuesta;
     registrarJugada('tragaperras');
     
-    const simbolos = [
-        { nombre: "💎", mult: 50 }, { nombre: "₿", mult: 20 }, { nombre: "Ξ", mult: 10 },
-        { nombre: "🪙", mult: 5 }, { nombre: "📈", mult: 2 }, { nombre: "📉", mult: 2 }
-    ];
+    const slots = document.querySelectorAll('.slot');
+    slots.forEach(slot => slot.classList.add('spinning'));
     
-    const r = [];
-    for (let i = 0; i < 3; i++) {
-        const rand = Math.random() * 100;
-        let acum = 0;
-        for (const s of simbolos) {
-            acum += 20;
-            if (rand < acum) {
-                r.push(s);
-                break;
+    setTimeout(() => {
+        const simbolos = [
+            { nombre: "💎", mult: 50 }, { nombre: "₿", mult: 20 }, { nombre: "Ξ", mult: 10 },
+            { nombre: "🪙", mult: 5 }, { nombre: "📈", mult: 2 }, { nombre: "📉", mult: 2 }
+        ];
+        
+        const r = [];
+        for (let i = 0; i < 3; i++) {
+            const rand = Math.random() * 100;
+            let acum = 0;
+            for (const s of simbolos) {
+                acum += 20;
+                if (rand < acum) {
+                    r.push(s);
+                    break;
+                }
             }
         }
-    }
-    
-    document.getElementById('slot1').textContent = r[0].nombre;
-    document.getElementById('slot2').textContent = r[1].nombre;
-    document.getElementById('slot3').textContent = r[2].nombre;
-    
-    if (r[0].nombre === r[1].nombre && r[1].nombre === r[2].nombre) {
-        let mult = r[0].mult;
-        if (esPremium()) mult *= 2;
-        userData.diamonds += apuesta * mult;
-        document.getElementById('tragaperras-result').innerHTML = `<span style="color:#4ade80;">🎉 ¡JACKPOT! x${mult}</span>`;
-    } else {
-        document.getElementById('tragaperras-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
-    }
-    
-    actualizarUI();
-    saveUserData();
+        
+        document.getElementById('slot1').textContent = r[0].nombre;
+        document.getElementById('slot2').textContent = r[1].nombre;
+        document.getElementById('slot3').textContent = r[2].nombre;
+        
+        slots.forEach(slot => slot.classList.remove('spinning'));
+        
+        if (r[0].nombre === r[1].nombre && r[1].nombre === r[2].nombre) {
+            let mult = r[0].mult;
+            if (esPremium()) mult *= 2;
+            userData.diamonds += apuesta * mult;
+            document.getElementById('tragaperras-result').innerHTML = `<span style="color:#4ade80;">🎉 ¡JACKPOT! x${mult}</span>`;
+            if (navigator.vibrate) navigator.vibrate(100);
+        } else {
+            document.getElementById('tragaperras-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
+        }
+        
+        actualizarUI();
+        saveUserData();
+    }, 300);
 }
 
 function jugarDados(eleccion) {
@@ -1147,29 +1216,41 @@ function jugarDados(eleccion) {
     userData.diamonds -= apuesta;
     registrarJugada('dados');
     
-    let d1 = Math.floor(Math.random() * 6) + 1;
-    let d2 = Math.floor(Math.random() * 6) + 1;
+    const d1 = Math.floor(Math.random() * 6) + 1;
+    const d2 = Math.floor(Math.random() * 6) + 1;
     const caras = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-    document.getElementById('dado1').textContent = caras[d1 - 1];
-    document.getElementById('dado2').textContent = caras[d2 - 1];
-    const suma = d1 + d2;
-    document.getElementById('dados-suma').textContent = `Suma: ${suma}`;
     
-    let gana = (eleccion === 'menor' && suma >= 2 && suma <= 6) ||
-               (eleccion === 'mayor' && suma >= 8 && suma <= 12) ||
-               (eleccion === 'exacto' && suma === 7);
+    const dado1 = document.getElementById('dado1');
+    const dado2 = document.getElementById('dado2');
+    dado1.classList.add('rolling');
+    dado2.classList.add('rolling');
     
-    if (gana) {
-        let ganancia = eleccion === 'exacto' ? apuesta * 5 : apuesta * 2;
-        if (esPremium()) ganancia *= 2;
-        userData.diamonds += ganancia;
-        document.getElementById('dados-result').innerHTML = '<span style="color:#4ade80;">🎉 ¡GANASTE!</span>';
-    } else {
-        document.getElementById('dados-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
-    }
-    
-    actualizarUI();
-    saveUserData();
+    setTimeout(() => {
+        dado1.textContent = caras[d1 - 1];
+        dado2.textContent = caras[d2 - 1];
+        dado1.classList.remove('rolling');
+        dado2.classList.remove('rolling');
+        
+        const suma = d1 + d2;
+        document.getElementById('dados-suma').textContent = `Suma: ${suma}`;
+        
+        let gana = (eleccion === 'menor' && suma >= 2 && suma <= 6) ||
+                   (eleccion === 'mayor' && suma >= 8 && suma <= 12) ||
+                   (eleccion === 'exacto' && suma === 7);
+        
+        if (gana) {
+            let ganancia = eleccion === 'exacto' ? apuesta * 5 : apuesta * 2;
+            if (esPremium()) ganancia *= 2;
+            userData.diamonds += ganancia;
+            document.getElementById('dados-result').innerHTML = '<span style="color:#4ade80;">🎉 ¡GANASTE!</span>';
+            if (navigator.vibrate) navigator.vibrate(50);
+        } else {
+            document.getElementById('dados-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
+        }
+        
+        actualizarUI();
+        saveUserData();
+    }, 300);
 }
 
 function comprarBoletos() {
@@ -1216,6 +1297,7 @@ function jugarLoteria() {
     if (premioTotal > 0) {
         userData.diamonds += premioTotal;
         document.getElementById('loteria-result').innerHTML = `<span style="color:#4ade80;">🎉 +${premioTotal} 💎</span>`;
+        if (navigator.vibrate) navigator.vibrate(50);
     } else {
         document.getElementById('loteria-result').innerHTML = '<span style="color:#ef4444;">😞 No ganaste</span>';
     }
@@ -1277,9 +1359,7 @@ async function updateRankingAndPool() {
         userData.weekly_rank = pos;
         
         await calculateProjectedReward();
-    } catch(e) {
-        console.error("Error ranking:", e);
-    }
+    } catch(e) { console.error("Error ranking:", e); }
 }
 
 async function calculateProjectedReward() {
@@ -1328,7 +1408,7 @@ async function updateRealPoolBalance() {
 }
 
 // ==========================================
-// RETIROS PROFESIONALES (SIN NÚMERO DE SEMANA)
+// RETIROS
 // ==========================================
 async function exchangeDiamonds() {
     if (!tonConnectUI?.connected) return alert("❌ Conecta tu wallet primero");
@@ -1376,21 +1456,14 @@ async function withdrawTON() {
     } catch(e) { alert("❌ Error en transacción"); console.error(e); }
 }
 
-function getNumeroSemana() {
-    const ahora = new Date();
-    const inicio = new Date(ahora.getFullYear(), 0, 1);
-    const dias = Math.floor((ahora - inicio) / (24 * 60 * 60 * 1000));
-    return Math.ceil(dias / 7);
-}
-
 async function openWithdraw() {
     await updateRealPoolBalance();
     await updateRankingAndPool();
     
     const esDomingo = enVentanaRetiro();
-    const badge = document.getElementById('withdraw-day-badge');
     const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
     const today = days[new Date().getDay()];
+    const badge = document.getElementById('withdraw-day-badge');
     
     if (esDomingo) {
         badge.textContent = `${today} · INTERCAMBIO DISPONIBLE`;
@@ -1881,4 +1954,4 @@ window.switchFabricaTab = switchFabricaTab;
 window.switchPiscinaTab = switchPiscinaTab;
 window.switchHospitalTab = switchHospitalTab;
 
-console.log('✅ TON CITY - Versión profesional completa corregida');
+console.log('✅ TON CITY - Versión Ultra Profesional con animaciones');
