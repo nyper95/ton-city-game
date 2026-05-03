@@ -38,7 +38,6 @@
             --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
             --shadow-glow: 0 0 30px rgba(250, 204, 21, 0.3);
             
-            /* Colores únicos para cada edificio */
             --color-piscina: #38bdf8;
             --color-fabrica: #a78bfa;
             --color-escuela: #fbbf24;
@@ -49,7 +48,6 @@
             --color-parque: #4ade80;
         }
 
-        /* Animaciones globales */
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
@@ -74,16 +72,6 @@
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
-        }
-
-        @keyframes spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes ripple {
-            0% { transform: scale(0); opacity: 0.5; }
-            100% { transform: scale(4); opacity: 0; }
         }
 
         @keyframes winPulse {
@@ -115,7 +103,6 @@
             z-index: -1;
         }
 
-        /* Header */
         .app-header {
             padding: 20px 20px 10px;
             display: flex;
@@ -157,7 +144,6 @@
             animation: pulse-glow 2s infinite;
         }
 
-        /* Balance Card */
         .balance-card {
             background: var(--glass-bg);
             backdrop-filter: blur(10px);
@@ -190,7 +176,6 @@
 
         .rate-badge i { color: var(--accent-green); }
 
-        /* Banners */
         .action-banner {
             background: linear-gradient(135deg, #1e2332, #141824);
             border-radius: 20px;
@@ -210,19 +195,20 @@
         .banner-icon {
             width: 44px;
             height: 44px;
-            background: rgba(250, 204, 21, 0.15);
             border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 22px;
-            color: var(--primary);
         }
 
-        .event-banner { border-left-color: #ff9f0a; }
+        .banner-content { flex: 1; }
+        .banner-title { font-weight: 700; font-size: 15px; }
+        .banner-subtitle { font-size: 12px; color: var(--text-secondary); }
+
+        .banner-icon { background: rgba(250, 204, 21, 0.15); color: var(--primary); }
         .event-banner .banner-icon { color: #ff9f0a; background: rgba(255, 159, 10, 0.15); }
 
-        /* Grid edificios */
         .section-title {
             margin: 20px 20px 12px;
             font-size: 18px;
@@ -251,47 +237,30 @@
             overflow: hidden;
         }
 
-        .building-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
-            transition: left 0.5s;
-        }
-
-        .building-card:hover::before { left: 100%; }
         .building-card:active { transform: scale(0.96); }
 
-        .building-card.event-active {
-            animation: pulse-glow 2s infinite;
-        }
-
-        /* Colores específicos por edificio */
-        .building-card.piscina { border-color: rgba(56, 189, 248, 0.3); }
+        .building-card.piscina { border-color: rgba(56, 189, 248, 0.4); }
         .building-card.piscina .building-icon { background: rgba(56, 189, 248, 0.15); color: var(--color-piscina); }
         
-        .building-card.fabrica { border-color: rgba(167, 139, 250, 0.3); }
+        .building-card.fabrica { border-color: rgba(167, 139, 250, 0.4); }
         .building-card.fabrica .building-icon { background: rgba(167, 139, 250, 0.15); color: var(--color-fabrica); }
         
-        .building-card.escuela { border-color: rgba(251, 191, 36, 0.3); }
+        .building-card.escuela { border-color: rgba(251, 191, 36, 0.4); }
         .building-card.escuela .building-icon { background: rgba(251, 191, 36, 0.15); color: var(--color-escuela); }
         
-        .building-card.hospital { border-color: rgba(248, 113, 113, 0.3); }
+        .building-card.hospital { border-color: rgba(248, 113, 113, 0.4); }
         .building-card.hospital .building-icon { background: rgba(248, 113, 113, 0.15); color: var(--color-hospital); }
         
-        .building-card.banco { border-color: rgba(52, 211, 153, 0.3); }
+        .building-card.banco { border-color: rgba(52, 211, 153, 0.4); }
         .building-card.banco .building-icon { background: rgba(52, 211, 153, 0.15); color: var(--color-banco); }
         
-        .building-card.premium { border-color: rgba(244, 114, 182, 0.3); }
+        .building-card.premium { border-color: rgba(244, 114, 182, 0.4); }
         .building-card.premium .building-icon { background: rgba(244, 114, 182, 0.15); color: var(--color-premium); }
         
-        .building-card.casino { border-color: rgba(251, 146, 60, 0.3); }
+        .building-card.casino { border-color: rgba(251, 146, 60, 0.4); }
         .building-card.casino .building-icon { background: rgba(251, 146, 60, 0.15); color: var(--color-casino); }
         
-        .building-card.parque { border-color: rgba(74, 222, 128, 0.3); }
+        .building-card.parque { border-color: rgba(74, 222, 128, 0.4); }
         .building-card.parque .building-icon { background: rgba(74, 222, 128, 0.15); color: var(--color-parque); }
 
         .building-icon {
@@ -309,7 +278,8 @@
         .building-name { font-weight: 700; margin-bottom: 4px; }
         .building-level { font-size: 12px; color: var(--text-secondary); }
 
-        /* Overlay y Modales */
+        .hidden { display: none !important; }
+
         .overlay {
             position: fixed;
             top: 0;
@@ -379,7 +349,7 @@
             transition: all 0.2s;
         }
 
-        .modal-back:active { transform: scale(0.92); background: var(--bg-card); }
+        .modal-back:active { transform: scale(0.92); }
 
         .modal-title {
             font-size: 22px;
@@ -390,7 +360,6 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* Pestañas */
         .tabs {
             display: flex;
             gap: 8px;
@@ -412,12 +381,8 @@
             transition: all 0.2s;
         }
 
-        .tab.active {
-            background: var(--primary);
-            color: #000;
-        }
+        .tab.active { background: var(--primary); color: #000; }
 
-        /* Banco tabs */
         .banco-tabs {
             display: flex;
             gap: 8px;
@@ -438,12 +403,8 @@
             transition: all 0.2s;
         }
 
-        .banco-tab.active {
-            background: var(--color-banco);
-            color: #000;
-        }
+        .banco-tab.active { background: var(--color-banco); color: #000; }
 
-        /* Estadísticas edificios */
         .building-stats {
             background: var(--bg-elevated);
             border-radius: 20px;
@@ -469,45 +430,6 @@
             transition: all 0.2s;
         }
 
-        .upgrade-btn:active { transform: scale(0.97); }
-
-        /* Botones de compra/venta */
-        .buy-btn {
-            background: var(--color-banco);
-            color: #000;
-            border: none;
-            border-radius: 20px;
-            padding: 16px;
-            font-weight: 800;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 10px;
-        }
-
-        .buy-btn:active { transform: scale(0.97); }
-
-        .sell-btn {
-            background: #f97316;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 16px;
-            font-weight: 800;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 10px;
-        }
-
-        .sell-btn:active { transform: scale(0.97); }
-
-        .sell-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        /* Área de juego */
         .game-area {
             background: var(--bg-elevated);
             border-radius: 28px;
@@ -516,12 +438,7 @@
             border: 2px solid rgba(250, 204, 21, 0.2);
         }
 
-        .lives-container {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin: 16px 0;
-        }
+        .lives-container { display: flex; justify-content: center; gap: 12px; margin: 16px 0; }
 
         .life {
             width: 38px;
@@ -538,7 +455,6 @@
         .life.active {
             background: linear-gradient(135deg, #ef4444, #dc2626);
             box-shadow: 0 0 10px #ef4444;
-            animation: bounce 0.3s ease;
         }
 
         .revive-btn {
@@ -551,10 +467,7 @@
             cursor: pointer;
             width: 100%;
             color: white;
-            transition: all 0.2s;
         }
-
-        .revive-btn:active { transform: scale(0.97); }
 
         .game-instructions {
             background: linear-gradient(135deg, #1e293b, #0f172a);
@@ -564,13 +477,6 @@
             margin: 16px 0;
             font-size: 13px;
             color: var(--text-secondary);
-        }
-
-        .ad-options {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-            flex-wrap: wrap;
         }
 
         .ad-btn {
@@ -589,176 +495,6 @@
             transition: all 0.2s;
         }
 
-        .ad-btn:active { transform: scale(0.96); }
-
-        /* Mejoras visuales para minijuegos */
-        .sequence-display {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            margin: 24px 0;
-            flex-wrap: wrap;
-        }
-
-        .sequence-card {
-            width: 75px;
-            height: 75px;
-            background: linear-gradient(145deg, #1e293b, #0f172a);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            font-weight: 800;
-            border: 2px solid var(--color-escuela);
-            transition: all 0.2s;
-            box-shadow: 0 8px 0 #5a3a0a;
-        }
-
-        .sequence-card.highlight {
-            background: linear-gradient(145deg, var(--color-escuela), #d97706);
-            color: white;
-            transform: scale(1.15);
-            box-shadow: 0 0 20px var(--color-escuela);
-            animation: bounce 0.3s ease;
-        }
-
-        .pupitres-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin: 24px 0;
-        }
-
-        .pupitre {
-            background: linear-gradient(145deg, #1e293b, #0f172a);
-            border-radius: 20px;
-            padding: 18px;
-            text-align: center;
-            font-size: 28px;
-            font-weight: 700;
-            cursor: pointer;
-            border: 2px solid var(--color-escuela);
-            transition: all 0.1s;
-            box-shadow: 0 6px 0 #5a3a0a;
-        }
-
-        .pupitre:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #5a3a0a;
-            background: linear-gradient(145deg, var(--color-escuela), #d97706);
-        }
-
-        .conveyor-belt {
-            position: relative;
-            height: 130px;
-            background: linear-gradient(180deg, #2d2f3a, #1a1c24);
-            border-radius: 65px;
-            overflow: hidden;
-            margin: 20px 0;
-            border: 2px solid var(--color-fabrica);
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 8px 0 #4a2c6b;
-        }
-
-        .moving-piece {
-            position: absolute;
-            width: 85px;
-            height: 85px;
-            background: linear-gradient(145deg, var(--color-fabrica), #7c3aed);
-            border-radius: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 52px;
-            top: 22px;
-            transition: left 0.05s linear;
-            box-shadow: 0 8px 0 #4a2c6b;
-            z-index: 5;
-        }
-
-        .calibration-zone {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 110px;
-            height: 110px;
-            background: rgba(167, 139, 250, 0.3);
-            border: 3px solid var(--color-fabrica);
-            border-radius: 25px;
-            top: 10px;
-            animation: pulse-glow 1s infinite;
-            z-index: 2;
-        }
-
-        .slingshot-area {
-            position: relative;
-            height: 320px;
-            background: linear-gradient(180deg, #0f4c81, #0b2a4a);
-            border-radius: 32px;
-            overflow: hidden;
-            margin: 20px 0;
-            cursor: grab;
-            touch-action: none;
-            border: 2px solid var(--color-piscina);
-            box-shadow: 0 12px 0 #1e3a5f;
-        }
-
-        .diver {
-            position: absolute;
-            bottom: 30px;
-            left: 30px;
-            font-size: 70px;
-            transition: transform 0.1s;
-            z-index: 10;
-            filter: drop-shadow(0 8px 0 #1e3a5f);
-        }
-
-        .target {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            width: 85px;
-            height: 85px;
-            background: rgba(56, 189, 248, 0.25);
-            border: 3px solid var(--color-piscina);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 52px;
-            animation: float 2s infinite;
-            box-shadow: 0 0 20px var(--color-piscina);
-        }
-
-        .surgery-area {
-            position: relative;
-            width: 100%;
-            height: 320px;
-            background: #f4e6d8;
-            border-radius: 32px;
-            margin: 20px 0;
-            overflow: hidden;
-            border: 3px solid var(--color-hospital);
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.1), 0 12px 0 #991f1f;
-        }
-
-        .virus {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background: radial-gradient(circle at 30% 30%, #8b4513, #5a2a0a);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            cursor: grab;
-            z-index: 10;
-            box-shadow: 0 6px 0 #3a1a05;
-            transition: all 0.05s linear;
-        }
-
-        /* Perfil */
         .perfil-avatar {
             width: 80px;
             height: 80px;
@@ -786,11 +522,8 @@
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
-        .perfil-stat:last-child {
-            border-bottom: none;
-        }
+        .perfil-stat:last-child { border-bottom: none; }
 
-        /* Navbar mejorada */
         .navbar {
             position: fixed;
             bottom: 0;
@@ -819,10 +552,112 @@
         .nav-item i { font-size: 22px; }
         .nav-item.active { color: var(--primary); }
 
-        /* Oculto */
-        .hidden { display: none !important; }
+        .referral-code {
+            background: #0f172a;
+            padding: 16px;
+            border-radius: 20px;
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .referral-code code {
+            font-size: 18px;
+            background: #1e293b;
+            padding: 12px;
+            border-radius: 12px;
+            display: block;
+            margin: 10px 0;
+            word-break: break-all;
+            color: var(--primary);
+        }
+
+        .copy-btn {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .rank-list { display: flex; flex-direction: column; gap: 8px; }
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: var(--bg-elevated);
+            border-radius: 14px;
+            border-left: 4px solid;
+        }
+        .rank-item.diamond { border-left-color: #60a5fa; }
+        .rank-item.gold { border-left-color: #fbbf24; }
+        .rank-item.silver { border-left-color: #94a3b8; }
+        .rank-item.citizen { border-left-color: #4ade80; }
+
+        .badge {
+            background: var(--primary);
+            color: #000;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        button { cursor: pointer; }
         
-        /* Modal banco estilos */
+        .flex-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .number-display {
+            font-size: 60px;
+            font-weight: 800;
+            font-family: monospace;
+            background: linear-gradient(145deg, #0f172a, #020617);
+            padding: 25px;
+            border-radius: 24px;
+            margin: 16px 0;
+            text-align: center;
+            border: 2px solid #f97316;
+            letter-spacing: 10px;
+        }
+
+        .dice-display { display: flex; justify-content: center; gap: 35px; margin: 20px 0; }
+        
+        .dice {
+            width: 85px;
+            height: 85px;
+            background: linear-gradient(145deg, #fff, #e2e8f0);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 52px;
+            font-weight: bold;
+            box-shadow: 0 10px 0 #94a3b8;
+        }
+
+        .slot-machine { display: flex; justify-content: center; gap: 25px; margin: 20px 0; }
+        
+        .slot {
+            width: 85px;
+            height: 105px;
+            background: linear-gradient(145deg, #fff, #e2e8f0);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 52px;
+            font-weight: bold;
+            box-shadow: 0 10px 0 #94a3b8;
+        }
+
         .min-withdraw-info {
             background: rgba(249, 115, 22, 0.1);
             border: 1px solid rgba(249, 115, 22, 0.3);
@@ -836,39 +671,104 @@
 </head>
 <body>
     <!-- BANNERS -->
-    <div id="sunday-banner" style="display: none;" class="sunday-banner"><i class="fa-solid fa-circle-pause"></i> 🎉 DOMINGO DE RECOMPENSAS - CAMBIA TUS DIAMANTES POR TON 🎉</div>
-    <div id="daily-banner" class="action-banner" onclick="openDailyReward()"><div class="banner-icon"><i class="fa-solid fa-calendar-check"></i></div><div class="banner-content"><div class="banner-title">Recompensa diaria</div><div class="banner-subtitle" id="daily-subtitle">¡Reclama tus diamantes gratis!</div></div><i class="fa-solid fa-chevron-right"></i></div>
-    <div id="event-banner" class="action-banner event-banner" style="display: none;" onclick="openEventModal()"><div class="banner-icon" id="event-icon"><i class="fa-solid fa-star"></i></div><div class="banner-content"><div class="banner-title" id="event-title">Evento semanal</div><div class="banner-subtitle" id="event-subtitle">¡Recompensas x2 activas!</div></div><i class="fa-solid fa-chevron-right"></i></div>
+    <div id="daily-banner" class="action-banner" onclick="openDailyReward()">
+        <div class="banner-icon"><i class="fa-solid fa-calendar-check"></i></div>
+        <div class="banner-content">
+            <div class="banner-title">Recompensa diaria</div>
+            <div class="banner-subtitle" id="daily-subtitle">¡Reclama tus diamantes gratis!</div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="color:var(--text-secondary);"></i>
+    </div>
+    <div id="event-banner" class="action-banner event-banner" style="display:none;" onclick="openEventModal()">
+        <div class="banner-icon" id="event-banner-icon"><i class="fa-solid fa-star"></i></div>
+        <div class="banner-content">
+            <div class="banner-title" id="event-banner-title">Evento semanal</div>
+            <div class="banner-subtitle" id="event-banner-subtitle">¡Recompensas x2 activas!</div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="color:var(--text-secondary);"></i>
+    </div>
 
     <!-- HEADER -->
     <div class="app-header">
-        <div class="user-greeting"><span class="greeting-label">HOLA,</span><span id="user-display">Cargando...</span></div>
-        <div id="premium-badge" class="premium-badge" style="display: none;"><i class="fa-solid fa-crown"></i> PREMIUM</div>
+        <div class="user-greeting">
+            <span class="greeting-label">HOLA,</span>
+            <span id="user-display">Cargando...</span>
+        </div>
+        <div id="premium-badge" class="premium-badge" style="display:none;">
+            <i class="fa-solid fa-crown"></i> PREMIUM
+        </div>
     </div>
 
-    <!-- BALANCE CARD -->
-    <div class="balance-card"><div class="balance-info"><div><span class="balance-value" id="diamonds">0</span><span class="balance-unit">💎</span></div></div><div class="rate-badge"><i class="fa-solid fa-bolt"></i><span>+<span id="rate">0</span>/h</span></div></div>
+    <!-- BALANCE -->
+    <div class="balance-card">
+        <div class="balance-info">
+            <span class="balance-value" id="diamonds">0</span>
+            <span style="color:var(--text-secondary); font-size:14px;">💎</span>
+        </div>
+        <div class="rate-badge">
+            <i class="fa-solid fa-bolt"></i>
+            <span>+<span id="rate">0</span>/h</span>
+        </div>
+    </div>
 
     <!-- GRID EDIFICIOS -->
-    <div class="section-title"><i class="fa-solid fa-building"></i><span>Edificios</span></div>
+    <div class="section-title"><i class="fa-solid fa-building"></i> Edificios</div>
     <div class="grid-4x2">
-        <div class="building-card banco" onclick="openBank()"><div class="building-icon"><i class="fa-solid fa-building-columns"></i></div><div class="building-name">Banco</div><div class="building-level">Comprar/Vender TON</div></div>
-        <div class="building-card premium" onclick="openStore()"><div class="building-icon"><i class="fa-solid fa-crown"></i></div><div class="building-name">Premium</div><div class="building-level">Planes VIP</div></div>
-        <div class="building-card casino" onclick="openCasino()"><div class="building-icon"><i class="fa-solid fa-dice"></i></div><div class="building-name">Casino</div><div class="building-level">5 juegos</div></div>
-        <div class="building-card parque" onclick="showAdsModal()"><div class="building-icon"><i class="fa-solid fa-tree"></i></div><div class="building-name">Parque</div><div class="building-level">Anuncios</div></div>
-        <div class="building-card piscina" onclick="openBuilding('piscina')"><div class="building-icon"><i class="fa-solid fa-water-ladder"></i></div><div class="building-name">Piscina</div><div class="building-level">Nivel <span id="lvl_piscina">0</span></div></div>
-        <div class="building-card fabrica" onclick="openBuilding('fabrica')"><div class="building-icon"><i class="fa-solid fa-industry"></i></div><div class="building-name">Fábrica</div><div class="building-level">Nivel <span id="lvl_fabrica">0</span></div></div>
-        <div class="building-card escuela" onclick="openBuilding('escuela')"><div class="building-icon"><i class="fa-solid fa-school"></i></div><div class="building-name">Escuela</div><div class="building-level">Nivel <span id="lvl_escuela">0</span></div></div>
-        <div class="building-card hospital" onclick="openBuilding('hospital')"><div class="building-icon"><i class="fa-solid fa-hospital"></i></div><div class="building-name">Hospital</div><div class="building-level">Nivel <span id="lvl_hospital">0</span></div></div>
+        <div class="building-card banco" onclick="openBank()">
+            <div class="building-icon"><i class="fa-solid fa-building-columns"></i></div>
+            <div class="building-name">Banco</div>
+            <div class="building-level">Comprar/Vender TON</div>
+        </div>
+        <div class="building-card premium" onclick="openStore()">
+            <div class="building-icon"><i class="fa-solid fa-crown"></i></div>
+            <div class="building-name">Premium</div>
+            <div class="building-level">Planes VIP</div>
+        </div>
+        <div class="building-card casino" onclick="openCasino()">
+            <div class="building-icon"><i class="fa-solid fa-dice"></i></div>
+            <div class="building-name">Casino</div>
+            <div class="building-level">5 juegos</div>
+        </div>
+        <div class="building-card parque" onclick="showAdsModal()">
+            <div class="building-icon"><i class="fa-solid fa-tree"></i></div>
+            <div class="building-name">Parque</div>
+            <div class="building-level">Anuncios</div>
+        </div>
+        <div class="building-card piscina" onclick="openBuilding('piscina')">
+            <div class="building-icon"><i class="fa-solid fa-water-ladder"></i></div>
+            <div class="building-name">Piscina</div>
+            <div class="building-level">Nivel <span id="lvl_piscina">0</span></div>
+        </div>
+        <div class="building-card fabrica" onclick="openBuilding('fabrica')">
+            <div class="building-icon"><i class="fa-solid fa-industry"></i></div>
+            <div class="building-name">Fábrica</div>
+            <div class="building-level">Nivel <span id="lvl_fabrica">0</span></div>
+        </div>
+        <div class="building-card escuela" onclick="openBuilding('escuela')">
+            <div class="building-icon"><i class="fa-solid fa-school"></i></div>
+            <div class="building-name">Escuela</div>
+            <div class="building-level">Nivel <span id="lvl_escuela">0</span></div>
+        </div>
+        <div class="building-card hospital" onclick="openBuilding('hospital')">
+            <div class="building-icon"><i class="fa-solid fa-hospital"></i></div>
+            <div class="building-name">Hospital</div>
+            <div class="building-level">Nivel <span id="lvl_hospital">0</span></div>
+        </div>
     </div>
 
     <div class="overlay" id="overlay" onclick="closeAll()"></div>
 
-    <!-- ==================== MODAL PERFIL ==================== -->
+    <!-- MODAL PERFIL -->
     <div class="modal" id="modalPerfil">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Mi Perfil</div></div>
+        <div class="modal-header">
+            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
+            <div class="modal-title">Mi Perfil</div>
+        </div>
         <div class="perfil-avatar" id="perfil-avatar">👤</div>
-        <div style="text-align:center;"><h3 id="perfil-name">Usuario</h3><span class="badge" id="perfil-rank">Ciudadano</span></div>
+        <div style="text-align:center;">
+            <h3 id="perfil-name">Usuario</h3>
+            <span class="badge" id="perfil-rank">Ciudadano</span>
+        </div>
         <div class="perfil-stats">
             <div class="perfil-stat"><span>💎 Diamantes</span><span id="perfil-diamonds" style="color:var(--primary); font-weight:bold;">0</span></div>
             <div class="perfil-stat"><span>⚡ Producción/h</span><span id="perfil-rate" style="color:var(--accent-green); font-weight:bold;">0</span></div>
@@ -881,21 +781,24 @@
             <div class="perfil-stat"><span>💰 Proyección semanal</span><span id="perfil-proyeccion" style="color:var(--accent-green);">0 TON</span></div>
             <div class="perfil-stat"><span>💎 Premium</span><span id="perfil-premium">No</span></div>
         </div>
-        <button class="close" onclick="closeAll()" style="background:var(--bg-elevated); border:none; color:white; padding:12px; border-radius:20px; width:100%; margin-top:10px;">CERRAR</button>
+        <button onclick="closeAll()" style="background:var(--bg-elevated); border:none; color:white; padding:12px; border-radius:20px; width:100%; margin-top:10px;">CERRAR</button>
     </div>
 
-    <!-- ==================== MODAL AMIGOS ==================== -->
+    <!-- MODAL AMIGOS -->
     <div class="modal" id="modalFriends">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Invitar Amigos</div></div>
+        <div class="modal-header">
+            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
+            <div class="modal-title">Invitar Amigos</div>
+        </div>
         <div style="text-align:center; margin:20px 0;">
             <div style="font-size:64px;">👥</div>
             <h3 style="margin:10px 0;">¡Gana el 10% de tus referidos!</h3>
             <p style="color:var(--text-secondary);">Comparte tu enlace de invitación</p>
         </div>
         <div class="referral-code">
-            <p>Tu código de referencia:</p>
-            <code id="referral-code" style="font-size:18px; background:#0f172a; padding:12px; border-radius:12px; display:block; margin:10px 0; word-break:break-all;">CARGANDO...</code>
-            <button class="copy-btn" onclick="copyReferralCode()" style="background:var(--primary); color:#000; border:none; padding:12px 20px; border-radius:30px; font-weight:700; cursor:pointer; width:100%;">📋 COPIAR ENLACE DE INVITACIÓN</button>
+            <p style="color:var(--text-secondary);">Tu código de referencia:</p>
+            <code id="referral-code">CARGANDO...</code>
+            <button class="copy-btn" onclick="copyReferralCode()">📋 COPIAR ENLACE DE INVITACIÓN</button>
         </div>
         <div class="building-stats" style="margin-top:16px;">
             <div class="stat-row"><span>👥 Amigos referidos</span><span id="ref-count" style="color:var(--primary); font-weight:bold;">0</span></div>
@@ -907,19 +810,24 @@
             <strong>¿Cómo funciona?</strong><br>
             Cuando un amigo se une usando tu enlace, recibirás el <strong>10%</strong> de todos los diamantes que genere. ¡Sin límite de referidos!
         </div>
-        <button class="close" onclick="closeAll()" style="background:var(--bg-elevated); border:none; color:white; padding:12px; border-radius:20px; width:100%; margin-top:10px;">CERRAR</button>
+        <button onclick="closeAll()" style="background:var(--bg-elevated); border:none; color:white; padding:12px; border-radius:20px; width:100%; margin-top:10px;">CERRAR</button>
     </div>
 
-    <!-- ==================== MODAL RANKING ==================== -->
+    <!-- MODAL RANKING -->
     <div class="modal" id="modalRanking">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Ranking semanal</div></div>
+        <div class="modal-header">
+            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
+            <div class="modal-title">Ranking semanal</div>
+        </div>
         <div style="text-align:center; margin:20px 0;">
             <div style="font-size:64px;">🏆</div>
             <h3>Sistema de Rangos</h3>
             <p style="color:var(--text-secondary);">Compite semanalmente por el pool de TON</p>
         </div>
-        <div class="ranking-section">
-            <div class="ranking-title"><i class="fa-solid fa-trophy"></i> Rangos y recompensas</div>
+        <div style="margin-top:16px;">
+            <div style="font-size:18px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; color:var(--primary);">
+                <i class="fa-solid fa-trophy"></i> Rangos y recompensas
+            </div>
             <div class="rank-list">
                 <div class="rank-item diamond"><span>💎 Diamante</span><span>Top 1-3</span><span>40% del pool</span></div>
                 <div class="rank-item gold"><span>🥇 Oro</span><span>Top 4-10</span><span>25% del pool</span></div>
@@ -928,7 +836,7 @@
             </div>
         </div>
         <div class="building-stats" style="margin-top:16px;">
-            <div class="stat-row"><span>🏅 Tu rango actual</span><span class="badge" id="user-rank-display" style="background:var(--primary); color:#000;">Ciudadano</span></div>
+            <div class="stat-row"><span>🏅 Tu rango actual</span><span class="badge" id="user-rank-display">Ciudadano</span></div>
             <div class="stat-row"><span>💰 Pool total semanal</span><span id="pool-total-ranking" style="color:var(--accent-green); font-weight:bold;">0 TON</span></div>
             <div class="stat-row"><span>📊 Tu proyección</span><span id="projected-reward-display" style="color:var(--primary); font-weight:bold;">0 TON</span></div>
             <div class="stat-row"><span>💎 Diamantes generados</span><span id="ranking-diamonds" style="color:var(--accent-green);">0</span></div>
@@ -937,20 +845,21 @@
             <i class="fa-solid fa-info-circle"></i> 
             <strong>El ranking se reinicia cada domingo.</strong> Genera la mayor cantidad de diamantes para subir de rango y ganar más TON.
         </div>
-        <button class="close" onclick="closeAll()" style="background:var(--bg-elevated); border:none; color:white; padding:12px; border-radius:20px; width:100%; margin-top:10px;">CERRAR</button>
+        <button onclick="closeAll()" style="background:var(--bg-elevated); border:none; color:white; padding:12px; border-radius:20px; width:100%; margin-top:10px;">CERRAR</button>
     </div>
 
-    <!-- ==================== MODAL BANCO (COMPRA/VENTA) ==================== -->
+    <!-- MODAL BANCO -->
     <div class="modal" id="modalBank">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Banco TON</div></div>
+        <div class="modal-header">
+            <div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div>
+            <div class="modal-title">Banco TON</div>
+        </div>
         
-        <!-- Tabs Compra/Venta -->
         <div class="banco-tabs">
             <div class="banco-tab active" onclick="switchBancoTab('compra')">🛒 COMPRAR TON</div>
             <div class="banco-tab" onclick="switchBancoTab('venta')">💱 VENDER DIAMANTES</div>
         </div>
 
-        <!-- Panel de Compra -->
         <div id="banco-compra-panel">
             <div class="game-instructions">
                 <i class="fa-solid fa-info-circle"></i> 
@@ -964,270 +873,49 @@
             <div id="bankList" style="margin-top:16px;"></div>
         </div>
 
-        <!-- Panel de Venta -->
         <div id="banco-venta-panel" class="hidden">
             <div class="game-instructions">
                 <i class="fa-solid fa-info-circle"></i> 
-                Cambia tus diamantes por TON. Los TON se transfieren a tu wallet conectada.
+                Cambia tus diamantes por TON directamente a tu wallet.
             </div>
-            
             <div class="min-withdraw-info">
                 <i class="fa-solid fa-circle-exclamation"></i> 
                 <strong>Requisitos:</strong><br>
                 • Mínimo de retiro: <strong>1 TON</strong><br>
                 • Límite diario: <strong>5 TON</strong><br>
-                • Solo disponible con wallet conectada
+                • Wallet conectada requerida
             </div>
-
             <div class="building-stats" style="margin-top:16px;">
                 <div class="stat-row"><span>💎 Tus diamantes</span><span id="venta-diamonds" style="color:var(--primary); font-weight:bold;">0</span></div>
-                <div class="stat-row"><span>💰 TON disponibles (pool)</span><span id="venta-pool" style="color:var(--accent-green); font-weight:bold;">0 TON</span></div>
+                <div class="stat-row"><span>💰 TON en pool</span><span id="venta-pool" style="color:var(--accent-green); font-weight:bold;">0 TON</span></div>
                 <div class="stat-row"><span>📊 Tasa de cambio</span><span id="venta-tasa" style="color:var(--accent-green);">Cargando...</span></div>
-                <div class="stat-row"><span>🎯 TON a recibir</span><span id="venta-ton-recibir" style="color:var(--primary); font-weight:bold;">0 TON</span></div>
+                <div class="stat-row"><span>🎯 Recibirás</span><span id="venta-ton-recibir" style="color:var(--primary); font-weight:bold;">0 TON</span></div>
                 <div class="stat-row"><span>📅 Retirado hoy</span><span id="venta-retirado-hoy" style="color:#f97316;">0 TON</span></div>
             </div>
-
             <div style="margin:16px 0;">
-                <label style="color:var(--text-secondary); font-size:14px;">Cantidad de diamantes a cambiar:</label>
-                <div class="bet-controls" style="margin:10px 0;">
-                    <button onclick="cambiarVentaDiamonds(-100)">-100</button>
-                    <span id="venta-cantidad" style="font-size:24px; min-width:80px; text-align:center;">100</span>
-                    <button onclick="cambiarVentaDiamonds(100)">+100</button>
+                <label style="color:var(--text-secondary); font-size:14px;">Diamantes a cambiar:</label>
+                <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin:10px 0;">
+                    <button onclick="cambiarVentaDiamonds(-100)" style="width:50px; height:50px; border-radius:25px; background:var(--bg-elevated); border:none; color:white; font-size:24px; font-weight:700;">-</button>
+                    <span id="venta-cantidad" style="font-size:24px; min-width:80px; text-align:center; color:var(--primary); font-weight:800;">100</span>
+                    <button onclick="cambiarVentaDiamonds(100)" style="width:50px; height:50px; border-radius:25px; background:var(--bg-elevated); border:none; color:white; font-size:24px; font-weight:700;">+</button>
                 </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <div style="display:flex; gap:8px;">
                     <button onclick="setVentaCantidad(100)" style="flex:1; background:var(--bg-elevated); border:none; color:white; padding:8px; border-radius:12px;">100</button>
                     <button onclick="setVentaCantidad(500)" style="flex:1; background:var(--bg-elevated); border:none; color:white; padding:8px; border-radius:12px;">500</button>
                     <button onclick="setVentaCantidad(1000)" style="flex:1; background:var(--bg-elevated); border:none; color:white; padding:8px; border-radius:12px;">1K</button>
                     <button onclick="setVentaCantidadMax()" style="flex:1; background:var(--bg-elevated); border:none; color:var(--primary); padding:8px; border-radius:12px;">MAX</button>
                 </div>
             </div>
-
-            <button class="sell-btn" id="vender-btn" onclick="venderDiamantes()" disabled>
+            <button id="vender-btn" onclick="venderDiamantes()" disabled style="background:#f97316; color:white; border:none; border-radius:20px; padding:16px; font-weight:800; width:100%; cursor:pointer;">
                 💱 CAMBIAR A TON
             </button>
             <p id="venta-error" style="color:#ef4444; text-align:center; font-size:13px; display:none;"></p>
         </div>
 
-        <button class="close" onclick="closeAll()" style="background:var(--bg-elevated); border:none; color:white; padding:12px; border-radius:20px; width:100%; margin-top:10px;">CERRAR</button>
+        <button onclick="closeAll()" style="background:var(--bg-elevated); border:none; color:white; padding:12px; border-radius:20px; width:100%; margin-top:10px;">CERRAR</button>
     </div>
 
-    <!-- MODAL TIENDA PREMIUM -->
-    <div class="modal" id="modalStore"><div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Tienda Premium</div></div><div class="premium-benefits"><strong>🎁 Beneficios Premium:</strong><ul><li>✨ Multiplicador x2</li><li>🚫 Sin anuncios</li><li>💎 Nombre azul</li><li>⚡ Eventos x4</li></ul></div><div id="premium-plans"></div><button class="close" onclick="closeAll()">Cerrar</button></div>
-
-    <!-- MODAL ESCUELA -->
-    <div class="modal modal-full" id="modalEscuela">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Escuela · Nivel <span id="escuela-game-level">1</span></div><div id="escuela-event-badge" style="display:none; background:#ff9f0a; padding:5px 12px; border-radius:20px; font-size:12px;">🎉 EVENTO x2</div></div>
-        <div class="tabs"><div class="tab active" onclick="switchEscuelaTab('upgrade')">MEJORAS</div><div class="tab" onclick="switchEscuelaTab('game')">JUEGO</div></div>
-        <div id="escuela-upgrade-panel"><div class="building-stats"><div class="stat-row"><span>Nivel</span><span id="escuela-level">0</span></div><div class="stat-row"><span>Producción</span><span id="escuela-prod">0 💎/h</span></div><div class="stat-row"><span>Próxima mejora</span><span id="escuela-price">3000 💎</span></div></div><button class="upgrade-btn" id="escuela-btn" onclick="buyUpgradeFromBuilding('escuela', 3000)">MEJORAR</button></div>
-        <div id="escuela-game-panel" style="display:none;">
-            <div class="game-instructions"><i class="fa-solid fa-lightbulb"></i> <strong>Mente Maestra</strong> - Memoriza la secuencia y repítela tocando los pupitres en orden.</div>
-            <div class="game-area"><div class="flex-row"><span>🎯 Nivel <span id="mem-level">1</span></span><span>🏆 Récord <span id="mem-best">0</span></span></div>
-            <div class="lives-container" id="escuela-lives"></div>
-            <div id="sequence-display" class="sequence-display"></div>
-            <div id="pupitres-grid" class="pupitres-grid"></div>
-            <div id="mem-result" style="text-align:center;"></div>
-            <div id="escuela-revive" class="revive-btn" style="display:none;" onclick="reviveGame('escuela')"><i class="fa-solid fa-heart-broken"></i> Revivir (Anuncio)</div>
-            <div class="ad-options"><div class="ad-btn" onclick="useAdMultiplier('escuela')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div></div></div>
-        </div>
-        <button class="close" onclick="closeAll()">Cerrar</button>
-    </div>
-
-    <!-- MODAL FÁBRICA -->
-    <div class="modal modal-full" id="modalFabrica">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Fábrica · Nivel <span id="fabrica-game-level">1</span></div><div id="fabrica-event-badge" style="display:none; background:#ff9f0a; padding:5px 12px; border-radius:20px; font-size:12px;">🎉 EVENTO x2</div></div>
-        <div class="tabs"><div class="tab active" onclick="switchFabricaTab('upgrade')">MEJORAS</div><div class="tab" onclick="switchFabricaTab('game')">JUEGO</div></div>
-        <div id="fabrica-upgrade-panel"><div class="building-stats"><div class="stat-row"><span>Nivel</span><span id="fabrica-level">0</span></div><div class="stat-row"><span>Producción</span><span id="fabrica-prod">0 💎/h</span></div><div class="stat-row"><span>Próxima mejora</span><span id="fabrica-price">10000 💎</span></div></div><button class="upgrade-btn" id="fabrica-btn" onclick="buyUpgradeFromBuilding('fabrica', 10000)">MEJORAR</button></div>
-        <div id="fabrica-game-panel" style="display:none;">
-            <div class="game-instructions"><i class="fa-solid fa-gear"></i> <strong>Línea de Ensamblaje</strong> - Toca cuando la pieza pase por la zona violeta. ¡Cuidado con piezas defectuosas!</div>
-            <div class="game-area"><div class="flex-row"><span>🔧 <span id="asm-completed">0</span>/<span id="asm-required">5</span></span><span>🏆 Récord <span id="asm-best">0</span></span></div>
-            <div class="lives-container" id="fabrica-lives"></div>
-            <div class="conveyor-belt" id="conveyor"><div class="moving-piece" id="moving-piece">🔧</div><div class="calibration-zone"></div></div>
-            <div id="defect-indicator" class="defect-indicator"></div>
-            <div id="asm-result" style="text-align:center;"></div>
-            <div id="fabrica-revive" class="revive-btn" style="display:none;" onclick="reviveGame('fabrica')"><i class="fa-solid fa-heart-broken"></i> Revivir (Anuncio)</div>
-            <div class="ad-options"><div class="ad-btn" onclick="useAdMultiplier('fabrica')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div></div></div>
-        </div>
-        <button class="close" onclick="closeAll()">Cerrar</button>
-    </div>
-
-    <!-- MODAL PISCINA -->
-    <div class="modal modal-full" id="modalPiscina">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Piscina · Nivel <span id="piscina-game-level">1</span></div><div id="piscina-event-badge" style="display:none; background:#ff9f0a; padding:5px 12px; border-radius:20px; font-size:12px;">🎉 EVENTO x2</div></div>
-        <div class="tabs"><div class="tab active" onclick="switchPiscinaTab('upgrade')">MEJORAS</div><div class="tab" onclick="switchPiscinaTab('game')">JUEGO</div></div>
-        <div id="piscina-upgrade-panel"><div class="building-stats"><div class="stat-row"><span>Nivel</span><span id="piscina-level">0</span></div><div class="stat-row"><span>Producción</span><span id="piscina-prod">0 💎/h</span></div><div class="stat-row"><span>Próxima mejora</span><span id="piscina-price">5000 💎</span></div></div><button class="upgrade-btn" id="piscina-btn" onclick="buyUpgradeFromBuilding('piscina', 5000)">MEJORAR</button></div>
-        <div id="piscina-game-panel" style="display:none;">
-            <div class="game-instructions"><i class="fa-solid fa-water"></i> <strong>Salto de Precisión</strong> - Arrastra hacia atrás para cargar potencia y suelta para saltar al flotador.</div>
-            <div class="game-area"><div class="flex-row"><span>🎯 <span id="jump-perfect">0</span>/<span id="jump-required">3</span></span><span>🏆 Récord <span id="jump-best">0</span></span></div>
-            <div class="lives-container" id="piscina-lives"></div>
-            <div class="slingshot-area" id="slingshot-area"><div class="diver" id="diver">🏊</div><div class="target" id="target">🎯</div><div class="power-bar"><div class="power-fill" id="power-fill"></div></div></div>
-            <div id="jump-result" style="text-align:center;"></div>
-            <div id="piscina-revive" class="revive-btn" style="display:none;" onclick="reviveGame('piscina')"><i class="fa-solid fa-heart-broken"></i> Revivir (Anuncio)</div>
-            <div class="ad-options"><div class="ad-btn" onclick="useAdMultiplier('piscina')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div></div></div>
-        </div>
-        <button class="close" onclick="closeAll()">Cerrar</button>
-    </div>
-
-    <!-- MODAL HOSPITAL -->
-    <div class="modal modal-full" id="modalHospital">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Hospital · Nivel <span id="hospital-game-level">1</span></div><div id="hospital-event-badge" style="display:none; background:#ff9f0a; padding:5px 12px; border-radius:20px; font-size:12px;">🎉 EVENTO x2</div></div>
-        <div class="tabs"><div class="tab active" onclick="switchHospitalTab('upgrade')">MEJORAS</div><div class="tab" onclick="switchHospitalTab('game')">JUEGO</div></div>
-        <div id="hospital-upgrade-panel"><div class="building-stats"><div class="stat-row"><span>Nivel</span><span id="hospital-level">0</span></div><div class="stat-row"><span>Producción</span><span id="hospital-prod">0 💎/h</span></div><div class="stat-row"><span>Próxima mejora</span><span id="hospital-price">7500 💎</span></div></div><button class="upgrade-btn" id="hospital-btn" onclick="buyUpgradeFromBuilding('hospital', 7500)">MEJORAR</button></div>
-        <div id="hospital-game-panel" style="display:none;">
-            <div class="game-instructions"><i class="fa-solid fa-heartbeat"></i> <strong>Cirugía de Emergencia</strong> - Arrastra los virus fuera sin tocar las paredes. ¡El tiempo corre!</div>
-            <div class="game-area"><div class="flex-row"><span>🦠 <span id="virus-extracted">0</span>/<span id="virus-total">3</span></span><span>🏆 Récord <span id="surgery-best">0</span></span></div>
-            <div class="lives-container" id="hospital-lives"></div>
-            <div class="time-bar"><div class="time-fill" id="time-fill"></div></div>
-            <div id="surgery-area" class="surgery-area"></div>
-            <div id="surgery-result" style="text-align:center;"></div>
-            <div id="hospital-revive" class="revive-btn" style="display:none;" onclick="reviveGame('hospital')"><i class="fa-solid fa-heart-broken"></i> Revivir (Anuncio)</div>
-            <div class="ad-options"><div class="ad-btn" onclick="useAdMultiplier('hospital')"><i class="fa-solid fa-circle-play"></i> MULTIPLICAR x2</div></div></div>
-        </div>
-        <button class="close" onclick="closeAll()">Cerrar</button>
-    </div>
-
-    <!-- MODAL CASINO -->
-    <div class="modal" id="modalCasino">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Casino</div></div>
-        <div id="casino-rescue" style="background:#1e293b; padding:16px; border-radius:20px; margin:16px 0; border:2px solid #ff9f0a; display:none;"><div class="flex-row"><span>💎 ¿Sin diamantes?</span><button onclick="rescueWithAd()" style="background:#ff9f0a; border:none; border-radius:30px; padding:10px 20px;">RESCATE +100</button></div></div>
-        <div class="casino-grid">
-            <div class="casino-card" onclick="abrirJuego('highlow')"><i class="fa-solid fa-chart-simple"></i><div>High/Low</div><small>Adivina alto o bajo</small></div>
-            <div class="casino-card" onclick="abrirJuego('ruleta')"><i class="fa-solid fa-circle"></i><div>Ruleta</div><small>Color, par/impar o número</small></div>
-            <div class="casino-card" onclick="abrirJuego('tragaperras')"><i class="fa-solid fa-sliders"></i><div>Tragaperras</div><small>3 símbolos iguales</small></div>
-            <div class="casino-card" onclick="abrirJuego('dados')"><i class="fa-solid fa-dice"></i><div>Dados</div><small>Mayor, menor o exacto</small></div>
-            <div class="casino-card" onclick="abrirJuego('loteria')"><i class="fa-solid fa-ticket"></i><div>Lotería</div><small>Compra boletos de 4 dígitos</small></div>
-        </div>
-        <button class="close" onclick="closeAll()">Cerrar</button>
-    </div>
-
-    <!-- MODALES DE JUEGOS DE CASINO (se mantienen igual) -->
-    <div class="modal" id="modalHighLow">
-        <div class="modal-header"><div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">High/Low</div></div>
-        <div class="game-instructions"><i class="fa-solid fa-info-circle"></i> Apuesta si el número será bajo (0000-4999) o alto (5000-9999). ¡Ganas el doble!</div>
-        <div class="game-area">
-            <div class="number-display" id="hl-number">0000</div>
-            <div class="flex-row"><span>💰 Saldo: <span id="hl-balance">0</span> 💎</span><span>🎲 Apuesta: <span id="hl-bet">10</span> 💎</span></div>
-            <div class="bet-controls"><button onclick="cambiarApuesta('hl', -10)">-10</button><span id="hl-bet-display">10</span><button onclick="cambiarApuesta('hl', 10)">+10</button></div>
-            <div class="game-buttons"><button onclick="jugarHighLow('low')" style="background:#3b82f6;">LOW</button><button onclick="jugarHighLow('high')" style="background:#ef4444;">HIGH</button></div>
-            <div id="hl-result" style="text-align:center;"></div>
-        </div>
-        <button class="close" onclick="cerrarJuego()">Volver</button>
-    </div>
-
-    <div class="modal" id="modalRuleta">
-        <div class="modal-header"><div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Ruleta</div></div>
-        <div class="game-instructions"><i class="fa-solid fa-info-circle"></i> Apuesta a color, par/impar, bajo/alto o número exacto (x36).</div>
-        <div class="game-area">
-            <div class="number-display" id="ruleta-number">0</div>
-            <div class="flex-row"><span>💰 Saldo: <span id="ruleta-balance">0</span> 💎</span><span>🎲 Apuesta: <span id="ruleta-bet">10</span> 💎</span></div>
-            <div class="bet-controls"><button onclick="cambiarApuesta('ruleta', -10)">-10</button><span id="ruleta-bet-display">10</span><button onclick="cambiarApuesta('ruleta', 10)">+10</button></div>
-            <div class="game-buttons"><button onclick="jugarRuleta('rojo')" style="background:#ef4444;">🔴 ROJO</button><button onclick="jugarRuleta('negro')" style="background:#000;">⚫ NEGRO</button><button onclick="jugarRuleta('par')">🟢 PAR</button><button onclick="jugarRuleta('impar')">🟢 IMPAR</button><button onclick="jugarRuleta('bajo')">⬇️ 1-18</button><button onclick="jugarRuleta('alto')">⬆️ 19-36</button><button onclick="jugarRuleta('numero')" style="background:#facc15; color:black; grid-column:span 2;">🎯 NÚMERO EXACTO</button></div>
-            <div id="ruleta-result" style="text-align:center;"></div>
-        </div>
-        <button class="close" onclick="cerrarJuego()">Volver</button>
-    </div>
-
-    <div class="modal" id="modalTragaperras">
-        <div class="modal-header"><div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Tragaperras</div></div>
-        <div class="game-instructions"><i class="fa-solid fa-info-circle"></i> Gira los 3 rodillos. ¡3 símbolos iguales = premio multiplicador!</div>
-        <div class="game-area">
-            <div class="slot-machine"><div class="slot" id="slot1">💎</div><div class="slot" id="slot2">💎</div><div class="slot" id="slot3">💎</div></div>
-            <div class="flex-row"><span>💰 Saldo: <span id="tragaperras-balance">0</span> 💎</span><span>🎲 Apuesta: <span id="tragaperras-bet">5</span> 💎</span></div>
-            <div class="bet-controls"><button onclick="cambiarApuesta('tragaperras', -5)">-5</button><span id="tragaperras-bet-display">5</span><button onclick="cambiarApuesta('tragaperras', 5)">+5</button></div>
-            <button onclick="jugarTragaperras()" style="background:#facc15; color:black; border:none; padding:16px; border-radius:30px; width:100%; font-weight:700;">🎰 GIRAR</button>
-            <div id="tragaperras-result" style="text-align:center;"></div>
-        </div>
-        <button class="close" onclick="cerrarJuego()">Volver</button>
-    </div>
-
-    <div class="modal" id="modalDados">
-        <div class="modal-header"><div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Dados</div></div>
-        <div class="game-instructions"><i class="fa-solid fa-info-circle"></i> Apuesta si la suma será MENOR (2-6), MAYOR (8-12) o EXACTO (7).</div>
-        <div class="game-area">
-            <div class="dice-display"><div class="dice" id="dado1">⚀</div><div class="dice" id="dado2">⚀</div></div>
-            <div style="font-size:24px; text-align:center;" id="dados-suma">Suma: 2</div>
-            <div class="flex-row"><span>💰 Saldo: <span id="dados-balance">0</span> 💎</span><span>🎲 Apuesta: <span id="dados-bet">10</span> 💎</span></div>
-            <div class="bet-controls"><button onclick="cambiarApuesta('dados', -10)">-10</button><span id="dados-bet-display">10</span><button onclick="cambiarApuesta('dados', 10)">+10</button></div>
-            <div class="game-buttons"><button onclick="jugarDados('menor')" style="background:#3b82f6;">⬇️ MENOR</button><button onclick="jugarDados('mayor')" style="background:#f97316;">⬆️ MAYOR</button><button onclick="jugarDados('exacto')" style="background:#facc15; color:black;">🎯 EXACTO</button></div>
-            <div id="dados-result" style="text-align:center;"></div>
-        </div>
-        <button class="close" onclick="cerrarJuego()">Volver</button>
-    </div>
-
-    <div class="modal" id="modalLoteria">
-        <div class="modal-header"><div class="modal-back" onclick="cerrarJuego()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Lotería</div></div>
-        <div class="game-instructions"><i class="fa-solid fa-info-circle"></i> Compra boletos de 4 dígitos. ¡Premios por coincidencias!</div>
-        <div class="game-area">
-            <div class="number-display" id="loteria-number">0000</div>
-            <div class="flex-row"><span>💰 Saldo: <span id="loteria-balance">0</span> 💎</span><span>🎲 Boletos: <span id="loteria-bet">1</span> 💎 c/u</span></div>
-            <div class="bet-controls"><button onclick="cambiarApuesta('loteria', -1)">-1</button><span id="loteria-bet-display">1</span><button onclick="cambiarApuesta('loteria', 1)">+1</button></div>
-            <button onclick="comprarBoletos()" style="background:#4ade80; border:none; padding:14px; border-radius:20px; width:100%; margin:10px 0;">🎫 COMPRAR BOLETOS</button>
-            <button onclick="jugarLoteria()" style="background:#facc15; color:black; border:none; padding:14px; border-radius:20px; width:100%; margin:10px 0;">🎲 INICIAR SORTEO</button>
-            <div id="loteria-boletos" style="margin:20px 0;"></div>
-            <div id="loteria-result" style="text-align:center;"></div>
-        </div>
-        <button class="close" onclick="cerrarJuego()">Volver</button>
-    </div>
-
-    <!-- MODAL EVENTO -->
-    <div class="modal" id="modalEvent">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Evento semanal</div></div>
-        <div style="text-align:center;"><div id="event-icon-modal" style="font-size:64px; margin:20px 0;"><i class="fa-solid fa-star" style="color:#ff9f0a;"></i></div>
-        <h3 id="event-title-modal">Cargando...</h3>
-        <div style="background:#1e293b; padding:16px; border-radius:20px; margin:16px 0;"><p id="event-description"></p></div>
-        <div class="stat"><span>Recompensa base</span><span id="event-reward">0 💎</span></div>
-        <div class="stat"><span>Premium (1 anuncio)</span><span id="event-reward-premium">0 💎</span></div>
-        <div class="stat"><span>Gratis (3 anuncios)</span><span id="event-reward-normal">0 💎</span></div>
-        <div class="progress-bar"><div class="progress-fill" id="event-progress-bar"></div></div>
-        <p id="event-progress-text" style="text-align:center;">0/3 anuncios</p>
-        <button onclick="startEventTask()" id="event-btn" style="background:#ff9f0a; border:none; border-radius:30px; padding:16px; width:100%; font-weight:700;">PARTICIPAR</button>
-        <button class="close" onclick="closeAll()">Cerrar</button>
-    </div>
-
-    <!-- MODAL RECOMPENSA DIARIA -->
-    <div class="modal" id="modalDailyReward">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Recompensa diaria</div></div>
-        <div style="text-align:center;"><div style="font-size:64px; margin:20px 0;"><i class="fa-solid fa-calendar-check" style="color:#ff9f0a;"></i></div>
-        <div class="stat"><span>Día actual</span><span id="current-day">0</span></div>
-        <div class="stat"><span>Recompensa hoy</span><span id="today-reward">0 💎</span></div>
-        <div id="daily-status" style="background:#1e293b; padding:12px; border-radius:16px; margin:16px 0;">Cargando...</div>
-        <div class="daily-calendar" id="daily-calendar"></div>
-        <button onclick="claimDailyReward()" id="claim-daily-btn" style="background:#ff9f0a; border:none; border-radius:30px; padding:16px; width:100%; font-weight:700;">RECLAMAR</button>
-        <button class="close" onclick="closeAll()">Cerrar</button>
-    </div>
-
-    <!-- MODAL ANUNCIOS -->
-    <div class="modal" id="modalAds">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Parque</div></div>
-        <div style="text-align:center;"><div style="font-size:64px; margin:20px 0;"><i class="fa-solid fa-tree" style="color:#4ade80;"></i></div>
-        <div class="stat"><span>Disponible cada</span><span>1 hora</span></div>
-        <div class="stat"><span>Recompensa</span><span class="badge">30 💎</span></div>
-        <div id="ads-status" style="background:#1e293b; padding:16px; border-radius:20px; margin:16px 0;">Cargando anuncios...</div>
-        <div id="ads-timer-display" style="text-align:center; font-size:18px; margin:16px;"></div>
-        <button onclick="showAd()" id="watch-ad-btn" style="background:#ff9f0a; border:none; border-radius:30px; padding:16px; width:100%; font-weight:700;" disabled>VER ANUNCIO</button>
-        <button class="close" onclick="closeAll()">Cerrar</button>
-    </div>
-
-    <!-- MODAL RETIRO (se mantiene para compatibilidad) -->
-    <div class="modal" id="modalWithdraw">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Retirar</div></div>
-        <div class="withdraw-card">
-            <div id="withdraw-day-badge" class="withdraw-day-badge withdraw-day-other">CARGANDO</div>
-            <div class="withdraw-balance" id="available-diamonds">0</div>
-            <div style="margin-bottom:20px; color:#94a3b8;">diamantes disponibles</div>
-            <div class="building-stats">
-                <div class="stat-row"><span>Pool total</span><span id="pool-total">0 TON</span></div>
-                <div class="stat-row"><span>Tu proyección</span><span id="withdraw-projection">0 TON</span></div>
-                <div class="stat-row"><span>Acumulado</span><span id="accumulated-ton">0 TON</span></div>
-            </div>
-            <button class="withdraw-btn exchange" id="exchange-btn" onclick="exchangeDiamonds()" disabled><i class="fa-solid fa-arrows-spin"></i> CAMBIAR DIAMANTES</button>
-            <button class="withdraw-btn" id="withdraw-ton-btn" onclick="withdrawTON()" disabled><i class="fa-solid fa-money-bill-transfer"></i> RETIRAR TON</button>
-            <div class="info-text" style="margin-top:16px;"><i class="fa-solid fa-clock"></i> Intercambio solo los domingos</div>
-            <div class="info-text" style="color:#ef4444;"><i class="fa-solid fa-fire"></i> Diamantes no intercambiados se queman</div>
-        </div>
-        <button class="close" onclick="closeAll()">Cancelar</button>
-    </div>
-
-    <!-- ==================== NAVBAR MEJORADA (3 BOTONES) ==================== -->
+    <!-- NAVBAR - 3 BOTONES -->
     <div class="navbar">
         <div class="nav-item active" onclick="openPerfil()">
             <i class="fa-solid fa-user"></i>
@@ -1243,225 +931,6 @@
         </div>
     </div>
 
-    <script>
-        // ==================== FUNCIONES DE NAVEGACIÓN MEJORADAS ====================
-        
-        // Variable para controlar la pestaña activa del banco
-        let bancoTabActual = 'compra';
-        let ventaCantidad = 100;
-        
-        function openPerfil() {
-            closeAll();
-            actualizarPerfil();
-            document.getElementById('modalPerfil').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-            setActiveNav('perfil');
-        }
-
-        function openFriends() {
-            closeAll();
-            document.getElementById('modalFriends').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-            setActiveNav('amigos');
-        }
-
-        function openRanking() {
-            closeAll();
-            actualizarRankingModal();
-            document.getElementById('modalRanking').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-            setActiveNav('ranking');
-        }
-
-        function setActiveNav(tab) {
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            if (tab === 'perfil') document.querySelectorAll('.nav-item')[0].classList.add('active');
-            if (tab === 'amigos') document.querySelectorAll('.nav-item')[1].classList.add('active');
-            if (tab === 'ranking') document.querySelectorAll('.nav-item')[2].classList.add('active');
-        }
-
-        function actualizarPerfil() {
-            const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-            const name = user?.first_name || 'Usuario';
-            document.getElementById('perfil-name').textContent = name;
-            document.getElementById('perfil-avatar').textContent = name.charAt(0).toUpperCase();
-            document.getElementById('perfil-diamonds').textContent = gameState.diamonds || 0;
-            document.getElementById('perfil-rate').textContent = gameState.totalRate || 0;
-            document.getElementById('perfil-piscina').textContent = 'Nivel ' + (gameState.buildings?.piscina?.level || 0);
-            document.getElementById('perfil-fabrica').textContent = 'Nivel ' + (gameState.buildings?.fabrica?.level || 0);
-            document.getElementById('perfil-escuela').textContent = 'Nivel ' + (gameState.buildings?.escuela?.level || 0);
-            document.getElementById('perfil-hospital').textContent = 'Nivel ' + (gameState.buildings?.hospital?.level || 0);
-            document.getElementById('perfil-amigos').textContent = (gameState.referrals?.count || 0);
-            document.getElementById('perfil-rango-display').textContent = gameState.userRank || 'Ciudadano';
-            document.getElementById('perfil-proyeccion').textContent = (gameState.projectedReward || 0).toFixed(4) + ' TON';
-            document.getElementById('perfil-premium').textContent = gameState.isPremium ? 'Sí ⭐' : 'No';
-            document.getElementById('perfil-rank').textContent = gameState.userRank || 'Ciudadano';
-        }
-
-        function actualizarRankingModal() {
-            document.getElementById('user-rank-display').textContent = gameState.userRank || 'Ciudadano';
-            document.getElementById('pool-total-ranking').textContent = (gameState.poolTotal || 0).toFixed(4) + ' TON';
-            document.getElementById('projected-reward-display').textContent = (gameState.projectedReward || 0).toFixed(4) + ' TON';
-            document.getElementById('ranking-diamonds').textContent = gameState.diamonds || 0;
-        }
-
-        // ==================== FUNCIONES DEL BANCO MEJORADO ====================
-        function switchBancoTab(tab) {
-            bancoTabActual = tab;
-            document.querySelectorAll('.banco-tab').forEach(t => t.classList.remove('active'));
-            if (tab === 'compra') {
-                document.querySelectorAll('.banco-tab')[0].classList.add('active');
-                document.getElementById('banco-compra-panel').classList.remove('hidden');
-                document.getElementById('banco-venta-panel').classList.add('hidden');
-            } else {
-                document.querySelectorAll('.banco-tab')[1].classList.add('active');
-                document.getElementById('banco-compra-panel').classList.add('hidden');
-                document.getElementById('banco-venta-panel').classList.remove('hidden');
-                actualizarPanelVenta();
-            }
-        }
-
-        function actualizarPanelVenta() {
-            document.getElementById('venta-diamonds').textContent = gameState.diamonds || 0;
-            
-            // Calcular TON disponibles en el pool
-            const poolTotal = gameState.poolTotal || 0;
-            document.getElementById('venta-pool').textContent = poolTotal.toFixed(4) + ' TON';
-            
-            // Tasa de cambio dinámica (basada en el pool disponible)
-            const tasaBase = 10000; // diamantes por TON base
-            const poolFactor = Math.max(0.5, Math.min(2, poolTotal / 10)); // factor entre 0.5 y 2
-            const tasaActual = Math.floor(tasaBase / poolFactor);
-            document.getElementById('venta-tasa').textContent = tasaActual + ' 💎 = 1 TON';
-            
-            // Calcular TON a recibir
-            const tonRecibir = ventaCantidad / tasaActual;
-            document.getElementById('venta-ton-recibir').textContent = tonRecibir.toFixed(4) + ' TON';
-            
-            // Límite diario
-            const retiradoHoy = gameState.retiradoHoy || 0;
-            document.getElementById('venta-retirado-hoy').textContent = retiradoHoy.toFixed(4) + ' TON';
-            document.getElementById('venta-cantidad').textContent = ventaCantidad;
-            
-            // Validar botón
-            const btnVender = document.getElementById('vender-btn');
-            const errorEl = document.getElementById('venta-error');
-            const walletConnected = window.tonConnectUI?.connected || false;
-            
-            if (!walletConnected) {
-                btnVender.disabled = true;
-                errorEl.style.display = 'block';
-                errorEl.textContent = '⚠️ Conecta tu wallet primero (pestaña COMPRAR)';
-            } else if (ventaCantidad > (gameState.diamonds || 0)) {
-                btnVender.disabled = true;
-                errorEl.style.display = 'block';
-                errorEl.textContent = '⚠️ No tienes suficientes diamantes';
-            } else if (tonRecibir < 1) {
-                btnVender.disabled = true;
-                errorEl.style.display = 'block';
-                errorEl.textContent = '⚠️ El mínimo de retiro es 1 TON';
-            } else if ((retiradoHoy + tonRecibir) > 5) {
-                btnVender.disabled = true;
-                errorEl.style.display = 'block';
-                errorEl.textContent = '⚠️ Límite diario de 5 TON alcanzado';
-            } else if (tonRecibir > poolTotal) {
-                btnVender.disabled = true;
-                errorEl.style.display = 'block';
-                errorEl.textContent = '⚠️ No hay suficientes TON en el pool';
-            } else {
-                btnVender.disabled = false;
-                errorEl.style.display = 'none';
-            }
-            
-            // Guardar tasa para usar en venderDiamantes
-            window._tasaVentaActual = tasaActual;
-        }
-
-        function cambiarVentaDiamonds(delta) {
-            ventaCantidad = Math.max(100, Math.min(gameState.diamonds || 0, ventaCantidad + delta));
-            actualizarPanelVenta();
-        }
-
-        function setVentaCantidad(cantidad) {
-            ventaCantidad = Math.min(gameState.diamonds || 0, cantidad);
-            actualizarPanelVenta();
-        }
-
-        function setVentaCantidadMax() {
-            ventaCantidad = gameState.diamonds || 0;
-            actualizarPanelVenta();
-        }
-
-        function venderDiamantes() {
-            const tasa = window._tasaVentaActual || 10000;
-            const tonRecibir = ventaCantidad / tasa;
-            
-            if (tonRecibir < 1) {
-                alert('El mínimo de retiro es 1 TON');
-                return;
-            }
-            
-            if ((gameState.retiradoHoy || 0) + tonRecibir > 5) {
-                alert('Has alcanzado el límite diario de 5 TON');
-                return;
-            }
-            
-            if (tonRecibir > (gameState.poolTotal || 0)) {
-                alert('No hay suficientes TON en el pool');
-                return;
-            }
-            
-            if (!confirm(`¿Cambiar ${ventaCantidad} 💎 por ${tonRecibir.toFixed(4)} TON?`)) return;
-            
-            // Actualizar estado
-            gameState.diamonds -= ventaCantidad;
-            gameState.retiradoHoy = (gameState.retiradoHoy || 0) + tonRecibir;
-            gameState.poolTotal -= tonRecibir;
-            
-            // Aquí se enviaría la transacción TON
-            alert(`✅ Has cambiado ${ventaCantidad} 💎 por ${tonRecibir.toFixed(4)} TON`);
-            
-            ventaCantidad = 100;
-            actualizarPanelVenta();
-            actualizarUI();
-            guardarProgreso();
-        }
-
-        // ==================== SOBRESCRIBIR openBank PARA USAR EL NUEVO MODAL ====================
-        function openBank() {
-            closeAll();
-            document.getElementById('modalBank').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-            switchBancoTab('compra');
-            // Inicializar TON Connect si existe
-            if (typeof initTONConnect === 'function') {
-                initTONConnect();
-            }
-        }
-
-        // ==================== SOBRESCRIBIR closeAll ====================
-        function closeAll() {
-            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-            document.getElementById('overlay').style.display = 'none';
-            setActiveNav('perfil');
-        }
-
-        // ==================== INICIALIZACIÓN ====================
-        document.addEventListener('DOMContentLoaded', function() {
-            // Mostrar el perfil por defecto
-            setTimeout(() => {
-                openPerfil();
-            }, 1000);
-        });
-
-        console.log('✅ TON CITY - Mejoras aplicadas:');
-        console.log('   🎨 Colores únicos por edificio');
-        console.log('   👤 Botón PERFIL con datos completos');
-        console.log('   👥 Botón AMIGOS para invitar');
-        console.log('   🏆 Botón RANKING independiente');
-        console.log('   🏦 Banco con pestañas COMPRAR/VENDER');
-        console.log('   💱 Venta de diamantes: mín 1 TON, máx 5 TON/día');
-        console.log('   ⚖️ Fórmula de cambio a favor del pool');
-    </script>
+    <script src="game.js"></script>
 </body>
 </html>
