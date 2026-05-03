@@ -7,6 +7,8 @@
 // ✅ Guardado automático en Supabase
 // ✅ Eventos semanales con multiplicadores x2/x4
 // ✅ Animaciones y efectos visuales profesionales
+// ✅ Perfil, Amigos y Ranking en navbar inferior
+// ✅ Banco con pestañas de Compra y Venta
 // ======================================================
 
 console.log('🚀 TON CITY - Versión Ultra Profesional');
@@ -44,6 +46,11 @@ let adsReady = false;
 let AdController = null;
 let pendingMultiplier = null;
 
+// Variables para la venta de diamantes en el banco
+let bancoTabActual = 'compra';
+let ventaCantidad = 100;
+window._tasaVentaActual = 10000;
+
 let userData = {
     id: null,
     username: "Cargando...",
@@ -69,6 +76,7 @@ let userData = {
     projectedReward: 0,
     event_progress: {},
     accumulated_ton: 0,
+    retiradoHoy: 0,
     gameStats: {
         escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
         fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
@@ -225,13 +233,17 @@ function showModal(id) {
     BackButton.onClick(() => { closeAll(); BackButton.hide(); });
 }
 
+// ==========================================
+// NUEVA FUNCIÓN closeAll (incluye los nuevos modales)
+// ==========================================
 function closeAll() {
     document.getElementById('overlay').style.display = 'none';
     const modals = [
         'centralModal', 'modalBank', 'modalStore', 'modalFriends', 'modalWithdraw',
         'modalAds', 'modalDailyReward', 'modalCasino', 'modalHighLow', 'modalRuleta',
         'modalTragaperras', 'modalDados', 'modalLoteria', 'modalEscuela', 'modalFabrica',
-        'modalPiscina', 'modalHospital', 'modalEvent'
+        'modalPiscina', 'modalHospital', 'modalEvent',
+        'modalPerfil', 'modalRanking'
     ];
     modals.forEach(id => {
         const m = document.getElementById(id);
@@ -243,8 +255,203 @@ function closeAll() {
     if (fabricaAnimInterval) clearInterval(fabricaAnimInterval);
     if (fabricaDefectInterval) clearInterval(fabricaDefectInterval);
     if (hospitalTimer) clearInterval(hospitalTimer);
+    
+    setActiveNav('perfil');
 }
 
+// ==========================================
+// NUEVAS FUNCIONES DE NAVEGACIÓN
+// ==========================================
+function openPerfil() {
+    closeAll();
+    actualizarPerfil();
+    document.getElementById('modalPerfil').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+    setActiveNav('perfil');
+}
+
+function openRanking() {
+    closeAll();
+    actualizarRankingModal();
+    document.getElementById('modalRanking').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+    setActiveNav('ranking');
+}
+
+function setActiveNav(tab) {
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    if (tab === 'perfil') document.querySelectorAll('.nav-item')[0]?.classList.add('active');
+    if (tab === 'amigos') document.querySelectorAll('.nav-item')[1]?.classList.add('active');
+    if (tab === 'ranking') document.querySelectorAll('.nav-item')[2]?.classList.add('active');
+}
+
+function actualizarPerfil() {
+    const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const name = user?.first_name || userData.username || 'Usuario';
+    document.getElementById('perfil-name').textContent = name;
+    document.getElementById('perfil-avatar').textContent = name.charAt(0).toUpperCase();
+    document.getElementById('perfil-diamonds').textContent = Math.floor(userData.diamonds || 0);
+    document.getElementById('perfil-rate').textContent = Math.floor(getTotalProduction());
+    document.getElementById('perfil-piscina').textContent = 'Nivel ' + (userData.lvl_piscina || 0);
+    document.getElementById('perfil-fabrica').textContent = 'Nivel ' + (userData.lvl_fabrica || 0);
+    document.getElementById('perfil-escuela').textContent = 'Nivel ' + (userData.lvl_escuela || 0);
+    document.getElementById('perfil-hospital').textContent = 'Nivel ' + (userData.lvl_hospital || 0);
+    document.getElementById('perfil-amigos').textContent = (userData.referred_users?.length || 0);
+    document.getElementById('perfil-rango-display').textContent = userData.rank || 'Ciudadano';
+    document.getElementById('perfil-proyeccion').textContent = (userData.projectedReward || 0).toFixed(4) + ' TON';
+    document.getElementById('perfil-premium').textContent = esPremium() ? 'Sí ⭐' : 'No';
+    document.getElementById('perfil-rank').textContent = userData.rank || 'Ciudadano';
+}
+
+function actualizarRankingModal() {
+    document.getElementById('user-rank-display').textContent = userData.rank || 'Ciudadano';
+    document.getElementById('pool-total-ranking').textContent = (globalPoolData.pool_ton || 0).toFixed(4) + ' TON';
+    document.getElementById('projected-reward-display').textContent = (userData.projectedReward || 0).toFixed(4) + ' TON';
+    document.getElementById('ranking-diamonds').textContent = Math.floor(userData.diamonds || 0);
+}
+
+// ==========================================
+// NUEVAS FUNCIONES DEL BANCO (COMPRA/VENTA)
+// ==========================================
+function switchBancoTab(tab) {
+    bancoTabActual = tab;
+    document.querySelectorAll('.banco-tab').forEach(t => t.classList.remove('active'));
+    if (tab === 'compra') {
+        document.querySelectorAll('.banco-tab')[0].classList.add('active');
+        document.getElementById('banco-compra-panel').classList.remove('hidden');
+        document.getElementById('banco-venta-panel').classList.add('hidden');
+    } else {
+        document.querySelectorAll('.banco-tab')[1].classList.add('active');
+        document.getElementById('banco-compra-panel').classList.add('hidden');
+        document.getElementById('banco-venta-panel').classList.remove('hidden');
+        actualizarPanelVenta();
+    }
+}
+
+function actualizarPanelVenta() {
+    document.getElementById('venta-diamonds').textContent = Math.floor(userData.diamonds || 0);
+    
+    const poolTotal = globalPoolData.pool_ton || 0;
+    document.getElementById('venta-pool').textContent = poolTotal.toFixed(4) + ' TON';
+    
+    const tasaBase = 10000;
+    const poolFactor = Math.max(0.5, Math.min(2, poolTotal / 10));
+    const tasaActual = Math.floor(tasaBase / poolFactor);
+    document.getElementById('venta-tasa').textContent = tasaActual + ' 💎 = 1 TON';
+    window._tasaVentaActual = tasaActual;
+    
+    const tonRecibir = ventaCantidad / tasaActual;
+    document.getElementById('venta-ton-recibir').textContent = tonRecibir.toFixed(4) + ' TON';
+    
+    const retiradoHoy = userData.retiradoHoy || 0;
+    document.getElementById('venta-retirado-hoy').textContent = retiradoHoy.toFixed(4) + ' TON';
+    document.getElementById('venta-cantidad').textContent = ventaCantidad;
+    
+    const btnVender = document.getElementById('vender-btn');
+    const errorEl = document.getElementById('venta-error');
+    const walletConnected = tonConnectUI?.connected || false;
+    
+    if (!walletConnected) {
+        btnVender.disabled = true;
+        errorEl.style.display = 'block';
+        errorEl.textContent = '⚠️ Conecta tu wallet primero (pestaña COMPRAR)';
+    } else if (ventaCantidad > (userData.diamonds || 0)) {
+        btnVender.disabled = true;
+        errorEl.style.display = 'block';
+        errorEl.textContent = '⚠️ No tienes suficientes diamantes';
+    } else if (tonRecibir < 1) {
+        btnVender.disabled = true;
+        errorEl.style.display = 'block';
+        errorEl.textContent = '⚠️ El mínimo de retiro es 1 TON';
+    } else if ((retiradoHoy + tonRecibir) > 5) {
+        btnVender.disabled = true;
+        errorEl.style.display = 'block';
+        errorEl.textContent = '⚠️ Límite diario de 5 TON alcanzado';
+    } else if (tonRecibir > poolTotal) {
+        btnVender.disabled = true;
+        errorEl.style.display = 'block';
+        errorEl.textContent = '⚠️ No hay suficientes TON en el pool';
+    } else {
+        btnVender.disabled = false;
+        errorEl.style.display = 'none';
+    }
+}
+
+function cambiarVentaDiamonds(delta) {
+    ventaCantidad = Math.max(100, Math.min(userData.diamonds || 0, ventaCantidad + delta));
+    actualizarPanelVenta();
+}
+
+function setVentaCantidad(cantidad) {
+    ventaCantidad = Math.min(userData.diamonds || 0, cantidad);
+    actualizarPanelVenta();
+}
+
+function setVentaCantidadMax() {
+    ventaCantidad = userData.diamonds || 0;
+    actualizarPanelVenta();
+}
+
+async function venderDiamantes() {
+    const tasa = window._tasaVentaActual || 10000;
+    const tonRecibir = ventaCantidad / tasa;
+    
+    if (tonRecibir < 1) return alert('El mínimo de retiro es 1 TON');
+    if ((userData.retiradoHoy || 0) + tonRecibir > 5) return alert('Has alcanzado el límite diario de 5 TON');
+    if (tonRecibir > (globalPoolData.pool_ton || 0)) return alert('No hay suficientes TON en el pool');
+    if (!tonConnectUI?.connected) return alert('Conecta tu wallet primero');
+    
+    if (!confirm(`¿Cambiar ${ventaCantidad} 💎 por ${tonRecibir.toFixed(4)} TON?`)) return;
+    
+    try {
+        const tx = {
+            validUntil: Math.floor(Date.now() / 1000) + 300,
+            messages: [{
+                address: currentWallet.account.address,
+                amount: Math.floor((tonRecibir - RED_TON_FEE) * 1e9).toString(),
+                payload: "Venta de diamantes Ton City"
+            }]
+        };
+        await tonConnectUI.sendTransaction(tx);
+        
+        userData.diamonds -= ventaCantidad;
+        userData.retiradoHoy = (userData.retiradoHoy || 0) + tonRecibir;
+        globalPoolData.pool_ton -= tonRecibir;
+        
+        await saveUserData();
+        ventaCantidad = 100;
+        actualizarPanelVenta();
+        actualizarUI();
+        alert(`✅ Has cambiado ${ventaCantidad} 💎 por ${tonRecibir.toFixed(4)} TON`);
+    } catch(e) {
+        console.error(e);
+        alert('❌ Error en la transacción');
+    }
+}
+
+// Sobrescribir openBank para que use las pestañas
+function openBank() {
+    closeAll();
+    document.getElementById('modalBank').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+    switchBancoTab('compra');
+    // Refrescar lista de compra
+    const isConnected = tonConnectUI?.connected;
+    const packs = [
+        { ton: 0.10, diamonds: 100 }, { ton: 0.50, diamonds: 500 }, { ton: 1.00, diamonds: 1000 },
+        { ton: 2.00, diamonds: 2000 }, { ton: 5.00, diamonds: 5000 }, { ton: 10.00, diamonds: 10000 }
+    ];
+    document.getElementById('bankList').innerHTML = packs.map(p => `
+        <div style="background:#0f172a; border-radius:12px; padding:16px; margin:8px 0; display:flex; justify-content:space-between; align-items:center;">
+            <div><strong>${p.ton.toFixed(2)} TON</strong><div style="font-size:12px; color:#94a3b8;">+${p.diamonds} 💎</div></div>
+            <button onclick="comprarTON(${p.ton})" style="background:${isConnected ? '#4ade80' : '#334155'}; border:none; padding:10px 20px; border-radius:30px; color:white; font-weight:700; cursor:pointer;" ${!isConnected ? 'disabled' : ''}>${isConnected ? 'COMPRAR' : 'CONECTAR'}</button>
+        </div>
+    `).join('');
+}
+
+// ==========================================
+// ACTUALIZAR UI
+// ==========================================
 function actualizarUI() {
     const diamElem = document.getElementById('diamonds');
     if (diamElem) diamElem.textContent = Math.floor(userData.diamonds || 0);
@@ -263,9 +470,14 @@ function actualizarUI() {
     });
     
     const rankDisplay = document.getElementById('user-rank-display');
-    if (rankDisplay) rankDisplay.textContent = `${userData.rank} #${userData.weekly_rank}`;
+    if (rankDisplay) rankDisplay.textContent = userData.rank || 'Ciudadano';
     const projDisplay = document.getElementById('projected-reward-display');
-    if (projDisplay) projDisplay.textContent = userData.projectedReward.toFixed(4) + ' TON';
+    if (projDisplay) projDisplay.textContent = (userData.projectedReward || 0).toFixed(4) + ' TON';
+    
+    // Si el modal del banco está abierto en pestaña venta, refrescar
+    if (document.getElementById('modalBank')?.style.display === 'block' && bancoTabActual === 'venta') {
+        actualizarPanelVenta();
+    }
 }
 
 function getTotalProduction() {
@@ -1593,38 +1805,11 @@ function startEventTask() {
 }
 
 // ==========================================
-// BANCO, TIENDA, AMIGOS, ANUNCIOS
+// TIENDA, AMIGOS, ANUNCIOS
 // ==========================================
-function openBank() {
-    showModal('modalBank');
-    const isConnected = !!currentWallet;
-    const packs = [
-        { ton: 0.10, diamonds: 100 }, { ton: 0.50, diamonds: 500 }, { ton: 1.00, diamonds: 1000 },
-        { ton: 2.00, diamonds: 2000 }, { ton: 5.00, diamonds: 5000 }, { ton: 10.00, diamonds: 10000 }
-    ];
-    document.getElementById('bankList').innerHTML = packs.map(p => `
-        <div style="background:#0f172a; border-radius:12px; padding:16px; margin:8px 0; display:flex; justify-content:space-between; align-items:center;">
-            <div><strong>${p.ton.toFixed(2)} TON</strong><div style="font-size:12px; color:#94a3b8;">+${p.diamonds} 💎</div></div>
-            <button onclick="comprarTON(${p.ton})" style="background:${isConnected ? '#4ade80' : '#334155'}; border:none; padding:10px 20px; border-radius:30px; color:white; font-weight:700; cursor:pointer;" ${!isConnected ? 'disabled' : ''}>${isConnected ? 'COMPRAR' : 'CONECTAR'}</button>
-        </div>
-    `).join('');
-}
-
-async function comprarTON(tonAmount) {
-    if (!tonConnectUI?.connected) return alert('❌ Conecta wallet');
-    let comprados = Math.floor(tonAmount / PRECIO_COMPRA);
-    if (comprados < 100) comprados = 100;
-    userData.diamonds += comprados;
-    if (!userData.haInvertido && comprados >= 100) userData.haInvertido = true;
-    await saveUserData();
-    actualizarUI();
-    alert(`✅ +${comprados} 💎`);
-    closeAll();
-}
-
 function openStore() {
     showModal('modalStore');
-    const isConnected = !!currentWallet;
+    const isConnected = tonConnectUI?.connected;
     document.getElementById('premium-plans').innerHTML = PREMIUM_PLANS.map(p => `
         <div style="background:#0f172a; border-radius:16px; padding:16px; margin:10px 0;">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><strong>${p.name}</strong><span style="color:#facc15;">${p.price} TON</span></div>
@@ -1649,6 +1834,10 @@ function openFriends() {
     document.getElementById('referral-code').textContent = userData.referral_code || 'CARGANDO...';
     document.getElementById('ref-count').textContent = userData.referred_users?.length || 0;
     document.getElementById('ref-total').textContent = (userData.referral_earnings || 0) + ' 💎';
+    // Calcular ganancias semanales (simplificado)
+    document.getElementById('ref-weekly').textContent = Math.floor((userData.referral_earnings || 0) * 0.1) + ' 💎';
+    
+    setActiveNav('amigos'); // Activar pestaña amigos en navbar
 }
 
 function copyReferralCode() {
@@ -1777,6 +1966,10 @@ async function initTONConnect() {
             document.getElementById('ton-connect-button').style.display = 'block';
             document.getElementById('wallet-info').classList.add('hidden');
         }
+        // Refrescar panel de venta si el modal del banco está abierto
+        if (document.getElementById('modalBank')?.style.display === 'block' && bancoTabActual === 'venta') {
+            actualizarPanelVenta();
+        }
     });
 }
 
@@ -1785,6 +1978,18 @@ async function disconnectWallet() {
     currentWallet = null;
     document.getElementById('ton-connect-button').style.display = 'block';
     document.getElementById('wallet-info').classList.add('hidden');
+}
+
+async function comprarTON(tonAmount) {
+    if (!tonConnectUI?.connected) return alert('❌ Conecta wallet');
+    let comprados = Math.floor(tonAmount / PRECIO_COMPRA);
+    if (comprados < 100) comprados = 100;
+    userData.diamonds += comprados;
+    if (!userData.haInvertido && comprados >= 100) userData.haInvertido = true;
+    await saveUserData();
+    actualizarUI();
+    alert(`✅ +${comprados} 💎`);
+    closeAll();
 }
 
 // ==========================================
@@ -1810,6 +2015,7 @@ async function saveUserData() {
             haInvertido: userData.haInvertido,
             event_progress: userData.event_progress,
             accumulated_ton: userData.accumulated_ton,
+            retiradoHoy: userData.retiradoHoy,
             gameStats: userData.gameStats
         }).eq('telegram_id', userData.id);
         console.log('✅ Datos guardados:', new Date().toLocaleTimeString());
@@ -1831,6 +2037,7 @@ async function loadUserFromDB(tgId) {
             haInvertido: false,
             event_progress: {},
             accumulated_ton: 0,
+            retiradoHoy: 0,
             last_withdraw_week: null,
             gameStats: {
                 escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
@@ -1861,6 +2068,7 @@ async function loadUserFromDB(tgId) {
             haInvertido: data.haInvertido || false,
             event_progress: data.event_progress || {},
             accumulated_ton: Number(data.accumulated_ton) || 0,
+            retiradoHoy: Number(data.retiradoHoy) || 0,
             gameStats: data.gameStats || {
                 escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
                 fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
@@ -1909,6 +2117,13 @@ async function initApp() {
             }
         }
     }, 60000);
+    
+    // Abrir perfil por defecto al iniciar
+    setTimeout(() => {
+        if (document.getElementById('modalPerfil')) {
+            openPerfil();
+        }
+    }, 1000);
 }
 
 window.addEventListener('DOMContentLoaded', initApp);
@@ -1916,6 +2131,14 @@ window.addEventListener('DOMContentLoaded', initApp);
 // ==========================================
 // EXPORTAR FUNCIONES GLOBALES
 // ==========================================
+window.openPerfil = openPerfil;
+window.openRanking = openRanking;
+window.switchBancoTab = switchBancoTab;
+window.actualizarPanelVenta = actualizarPanelVenta;
+window.cambiarVentaDiamonds = cambiarVentaDiamonds;
+window.setVentaCantidad = setVentaCantidad;
+window.setVentaCantidadMax = setVentaCantidadMax;
+window.venderDiamantes = venderDiamantes;
 window.openCentral = openCentral;
 window.openBank = openBank;
 window.openStore = openStore;
@@ -1954,4 +2177,4 @@ window.switchFabricaTab = switchFabricaTab;
 window.switchPiscinaTab = switchPiscinaTab;
 window.switchHospitalTab = switchHospitalTab;
 
-console.log('✅ TON CITY - Versión Ultra Profesional con animaciones');
+console.log('✅ TON CITY - Versión completa con todas las mejoras integradas');
