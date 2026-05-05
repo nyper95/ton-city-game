@@ -84,10 +84,10 @@ let globalPoolData = { pool_ton: 100, total_diamonds: 0, user_rankings: [] };
 // CONSTANTES DE JUEGOS
 // ==========================================
 const EVENTOS_SEMANALES = [
-    { nombre: "Escuela", edificio: "escuela", icono: "fa-school", color: "#fbbf24", descripcion: "Semana del Saber", recompensa: 200, premium: 400, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 },
-    { nombre: "Fábrica", edificio: "fabrica", icono: "fa-industry", color: "#a78bfa", descripcion: "Semana de Producción", recompensa: 150, premium: 300, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 },
-    { nombre: "Piscina", edificio: "piscina", icono: "fa-water-ladder", color: "#38bdf8", descripcion: "Semana Olímpica", recompensa: 80, premium: 160, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 },
-    { nombre: "Hospital", edificio: "hospital", icono: "fa-hospital", color: "#f87171", descripcion: "Semana de la Salud", recompensa: 100, premium: 200, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 }
+    { nombre: "Escuela", edificio: "escuela", icono: "fa-school", color: "#fbbf24", descripcion: "Semana del Saber - Conocimiento multiplicado", recompensa: 200, premium: 400, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 },
+    { nombre: "Fábrica", edificio: "fabrica", icono: "fa-industry", color: "#a78bfa", descripcion: "Semana de Producción - Ensamblaje eficiente", recompensa: 150, premium: 300, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 },
+    { nombre: "Piscina", edificio: "piscina", icono: "fa-water-ladder", color: "#38bdf8", descripcion: "Semana Olímpica - Entrenamiento especial", recompensa: 80, premium: 160, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 },
+    { nombre: "Hospital", edificio: "hospital", icono: "fa-hospital", color: "#f87171", descripcion: "Semana de la Salud - Tratamientos con bonificación", recompensa: 100, premium: 200, requeridos: 3, requeridos_premium: 1, gameMultiplier: 2 }
 ];
 
 const PREMIUM_PLANS = [
@@ -121,8 +121,7 @@ let piscinaBest = 0;
 let piscinaPerfect = 0;
 let piscinaRequired = 3;
 let piscinaPower = 0;
-let piscinaIsDragging = false;
-let piscinaStartX = 0, piscinaStartY = 0;
+let piscinaHoldStart = 0;
 
 let hospitalLevel = 1;
 let hospitalBest = 0;
@@ -151,7 +150,6 @@ function getEventoActual() {
 
 function actualizarEventosUI() {
     const evento = getEventoActual();
-    document.querySelectorAll('.building-card').forEach(card => card.classList.remove('event-active'));
     const banner = document.getElementById('event-banner');
     if (banner) {
         banner.style.display = 'flex';
@@ -191,14 +189,22 @@ function calcularRecompensa(baseReward, building) {
     return Math.floor(baseReward * multiplier);
 }
 
+function actualizarUI() {
+    document.getElementById('diamonds').textContent = Math.floor(userData.diamonds || 0);
+    document.getElementById('rate').textContent = Math.floor(getTotalProduction());
+    document.getElementById('lvl_piscina').textContent = userData.lvl_piscina;
+    document.getElementById('lvl_fabrica').textContent = userData.lvl_fabrica;
+    document.getElementById('lvl_escuela').textContent = userData.lvl_escuela;
+    document.getElementById('lvl_hospital').textContent = userData.lvl_hospital;
+    document.getElementById('user-display').textContent = userData.username || 'Usuario';
+}
+
 // ==========================================
 // NAVEGACIÓN Y MODALES
 // ==========================================
 function showModal(id) {
     document.getElementById('overlay').style.display = 'block';
     document.getElementById(id).style.display = 'block';
-    BackButton.show();
-    BackButton.onClick(() => { closeAll(); BackButton.hide(); });
 }
 
 function closeAll() {
@@ -206,15 +212,13 @@ function closeAll() {
     const modals = [
         'modalPerfil', 'modalFriends', 'modalRanking', 'modalBank', 'modalStore',
         'modalCasino', 'modalHighLow', 'modalRuleta', 'modalTragaperras', 'modalDados',
-        'modalLoteria', 'modalEscuela', 'modalFabrica', 'modalPiscina', 'modalHospital',
+        'modalEscuela', 'modalFabrica', 'modalPiscina', 'modalHospital',
         'modalEvent', 'modalDailyReward', 'modalAds', 'modalWithdraw'
     ];
     modals.forEach(id => {
         const m = document.getElementById(id);
         if (m) m.style.display = 'none';
     });
-    BackButton.hide();
-    BackButton.offClick();
     if (fabricaAnimInterval) clearInterval(fabricaAnimInterval);
     if (fabricaDefectInterval) clearInterval(fabricaDefectInterval);
     if (hospitalTimer) clearInterval(hospitalTimer);
@@ -244,7 +248,15 @@ function actualizarPerfil() {
     const user = tg.initDataUnsafe?.user;
     const name = user?.first_name || userData.username || 'Usuario';
     document.getElementById('perfil-name').textContent = name;
-    document.getElementById('perfil-avatar').textContent = name.charAt(0).toUpperCase();
+    
+    // Intentar cargar foto de perfil de Telegram
+    const avatar = document.getElementById('perfil-avatar');
+    if (user?.photo_url) {
+        avatar.innerHTML = `<img src="${user.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    } else {
+        avatar.innerHTML = name.charAt(0).toUpperCase();
+    }
+    
     document.getElementById('perfil-diamonds').textContent = Math.floor(userData.diamonds || 0);
     document.getElementById('perfil-rate').textContent = Math.floor(getTotalProduction());
     document.getElementById('perfil-piscina').textContent = 'Nivel ' + (userData.lvl_piscina || 0);
@@ -255,7 +267,7 @@ function actualizarPerfil() {
     document.getElementById('perfil-rango-display').textContent = userData.rank || 'Ciudadano';
     document.getElementById('perfil-proyeccion').textContent = (userData.projectedReward || 0).toFixed(4) + ' TON';
     document.getElementById('perfil-premium').textContent = esPremium() ? 'Sí ⭐' : 'No';
-    document.getElementById('perfil-rank').textContent = userData.rank || 'Ciudadano';
+    document.getElementById('perfil-rank-badge').textContent = userData.rank || 'Ciudadano';
 }
 
 // ==========================================
@@ -268,17 +280,18 @@ function openFriends() {
     document.getElementById('referral-code').textContent = userData.referral_code || 'CARGANDO...';
     document.getElementById('ref-count').textContent = userData.referred_users?.length || 0;
     document.getElementById('ref-total').textContent = (userData.referral_earnings || 0) + ' 💎';
-    document.getElementById('ref-weekly').textContent = Math.floor((userData.referral_earnings || 0) * 0.1) + ' 💎';
     setActiveNav('amigos');
 }
 
 function copyReferralCode() {
     if (!userData.referral_code) return alert('❌ Código no disponible');
-    navigator.clipboard.writeText(`https://t.me/ton_city_bot?start=${userData.referral_code}`).then(() => alert('✅ Enlace copiado!'));
+    navigator.clipboard.writeText(`https://t.me/ton_city_bot?start=${userData.referral_code}`)
+        .then(() => alert('✅ Enlace copiado!'))
+        .catch(() => alert('❌ Error al copiar'));
 }
 
 // ==========================================
-// RANKING
+// RANKING (DIARIO)
 // ==========================================
 function openRanking() {
     closeAll();
@@ -352,9 +365,6 @@ function actualizarPanelVenta() {
     
     const tonRecibir = ventaCantidad / tasaActual;
     document.getElementById('venta-ton-recibir').textContent = tonRecibir.toFixed(4) + ' TON';
-    
-    const retiradoHoy = userData.retiradoHoy || 0;
-    document.getElementById('venta-retirado-hoy').textContent = retiradoHoy.toFixed(4) + ' TON';
     document.getElementById('venta-cantidad').textContent = ventaCantidad;
     
     const btnVender = document.getElementById('vender-btn');
@@ -373,7 +383,7 @@ function actualizarPanelVenta() {
         btnVender.disabled = true;
         errorEl.style.display = 'block';
         errorEl.textContent = '⚠️ El mínimo de retiro es 1 TON';
-    } else if ((retiradoHoy + tonRecibir) > 5) {
+    } else if ((userData.retiradoHoy || 0) + tonRecibir > 5) {
         btnVender.disabled = true;
         errorEl.style.display = 'block';
         errorEl.textContent = '⚠️ Límite diario de 5 TON alcanzado';
@@ -389,16 +399,6 @@ function actualizarPanelVenta() {
 
 function cambiarVentaDiamonds(delta) {
     ventaCantidad = Math.max(100, Math.min(userData.diamonds || 0, ventaCantidad + delta));
-    actualizarPanelVenta();
-}
-
-function setVentaCantidad(cantidad) {
-    ventaCantidad = Math.min(userData.diamonds || 0, cantidad);
-    actualizarPanelVenta();
-}
-
-function setVentaCantidadMax() {
-    ventaCantidad = userData.diamonds || 0;
     actualizarPanelVenta();
 }
 
@@ -475,14 +475,12 @@ async function initTONConnect() {
         });
         tonConnectUI.onStatusChange((wallet) => {
             currentWallet = wallet;
+            const btnDiv = document.getElementById('ton-connect-button');
+            const walletInfo = document.getElementById('wallet-info');
             if (wallet) {
-                const btnDiv = document.getElementById('ton-connect-button');
-                const walletInfo = document.getElementById('wallet-info');
                 if (btnDiv) btnDiv.style.display = 'none';
                 if (walletInfo) walletInfo.classList.remove('hidden');
             } else {
-                const btnDiv = document.getElementById('ton-connect-button');
-                const walletInfo = document.getElementById('wallet-info');
                 if (btnDiv) btnDiv.style.display = 'block';
                 if (walletInfo) walletInfo.classList.add('hidden');
             }
@@ -499,10 +497,8 @@ async function initTONConnect() {
 async function disconnectWallet() {
     if (tonConnectUI) await tonConnectUI.disconnect();
     currentWallet = null;
-    const btnDiv = document.getElementById('ton-connect-button');
-    const walletInfo = document.getElementById('wallet-info');
-    if (btnDiv) btnDiv.style.display = 'block';
-    if (walletInfo) walletInfo.classList.add('hidden');
+    document.getElementById('ton-connect-button').style.display = 'block';
+    document.getElementById('wallet-info').classList.add('hidden');
     actualizarListaCompra();
 }
 
@@ -551,29 +547,6 @@ async function comprarPremium(name, days) {
         console.error(e);
         alert('❌ Transacción cancelada');
     }
-}
-
-// ==========================================
-// ACTUALIZAR UI
-// ==========================================
-function actualizarUI() {
-    const diamElem = document.getElementById('diamonds');
-    if (diamElem) diamElem.textContent = Math.floor(userData.diamonds || 0);
-    const rateElem = document.getElementById('rate');
-    if (rateElem) rateElem.textContent = Math.floor(getTotalProduction());
-    
-    const lvls = {
-        lvl_piscina: userData.lvl_piscina,
-        lvl_fabrica: userData.lvl_fabrica,
-        lvl_escuela: userData.lvl_escuela,
-        lvl_hospital: userData.lvl_hospital
-    };
-    Object.keys(lvls).forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = lvls[id];
-    });
-    
-    document.getElementById('user-display').textContent = userData.username || 'Usuario';
 }
 
 // ==========================================
@@ -743,6 +716,7 @@ async function claimDailyReward() {
 function openEventModal() {
     closeAll();
     const evento = getEventoActual();
+    document.getElementById('event-description').textContent = evento.descripcion;
     document.getElementById('modalEvent').style.display = 'block';
     document.getElementById('overlay').style.display = 'block';
 }
@@ -798,41 +772,33 @@ function abrirJuego(juego) {
         case 'loteria': modalId = 'modalLoteria'; break;
     }
     if (modalId) {
+        document.getElementById(modalId).style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
         if (juego === 'highlow') {
             document.getElementById('hl-number').textContent = '0000';
             document.getElementById('hl-result').innerHTML = '';
             document.getElementById('hl-bet-display').textContent = apuestaActual.highlow;
-            document.getElementById('hl-bet').textContent = apuestaActual.highlow;
+            document.getElementById('hl-bet').textContent = apuestaActual.highlow + ' 💎';
         } else if (juego === 'ruleta') {
             document.getElementById('ruleta-number').textContent = '0';
             document.getElementById('ruleta-result').innerHTML = '';
             document.getElementById('ruleta-bet-display').textContent = apuestaActual.ruleta;
-            document.getElementById('ruleta-bet').textContent = apuestaActual.ruleta;
+            document.getElementById('ruleta-bet').textContent = apuestaActual.ruleta + ' 💎';
         } else if (juego === 'tragaperras') {
             document.getElementById('slot1').textContent = '💎';
             document.getElementById('slot2').textContent = '💎';
             document.getElementById('slot3').textContent = '💎';
             document.getElementById('tragaperras-result').innerHTML = '';
             document.getElementById('tragaperras-bet-display').textContent = apuestaActual.tragaperras;
-            document.getElementById('tragaperras-bet').textContent = apuestaActual.tragaperras;
+            document.getElementById('tragaperras-bet').textContent = apuestaActual.tragaperras + ' 💎';
         } else if (juego === 'dados') {
             document.getElementById('dado1').textContent = '⚀';
             document.getElementById('dado2').textContent = '⚀';
             document.getElementById('dados-suma').textContent = 'Suma: 2';
             document.getElementById('dados-result').innerHTML = '';
             document.getElementById('dados-bet-display').textContent = apuestaActual.dados;
-            document.getElementById('dados-bet').textContent = apuestaActual.dados;
-        } else if (juego === 'loteria') {
-            document.getElementById('loteria-number').textContent = '0000';
-            document.getElementById('loteria-boletos').innerHTML = '';
-            document.getElementById('loteria-result').innerHTML = '';
-            document.getElementById('loteria-bet-display').textContent = apuestaActual.loteria;
-            document.getElementById('loteria-bet').textContent = apuestaActual.loteria;
-            boletosComprados = [];
+            document.getElementById('dados-bet').textContent = apuestaActual.dados + ' 💎';
         }
-        document.getElementById(modalId).style.display = 'block';
-        document.getElementById('overlay').style.display = 'block';
-        actualizarUI();
     }
 }
 
@@ -844,10 +810,8 @@ function cerrarJuego() {
 function cambiarApuesta(juego, delta) {
     const key = juego === 'hl' ? 'highlow' : juego;
     apuestaActual[key] = Math.max(1, Math.min(1000, apuestaActual[key] + delta));
-    const displayId = `${juego === 'hl' ? 'hl' : key}-bet-display`;
-    const betId = `${juego === 'hl' ? 'hl' : key}-bet`;
-    document.getElementById(displayId).textContent = apuestaActual[key];
-    document.getElementById(betId).textContent = apuestaActual[key];
+    document.getElementById(`${juego === 'hl' ? 'hl' : key}-bet-display`).textContent = apuestaActual[key];
+    document.getElementById(`${juego === 'hl' ? 'hl' : key}-bet`).textContent = apuestaActual[key] + ' 💎';
 }
 
 function puedeJugar(juego, cantidad = 1) {
@@ -875,7 +839,7 @@ function jugarHighLow(eleccion) {
     document.getElementById('hl-number').textContent = numero.toString().padStart(4, '0');
     if (gana) {
         userData.diamonds += apuesta * 2;
-        document.getElementById('hl-result').innerHTML = '<span style="color:#4ade80;">🎉 ¡GANASTE!</span>';
+        document.getElementById('hl-result').innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + (apuesta * 2) + ' 💎</span>';
     } else {
         document.getElementById('hl-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
     }
@@ -908,7 +872,7 @@ function jugarRuleta(tipo) {
     let ganancia = (tipo === 'numero' && gana) ? apuesta * 36 : apuesta * 2;
     if (gana) {
         userData.diamonds += ganancia;
-        document.getElementById('ruleta-result').innerHTML = '<span style="color:#4ade80;">🎉 ¡GANASTE!</span>';
+        document.getElementById('ruleta-result').innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
     } else {
         document.getElementById('ruleta-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
     }
@@ -943,7 +907,7 @@ function jugarTragaperras() {
             let mult = r[0].mult;
             if (esPremium()) mult *= 2;
             userData.diamonds += apuesta * mult;
-            document.getElementById('tragaperras-result').innerHTML = `<span style="color:#4ade80;">🎉 ¡JACKPOT! x${mult}</span>`;
+            document.getElementById('tragaperras-result').innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡JACKPOT! x' + mult + ' (+' + (apuesta * mult) + ' 💎)</span>';
         } else {
             document.getElementById('tragaperras-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
         }
@@ -979,7 +943,7 @@ function jugarDados(eleccion) {
             let ganancia = eleccion === 'exacto' ? apuesta * 5 : apuesta * 2;
             if (esPremium()) ganancia *= 2;
             userData.diamonds += ganancia;
-            document.getElementById('dados-result').innerHTML = '<span style="color:#4ade80;">🎉 ¡GANASTE!</span>';
+            document.getElementById('dados-result').innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
         } else {
             document.getElementById('dados-result').innerHTML = '<span style="color:#ef4444;">😞 Perdiste</span>';
         }
@@ -988,78 +952,72 @@ function jugarDados(eleccion) {
     }, 300);
 }
 
-function comprarBoletos() {
-    const cantidad = apuestaActual.loteria;
-    const costo = cantidad * 5;
-    if (userData.diamonds < costo) return alert('❌ Insuficientes diamantes');
-    if (!puedeJugar('loteria', cantidad)) return alert('❌ Límite diario');
-    userData.diamonds -= costo;
-    registrarJugada('loteria', cantidad);
-    boletosComprados = [];
-    for (let i = 0; i < cantidad; i++) {
-        boletosComprados.push(Math.floor(Math.random() * 10000).toString().padStart(4, '0'));
-    }
-    let html = '<p style="color:#94a3b8;">Tus boletos:</p><div style="display:flex; flex-wrap:wrap; gap:5px;">';
-    boletosComprados.forEach(b => {
-        html += `<span style="background:#1e293b; padding:5px 10px; border-radius:5px; border:1px solid #facc15;">${b}</span>`;
-    });
-    html += '</div>';
-    document.getElementById('loteria-boletos').innerHTML = html;
-    actualizarUI();
-    saveUserData();
-}
-
-function jugarLoteria() {
-    if (boletosComprados.length === 0) return alert("❌ Compra boletos primero");
-    const ganador = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    document.getElementById('loteria-number').textContent = ganador;
-    let premioTotal = 0;
-    boletosComprados.forEach(b => {
-        let coinc = 0;
-        for (let i = 0; i < 4; i++) if (b[i] === ganador[i]) coinc++;
-        if (coinc === 4) premioTotal += 2500;
-        else if (coinc === 3) premioTotal += 250;
-        else if (coinc === 2) premioTotal += 25;
-        else if (coinc === 1) premioTotal += 5;
-    });
-    if (premioTotal > 0) {
-        userData.diamonds += premioTotal;
-        document.getElementById('loteria-result').innerHTML = `<span style="color:#4ade80;">🎉 +${premioTotal} 💎</span>`;
-    } else {
-        document.getElementById('loteria-result').innerHTML = '<span style="color:#ef4444;">😞 No ganaste</span>';
-    }
-    boletosComprados = [];
-    actualizarUI();
-    saveUserData();
-}
-
 // ==========================================
-// EDIFICIOS
+// EDIFICIOS Y MEJORAS
 // ==========================================
 function openBuilding(building) {
     closeAll();
     const modalId = `modal${building.charAt(0).toUpperCase() + building.slice(1)}`;
     document.getElementById(modalId).style.display = 'block';
     document.getElementById('overlay').style.display = 'block';
+    
+    // Actualizar panel de mejoras
+    actualizarPanelMejora(building);
+    
+    // Iniciar juego
     if (building === 'escuela') iniciarJuegoEscuela();
     else if (building === 'fabrica') iniciarJuegoFabrica();
     else if (building === 'piscina') iniciarJuegoPiscina();
     else if (building === 'hospital') iniciarJuegoHospital();
 }
 
-function buyUpgradeFromBuilding(building, price) {
-    if (userData.diamonds < price) return alert('❌ Insuficientes diamantes');
+function actualizarPanelMejora(building) {
+    const level = userData[`lvl_${building}`] || 0;
+    const producciones = { escuela: 40, fabrica: 120, piscina: 60, hospital: 80 };
+    const precios = { escuela: 3000, fabrica: 10000, piscina: 5000, hospital: 7500 };
+    const produccion = level * producciones[building];
+    const precio = Math.floor(precios[building] * Math.pow(1.15, level));
+    
+    document.getElementById(`${building}-level`).textContent = level;
+    document.getElementById(`${building}-prod`).textContent = produccion + ' 💎/h';
+    document.getElementById(`${building}-price`).textContent = precio.toLocaleString() + ' 💎';
+    
+    const btn = document.getElementById(`${building}-btn`);
+    if (btn) {
+        btn.disabled = userData.diamonds < precio;
+        btn.textContent = userData.diamonds < precio ? '💎 INSUFICIENTE' : 'MEJORAR';
+    }
+}
+
+function buyUpgrade(building) {
+    const precios = { escuela: 3000, fabrica: 10000, piscina: 5000, hospital: 7500 };
+    const level = userData[`lvl_${building}`] || 0;
+    const precio = Math.floor(precios[building] * Math.pow(1.15, level));
+    
+    if (userData.diamonds < precio) return alert('❌ Insuficientes diamantes');
     userData[`lvl_${building}`]++;
-    userData.diamonds -= price;
+    userData.diamonds -= precio;
     saveUserData();
     actualizarUI();
-    alert(`✅ ${building} nivel ${userData[`lvl_${building}`]}`);
-    const levelSpan = document.getElementById(`${building}-level`);
-    if (levelSpan) levelSpan.textContent = userData[`lvl_${building}`];
-    const prodSpan = document.getElementById(`${building}-prod`);
-    if (prodSpan) {
-        const producciones = { escuela: 40, fabrica: 120, piscina: 60, hospital: 80 };
-        prodSpan.textContent = (userData[`lvl_${building}`] * producciones[building]) + ' 💎/h';
+    actualizarPanelMejora(building);
+    alert(`✅ ${building} mejorado a nivel ${userData[`lvl_${building}`]}!`);
+}
+
+function switchTab(building, tab) {
+    const upgradePanel = document.getElementById(`${building}-upgrade-panel`);
+    const gamePanel = document.getElementById(`${building}-game-panel`);
+    const tabs = document.querySelectorAll(`#modal${building.charAt(0).toUpperCase() + building.slice(1)} .tab`);
+    
+    if (tab === 'game') {
+        upgradePanel.classList.add('hidden');
+        gamePanel.classList.remove('hidden');
+        tabs[0].classList.remove('active');
+        tabs[1].classList.add('active');
+    } else {
+        upgradePanel.classList.remove('hidden');
+        gamePanel.classList.add('hidden');
+        tabs[0].classList.add('active');
+        tabs[1].classList.remove('active');
     }
 }
 
@@ -1085,8 +1043,9 @@ function loseLife(game) {
     updateLivesUI(game);
     if (gameLives[game] === 0) {
         gameActiveStates[game] = false;
-        const resultElem = document.getElementById(`${game === 'escuela' ? 'mem' : game === 'fabrica' ? 'asm' : game === 'piscina' ? 'jump' : 'surgery'}-result`);
-        if (resultElem) resultElem.innerHTML = '<span style="color:#ef4444;">💀 GAME OVER</span>';
+        const resultId = game === 'escuela' ? 'mem' : game === 'fabrica' ? 'asm' : game === 'piscina' ? 'jump' : 'surgery';
+        const resultElem = document.getElementById(`${resultId}-result`);
+        if (resultElem) resultElem.innerHTML = '<span style="color:#ef4444;font-size:20px;">💀 GAME OVER</span>';
         return false;
     }
     return true;
@@ -1116,7 +1075,7 @@ function useAdMultiplier(game) {
 }
 
 // ==========================================
-// MINIJUEGO 1: ESCUELA
+// MINIJUEGO 1: ESCUELA - MENTE MAESTRA
 // ==========================================
 function iniciarJuegoEscuela() {
     gameActiveStates.escuela = true;
@@ -1127,6 +1086,7 @@ function iniciarJuegoEscuela() {
     document.getElementById('mem-level').textContent = escuelaLevel;
     document.getElementById('mem-best').textContent = escuelaBest;
     document.getElementById('escuela-game-level').textContent = escuelaLevel;
+    document.getElementById('mem-result').innerHTML = '';
     nuevaSecuenciaEscuela();
 }
 
@@ -1134,7 +1094,7 @@ function nuevaSecuenciaEscuela() {
     if (!gameActiveStates.escuela) return;
     escuelaSequence = [];
     escuelaUserInput = [];
-    const length = Math.min(5 + Math.floor(escuelaLevel / 10), 12);
+    const length = Math.min(4 + Math.floor(escuelaLevel / 15), 10);
     for (let i = 0; i < length; i++) escuelaSequence.push(Math.floor(Math.random() * 16) + 1);
     mostrarSecuenciaEscuela();
 }
@@ -1143,17 +1103,17 @@ function mostrarSecuenciaEscuela() {
     const display = document.getElementById('sequence-display');
     if (!display) return;
     display.innerHTML = '';
+    document.getElementById('pupitres-grid').innerHTML = '';
     let i = 0;
     function showNext() {
         if (i >= escuelaSequence.length) { crearPupitres(); return; }
+        display.innerHTML = '';
         const card = document.createElement('div');
-        card.className = 'sequence-card';
+        card.className = 'sequence-card highlight';
         card.textContent = escuelaSequence[i];
         display.appendChild(card);
-        setTimeout(() => card.classList.add('highlight'), 100);
-        setTimeout(() => card.remove(), 800);
         i++;
-        setTimeout(showNext, 800);
+        setTimeout(showNext, 600);
     }
     showNext();
 }
@@ -1175,12 +1135,24 @@ function seleccionarPupitre(num) {
     if (!gameActiveStates.escuela) return;
     escuelaUserInput.push(num);
     const idx = escuelaUserInput.length - 1;
+    
+    // Highlight pulsado
+    const pupitres = document.querySelectorAll('.pupitre');
+    if (pupitres[num - 1]) {
+        pupitres[num - 1].style.background = 'linear-gradient(145deg, var(--color-escuela), #d97706)';
+        setTimeout(() => {
+            if (pupitres[num - 1]) pupitres[num - 1].style.background = '';
+        }, 200);
+    }
+    
     if (escuelaUserInput[idx] !== escuelaSequence[idx]) {
         if (!loseLife('escuela')) return;
         escuelaUserInput = [];
+        document.getElementById('mem-result').innerHTML = '<span style="color:#ef4444;">❌ Secuencia incorrecta</span>';
         setTimeout(() => nuevaSecuenciaEscuela(), 1500);
         return;
     }
+    
     if (escuelaUserInput.length === escuelaSequence.length) {
         const reward = calcularRecompensa(50, 'escuela');
         userData.diamonds += reward;
@@ -1194,49 +1166,83 @@ function seleccionarPupitre(num) {
         userData.gameStats.escuela.lives = gameLives.escuela;
         document.getElementById('mem-level').textContent = escuelaLevel;
         document.getElementById('escuela-game-level').textContent = escuelaLevel;
-        const resultElem = document.getElementById('mem-result');
-        if (resultElem) resultElem.innerHTML = `<span style="color:#4ade80;">✅ +${reward} 💎!</span>`;
+        document.getElementById('mem-result').innerHTML = `<span style="color:#4ade80;font-size:18px;animation:winPulse 0.5s ease;">✅ +${reward} 💎! Nivel ${escuelaLevel}</span>`;
         actualizarUI();
+        actualizarPanelMejora('escuela');
         saveUserData();
         setTimeout(() => {
-            if (resultElem) resultElem.innerHTML = '';
+            document.getElementById('mem-result').innerHTML = '';
             nuevaSecuenciaEscuela();
         }, 2000);
     }
 }
 
 // ==========================================
-// MINIJUEGO 2: FÁBRICA
+// MINIJUEGO 2: FÁBRICA - LÍNEA DE ENSAMBLAJE
 // ==========================================
 function iniciarJuegoFabrica() {
     gameActiveStates.fabrica = true;
     fabricaLevel = userData.gameStats.fabrica.currentLevel || 1;
     fabricaBest = userData.gameStats.fabrica.bestLevel || 0;
     fabricaCompleted = 0;
-    fabricaRequired = Math.min(5 + Math.floor(fabricaLevel / 20), 20);
+    fabricaRequired = Math.min(5 + Math.floor(fabricaLevel / 15), 20);
     gameLives.fabrica = userData.gameStats.fabrica.lives || 3;
     updateLivesUI('fabrica');
     document.getElementById('asm-completed').textContent = fabricaCompleted;
     document.getElementById('asm-required').textContent = fabricaRequired;
     document.getElementById('asm-best').textContent = fabricaBest;
     document.getElementById('fabrica-game-level').textContent = fabricaLevel;
+    document.getElementById('asm-result').innerHTML = '';
     iniciarCinta();
 }
 
 function iniciarCinta() {
     if (fabricaAnimInterval) clearInterval(fabricaAnimInterval);
     if (fabricaDefectInterval) clearInterval(fabricaDefectInterval);
-    fabricaPosition = -50;
-    const speed = Math.max(2, 10 - Math.floor(fabricaLevel / 50));
+    fabricaPosition = -30;
+    fabricaIsDefect = Math.random() < Math.min(0.3, fabricaLevel / 150);
+    const piece = document.getElementById('moving-piece');
+    if (piece) {
+        piece.textContent = fabricaIsDefect ? '💢' : '🔧';
+        piece.style.left = fabricaPosition + '%';
+    }
+    
+    const speed = Math.max(1.5, 8 - Math.floor(fabricaLevel / 50));
     fabricaAnimInterval = setInterval(() => {
         if (!gameActiveStates.fabrica) return;
         fabricaPosition += speed;
-        if (fabricaPosition > 150) fabricaPosition = -50;
-        const piece = document.getElementById('moving-piece');
-        if (piece) piece.style.left = fabricaPosition + '%';
-        if (fabricaPosition > 45 && fabricaPosition < 55 && !fabricaIsDefect) {
+        if (fabricaPosition > 130) {
+            // Perdió la pieza
+            if (!fabricaIsDefect) {
+                if (!loseLife('fabrica')) {
+                    clearInterval(fabricaAnimInterval);
+                    return;
+                }
+            }
+            fabricaPosition = -30;
+            fabricaIsDefect = Math.random() < Math.min(0.3, fabricaLevel / 150);
+            const p = document.getElementById('moving-piece');
+            if (p) {
+                p.textContent = fabricaIsDefect ? '💢' : '🔧';
+                p.style.left = fabricaPosition + '%';
+            }
+        }
+        const p = document.getElementById('moving-piece');
+        if (p) p.style.left = fabricaPosition + '%';
+    }, 30);
+}
+
+function checkFabricaHit() {
+    if (!gameActiveStates.fabrica) return;
+    if (fabricaPosition > 30 && fabricaPosition < 70) {
+        if (fabricaIsDefect) {
+            if (!loseLife('fabrica')) return;
+            document.getElementById('asm-result').innerHTML = '<span style="color:#ef4444;">⚠️ Pieza defectuosa!</span>';
+        } else {
             fabricaCompleted++;
             document.getElementById('asm-completed').textContent = fabricaCompleted;
+            document.getElementById('asm-result').innerHTML = '<span style="color:#4ade80;">✅ +1!</span>';
+            
             if (fabricaCompleted >= fabricaRequired) {
                 const reward = calcularRecompensa(75, 'fabrica');
                 userData.diamonds += reward;
@@ -1249,135 +1255,176 @@ function iniciarCinta() {
                 userData.gameStats.fabrica.currentLevel = fabricaLevel;
                 userData.gameStats.fabrica.lives = gameLives.fabrica;
                 document.getElementById('fabrica-game-level').textContent = fabricaLevel;
+                document.getElementById('asm-result').innerHTML = `<span style="color:#4ade80;font-size:18px;animation:winPulse 0.5s ease;">✅ Nivel completado! +${reward} 💎</span>`;
                 actualizarUI();
+                actualizarPanelMejora('fabrica');
                 saveUserData();
                 clearInterval(fabricaAnimInterval);
-                clearInterval(fabricaDefectInterval);
                 setTimeout(() => iniciarJuegoFabrica(), 2000);
+                return;
             }
         }
-    }, 30);
-    fabricaDefectInterval = setInterval(() => {
-        if (!gameActiveStates.fabrica) return;
-        fabricaIsDefect = Math.random() < Math.min(0.3, fabricaLevel / 200);
-        const piece = document.getElementById('moving-piece');
-        if (piece) piece.textContent = fabricaIsDefect ? '💢' : '🔧';
-    }, 5000);
+    } else {
+        if (!loseLife('fabrica')) return;
+        document.getElementById('asm-result').innerHTML = '<span style="color:#ef4444;">❌ Fallaste!</span>';
+    }
+    
+    setTimeout(() => {
+        document.getElementById('asm-result').innerHTML = '';
+        fabricaPosition = -30;
+        fabricaIsDefect = Math.random() < Math.min(0.3, fabricaLevel / 150);
+        const p = document.getElementById('moving-piece');
+        if (p) {
+            p.textContent = fabricaIsDefect ? '💢' : '🔧';
+            p.style.left = fabricaPosition + '%';
+        }
+    }, 800);
 }
 
 // ==========================================
-// MINIJUEGO 3: PISCINA
+// MINIJUEGO 3: PISCINA - SALTO DE PRECISIÓN
 // ==========================================
 function iniciarJuegoPiscina() {
     gameActiveStates.piscina = true;
     piscinaLevel = userData.gameStats.piscina.currentLevel || 1;
     piscinaBest = userData.gameStats.piscina.bestLevel || 0;
     piscinaPerfect = 0;
-    piscinaRequired = Math.min(3 + Math.floor(piscinaLevel / 50), 10);
+    piscinaRequired = Math.min(3 + Math.floor(piscinaLevel / 30), 10);
     gameLives.piscina = userData.gameStats.piscina.lives || 3;
     updateLivesUI('piscina');
     document.getElementById('jump-perfect').textContent = piscinaPerfect;
     document.getElementById('jump-required').textContent = piscinaRequired;
     document.getElementById('jump-best').textContent = piscinaBest;
     document.getElementById('piscina-game-level').textContent = piscinaLevel;
-    initSlingshot();
+    document.getElementById('jump-result').innerHTML = '';
+    piscinaPower = 0;
+    piscinaHoldStart = 0;
 }
 
-function initSlingshot() {
+function startSlingshot(e) {
+    if (!gameActiveStates.piscina) return;
+    e.preventDefault();
+    piscinaHoldStart = Date.now();
     const area = document.getElementById('slingshot-area');
-    if (!area) return;
-    const powerFill = document.getElementById('power-fill');
+    if (area) area.style.background = 'linear-gradient(180deg, #0a6e9e, #063a5e)';
+}
+
+function releaseSlingshot() {
+    if (!gameActiveStates.piscina || piscinaHoldStart === 0) return;
+    const holdDuration = Date.now() - piscinaHoldStart;
+    piscinaPower = Math.min(100, holdDuration / 20);
+    piscinaHoldStart = 0;
     
-    area.onmousedown = (e) => {
-        if (!gameActiveStates.piscina) return;
-        piscinaIsDragging = true;
-        piscinaStartX = e.clientX;
-        piscinaStartY = e.clientY;
-    };
+    const area = document.getElementById('slingshot-area');
+    if (area) area.style.background = '';
     
-    area.onmousemove = (e) => {
-        if (!piscinaIsDragging || !gameActiveStates.piscina) return;
-        const dx = piscinaStartX - e.clientX;
-        const dy = piscinaStartY - e.clientY;
-        piscinaPower = Math.min(100, Math.sqrt(dx * dx + dy * dy) / 2);
-        if (powerFill) powerFill.style.height = piscinaPower + '%';
-    };
+    const isPerfect = piscinaPower > 35 && piscinaPower < 65;
+    const targetZone = Math.abs(piscinaPower - 50) < 15;
     
-    area.onmouseup = () => {
-        if (!piscinaIsDragging) return;
-        piscinaIsDragging = false;
-        const isPerfect = piscinaPower > 40 && piscinaPower < 60;
-        if (isPerfect) {
-            piscinaPerfect++;
-            document.getElementById('jump-perfect').textContent = piscinaPerfect;
-            if (piscinaPerfect >= piscinaRequired) {
-                const reward = calcularRecompensa(60, 'piscina');
-                userData.diamonds += reward;
-                piscinaLevel++;
-                if (piscinaLevel > piscinaBest) {
-                    piscinaBest = piscinaLevel;
-                    userData.gameStats.piscina.bestLevel = piscinaBest;
-                    document.getElementById('jump-best').textContent = piscinaBest;
-                }
-                userData.gameStats.piscina.currentLevel = piscinaLevel;
-                userData.gameStats.piscina.lives = gameLives.piscina;
-                document.getElementById('piscina-game-level').textContent = piscinaLevel;
-                actualizarUI();
-                saveUserData();
-                setTimeout(() => iniciarJuegoPiscina(), 2000);
+    if (isPerfect) {
+        piscinaPerfect++;
+        document.getElementById('jump-perfect').textContent = piscinaPerfect;
+        document.getElementById('jump-result').innerHTML = '<span style="color:#4ade80;">🎯 ¡Salto perfecto!</span>';
+        
+        if (piscinaPerfect >= piscinaRequired) {
+            const reward = calcularRecompensa(60, 'piscina');
+            userData.diamonds += reward;
+            piscinaLevel++;
+            if (piscinaLevel > piscinaBest) {
+                piscinaBest = piscinaLevel;
+                userData.gameStats.piscina.bestLevel = piscinaBest;
+                document.getElementById('jump-best').textContent = piscinaBest;
             }
-        } else {
-            loseLife('piscina');
+            userData.gameStats.piscina.currentLevel = piscinaLevel;
+            userData.gameStats.piscina.lives = gameLives.piscina;
+            document.getElementById('piscina-game-level').textContent = piscinaLevel;
+            document.getElementById('jump-result').innerHTML = `<span style="color:#4ade80;font-size:18px;animation:winPulse 0.5s ease;">✅ Nivel completado! +${reward} 💎</span>`;
+            piscinaPerfect = 0;
+            document.getElementById('jump-perfect').textContent = '0';
+            actualizarUI();
+            actualizarPanelMejora('piscina');
+            saveUserData();
+            setTimeout(() => iniciarJuegoPiscina(), 2000);
         }
-        piscinaPower = 0;
-        if (powerFill) powerFill.style.height = '0%';
-    };
+    } else {
+        loseLife('piscina');
+        document.getElementById('jump-result').innerHTML = '<span style="color:#ef4444;">💧 Fallaste (Potencia: ' + Math.floor(piscinaPower) + '%)</span>';
+    }
+    
+    piscinaPower = 0;
+    setTimeout(() => { document.getElementById('jump-result').innerHTML = ''; }, 1500);
 }
 
 // ==========================================
-// MINIJUEGO 4: HOSPITAL
+// MINIJUEGO 4: HOSPITAL - CIRUGÍA DE EMERGENCIA
 // ==========================================
 function iniciarJuegoHospital() {
     gameActiveStates.hospital = true;
     hospitalLevel = userData.gameStats.hospital.currentLevel || 1;
     hospitalBest = userData.gameStats.hospital.bestLevel || 0;
     hospitalExtracted = 0;
-    hospitalTotal = Math.min(3 + Math.floor(hospitalLevel / 50), 8);
+    hospitalTotal = Math.min(3 + Math.floor(hospitalLevel / 30), 8);
     gameLives.hospital = userData.gameStats.hospital.lives || 3;
     updateLivesUI('hospital');
     document.getElementById('virus-extracted').textContent = hospitalExtracted;
     document.getElementById('virus-total').textContent = hospitalTotal;
     document.getElementById('surgery-best').textContent = hospitalBest;
     document.getElementById('hospital-game-level').textContent = hospitalLevel;
+    document.getElementById('surgery-result').innerHTML = '';
     
-    hospitalTimeLeft = 30;
+    hospitalTimeLeft = 20 + Math.floor(hospitalLevel / 10);
     document.getElementById('time-fill').style.width = '100%';
+    
     if (hospitalTimer) clearInterval(hospitalTimer);
     hospitalTimer = setInterval(() => {
         if (!gameActiveStates.hospital) return;
         hospitalTimeLeft -= 0.1;
-        document.getElementById('time-fill').style.width = Math.max(0, (hospitalTimeLeft / 30) * 100) + '%';
+        document.getElementById('time-fill').style.width = Math.max(0, (hospitalTimeLeft / (20 + Math.floor(hospitalLevel / 10))) * 100) + '%';
         if (hospitalTimeLeft <= 0) {
             clearInterval(hospitalTimer);
             loseLife('hospital');
+            document.getElementById('surgery-result').innerHTML = '<span style="color:#ef4444;">⏰ Tiempo agotado</span>';
             setTimeout(() => iniciarJuegoHospital(), 2000);
         }
     }, 100);
     
+    crearVirusHospital();
+}
+
+function crearVirusHospital() {
     const area = document.getElementById('surgery-area');
     if (!area) return;
     area.innerHTML = '';
+    
     for (let i = 0; i < hospitalTotal; i++) {
         const virus = document.createElement('div');
-        virus.className = 'virus';
+        virus.style.cssText = `
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            background: radial-gradient(circle, #8b4513, #5a2a0a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 #3a1a05;
+            animation: float 2s infinite;
+            left: ${10 + Math.random() * 70}%;
+            top: ${10 + Math.random() * 70}%;
+            z-index: 10;
+        `;
         virus.textContent = '🦠';
-        virus.style.left = (20 + Math.random() * 60) + '%';
-        virus.style.top = (20 + Math.random() * 60) + '%';
-        virus.style.cursor = 'pointer';
-        virus.onclick = () => {
+        virus.onclick = function(e) {
+            e.stopPropagation();
+            if (!gameActiveStates.hospital) return;
             hospitalExtracted++;
             document.getElementById('virus-extracted').textContent = hospitalExtracted;
-            virus.remove();
+            virus.style.transform = 'scale(0)';
+            setTimeout(() => virus.remove(), 200);
+            
             if (hospitalExtracted >= hospitalTotal) {
                 clearInterval(hospitalTimer);
                 const reward = calcularRecompensa(80, 'hospital');
@@ -1391,17 +1438,21 @@ function iniciarJuegoHospital() {
                 userData.gameStats.hospital.currentLevel = hospitalLevel;
                 userData.gameStats.hospital.lives = gameLives.hospital;
                 document.getElementById('hospital-game-level').textContent = hospitalLevel;
+                document.getElementById('surgery-result').innerHTML = `<span style="color:#4ade80;font-size:18px;animation:winPulse 0.5s ease;">✅ Cirugía exitosa! +${reward} 💎</span>`;
                 actualizarUI();
+                actualizarPanelMejora('hospital');
                 saveUserData();
                 setTimeout(() => iniciarJuegoHospital(), 2000);
             }
         };
+        virus.onmouseenter = function() { this.style.transform = 'scale(1.2)'; };
+        virus.onmouseleave = function() { this.style.transform = 'scale(1)'; };
         area.appendChild(virus);
     }
 }
 
 // ==========================================
-// RANKING Y POOL
+// RANKING Y POOL (DIARIO)
 // ==========================================
 async function updateRankingAndPool() {
     try {
@@ -1409,6 +1460,7 @@ async function updateRankingAndPool() {
         if (!error && data) {
             globalPoolData.user_rankings = data.map(u => ({ id: u.telegram_id, diamonds: Number(u.diamonds) || 0 })).sort((a, b) => b.diamonds - a.diamonds);
         }
+        
         const posicion = globalPoolData.user_rankings.findIndex(u => u.id === userData.id);
         if (posicion !== -1) {
             if (posicion < 3) userData.rank = "Diamante";
@@ -1417,7 +1469,24 @@ async function updateRankingAndPool() {
             else userData.rank = "Ciudadano";
             userData.weekly_rank = posicion + 1;
         }
-        userData.projectedReward = globalPoolData.pool_ton * 0.01;
+        
+        // Calcular proyección diaria
+        const poolUsuarios = globalPoolData.pool_ton * 0.8 * RESERVA_POOL;
+        if (posicion < 3) userData.projectedReward = (poolUsuarios * 0.4) / 3;
+        else if (posicion < 10) userData.projectedReward = (poolUsuarios * 0.25) / 7;
+        else if (posicion < 50) userData.projectedReward = (poolUsuarios * 0.20) / 40;
+        else {
+            const ciudadanos = globalPoolData.user_rankings.slice(50);
+            const totalDiamantesCiudadanos = ciudadanos.reduce((sum, u) => sum + u.diamonds, 0);
+            if (totalDiamantesCiudadanos > 0 && userData.diamonds > 0) {
+                userData.projectedReward = (poolUsuarios * 0.15) * (userData.diamonds / totalDiamantesCiudadanos);
+            }
+        }
+        
+        // Actualizar UI si modal ranking está abierto
+        if (document.getElementById('modalRanking')?.style.display === 'block') {
+            actualizarRankingModal();
+        }
     } catch(e) { console.error("Error ranking:", e); }
 }
 
@@ -1504,6 +1573,7 @@ async function loadUserFromDB(tgId) {
             retiradoHoy: Number(data.retiradoHoy) || 0,
             last_ad_watch: data.last_ad_watch || null,
             last_casino_rescue: data.last_casino_rescue || null,
+            referral_code: data.referral_code || 'REF' + tgId.toString().slice(-6),
             gameStats: data.gameStats || {
                 escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
                 fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
@@ -1541,9 +1611,16 @@ async function initApp() {
         userData.username = user.first_name || 'Usuario';
         document.getElementById('user-display').textContent = userData.username;
         await loadUserFromDB(user.id);
+    } else {
+        // Modo desarrollo sin Telegram
+        userData.id = 'test_' + Date.now();
+        userData.username = 'Usuario Test';
+        userData.referral_code = 'REF' + userData.id.slice(-6);
+        document.getElementById('user-display').textContent = userData.username;
     }
     
     await initTONConnect();
+    setTimeout(initAds, 3000);
     await updateRealPoolBalance();
     await updateRankingAndPool();
     startProduction();
@@ -1583,25 +1660,24 @@ window.jugarHighLow = jugarHighLow;
 window.jugarRuleta = jugarRuleta;
 window.jugarTragaperras = jugarTragaperras;
 window.jugarDados = jugarDados;
-window.comprarBoletos = comprarBoletos;
-window.jugarLoteria = jugarLoteria;
 window.claimDailyReward = claimDailyReward;
 window.showAd = showAd;
 window.rescueWithAd = rescueWithAd;
 window.comprarPremium = comprarPremium;
 window.comprarTON = comprarTON;
-window.buyUpgradeFromBuilding = buyUpgradeFromBuilding;
+window.buyUpgrade = buyUpgrade;
 window.closeAll = closeAll;
 window.copyReferralCode = copyReferralCode;
 window.disconnectWallet = disconnectWallet;
 window.switchBancoTab = switchBancoTab;
-window.actualizarPanelVenta = actualizarPanelVenta;
 window.cambiarVentaDiamonds = cambiarVentaDiamonds;
-window.setVentaCantidad = setVentaCantidad;
-window.setVentaCantidadMax = setVentaCantidadMax;
 window.venderDiamantes = venderDiamantes;
 window.startEventTask = startEventTask;
 window.useAdMultiplier = useAdMultiplier;
 window.reviveGame = reviveGame;
+window.switchTab = switchTab;
+window.checkFabricaHit = checkFabricaHit;
+window.startSlingshot = startSlingshot;
+window.releaseSlingshot = releaseSlingshot;
 
-console.log('✅ TON CITY - Iniciado correctamente');
+console.log('✅ TON CITY - Completamente iniciado');
