@@ -590,13 +590,11 @@ async function comprarTON(tonAmount) {
             messages: [
                 {
                     address: CONFIG.BILLETERA_POOL,
-                    amount: montoPool.toString(),
-                    payload: "Compra diamantes - Ton City"
+                    amount: montoPool.toString()
                 },
                 {
                     address: CONFIG.BILLETERA_PROPIETARIO,
-                    amount: montoDueño.toString(),
-                    payload: "Comisión - Ton City"
+                    amount: montoDueño.toString()
                 }
             ]
         };
@@ -711,8 +709,7 @@ async function comprarPremium(days) {
             validUntil: Math.floor(Date.now() / 1000) + 300,
             messages: [{
                 address: CONFIG.BILLETERA_PROPIETARIO,
-                amount: Math.floor(planSeleccionado.price * 1000000000).toString(),
-                payload: "Premium Ton City - " + planSeleccionado.name
+                amount: Math.floor(planSeleccionado.price * 1000000000).toString()
             }]
         };
         await tonConnectUI.sendTransaction(transaccion);
@@ -1947,12 +1944,25 @@ async function initApp() {
         userData.id = usuario.id.toString();
         userData.username = usuario.first_name || 'Usuario';
         await loadUserFromDB(usuario.id);
+        // Volver a poner el nombre real de Telegram: loadUserFromDB puede
+        // haberlo pisado con un valor viejo guardado en Supabase.
+        userData.username = usuario.first_name || 'Usuario';
     } else {
         userData.id = 'test_' + Date.now();
         userData.username = 'Usuario Test';
         userData.referral_code = 'REF' + userData.id.slice(-6);
     }
     document.getElementById('user-display').textContent = userData.username;
+    if (usuario && usuario.photo_url) {
+        const userDisplayElem = document.getElementById('user-display');
+        if (userDisplayElem && !document.getElementById('user-avatar-main')) {
+            const img = document.createElement('img');
+            img.id = 'user-avatar-main';
+            img.src = usuario.photo_url;
+            img.style.cssText = 'width:32px;height:32px;border-radius:50%;object-fit:cover;margin-right:8px;vertical-align:middle;';
+            userDisplayElem.parentNode.insertBefore(img, userDisplayElem);
+        }
+    }
     await initTONConnect();
     setTimeout(initAds, 3000);
     await updateRealPoolBalance();
