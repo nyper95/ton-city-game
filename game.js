@@ -621,7 +621,7 @@ async function comprarTON(tonAmount) {
         closeAll();
     } catch (error) {
         console.error('Error en compra:', error);
-        alert('❌ La transacción fue cancelada o rechazada');
+        alert('❌ Error: ' + (error.message || 'La transacción fue cancelada o rechazada'));
     }
 }
 
@@ -1820,12 +1820,10 @@ async function updateRankingAndPool() {
 
 async function updateRealPoolBalance() {
     try {
-        const respuesta = await fetch('https://tonapi.io/v2/accounts/' + CONFIG.BILLETERA_POOL, {
-            headers: { 'Authorization': 'Bearer ' + CONFIG.TON_API_KEY }
-        });
+        const respuesta = await fetch('/api/pool-balance');
         if (respuesta.ok) {
             const datos = await respuesta.json();
-            globalPoolData.pool_ton = (datos.balance || 0) / 1000000000;
+            if (datos.success) globalPoolData.pool_ton = datos.pool_ton;
         }
     } catch (error) { console.error('Error pool:', error); }
 }
