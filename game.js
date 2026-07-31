@@ -543,59 +543,81 @@ async function venderDiamantes() {
     const tonRecibir = ventaCantidad / tasa;
     if (!tonConnectUI || !tonConnectUI.connected) return alert('❌ Conecta tu wallet primero');
     if (tonRecibir < 1) return alert('❌ El mínimo de retiro es 1 TON');
-    const retiradoHoy = userData.retiradoHoy || 0;
-    if (retiradoHoy + tonRecibir > 5) return alert('❌ Has alcanzado el límite diario de 5 TON');
-    if (tonRecibir > (globalPoolData.pool_ton || 0)) return alert('❌ No hay suficientes TON en el pool');
-    const tonDespuesComision = tonRecibir - CONFIG.RED_TON_FEE;
-    if (!confirm('¿Confirmas el cambio?\n\nDiamantes: ' + ventaCantidad + ' 💎\nRecibirás: ' + tonDespuesComision.toFixed(4) + ' TON\n(Comisión de red: ' + CONFIG.RED_TON_FEE.toFixed(4) + ' TON)')) return;
+    if (!confirm('¿Confirmas el cambio?\n\nDiamantes: ' + ventaCantidad + ' 💎\nRecibirás aproximadamente: ' + (tonRecibir - CONFIG.RED_TON_FEE).toFixed(4) + ' TON')) return;
+
     try {
-        const transaccion = {
-            validUntil: Math.floor(Date.now() / 1000) + 300,
-            messages: [{
-                address: currentWallet.account.address,
-                amount: Math.floor(tonDespuesComision * 1000000000).toString(),
-                payload: "Venta de diamantes - Ton City"
-            }]
-        };
-        await tonConnectUI.sendTransaction(transaccion);
-        userData.diamonds = userData.diamonds - ventaCantidad;
-        userData.retiradoHoy = (userData.retiradoHoy || 0) + tonRecibir;
-        globalPoolData.pool_ton = globalPoolData.pool_ton - tonRecibir;
-        await saveUserData();
+        const resp = await fetch('/api/sell', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: userData.id,
+                diamondsAmount: ventaCantidad,
+                tonAddress: currentWallet.account.address
+            })
+        });
+        const data = await resp.json();
+
+        if (!data.success) {
+            alert('❌ ' + (data.error || 'No se pudo procesar la venta'));
+            return;
+        }
+
+        userData.diamonds = data.diamonds;
         ventaCantidad = 100;
         const input = document.getElementById('venta-input');
         if (input) input.value = 100;
         actualizarPanelVenta();
         actualizarUI();
         spawnConfetti();
-        alert('✅ ¡Transacción exitosa!\n\nRecibiste ' + tonDespuesComision.toFixed(4) + ' TON en tu wallet.');
+        alert('✅ ¡Transacción exitosa!\n\nRecibiste ' + data.tonEnviado.toFixed(4) + ' TON en tu wallet.');
     } catch (error) {
         console.error('Error en venta:', error);
-        alert('❌ La transacción fue cancelada o rechazada');
+        alert('❌ Ocurrió un error procesando la venta, intenta de nuevo');
     }
 }
 
 async function comprarTON(tonAmount) {
     if (!tonConnectUI || !tonConnectUI.connected) return alert('❌ Conecta tu wallet primero');
-    if (!confirm('¿Confirmas la compra?\n\nPagarás: ' + tonAmount.toFixed(2) + ' TON\nRecibirás: ' + Math.floor(tonAmount / CONFIG.PRECIO_COMPRA) + ' 💎')) return;
+    const diamantesAComprar = Math.max(100, Math.floor(tonAmount / CONFIG.PRECIO_COMPRA));
+    if (!confirm('¿Confirmas la compra?\n\nPagarás: ' + tonAmount.toFixed(2) + ' TON\nRecibirás: ' + diamantesAComprar + ' 💎')) return;
+
+    const montoPool = Math.floor(tonAmount * 0.8 * 1000000000);
+    const montoDueño = Math.floor(tonAmount * 0.2 * 1000000000);
+
     try {
         const transaccion = {
             validUntil: Math.floor(Date.now() / 1000) + 300,
-            messages: [{
-                address: CONFIG.BILLETERA_PROPIETARIO,
-                amount: Math.floor(tonAmount * 1000000000).toString(),
-                payload: "Compra de diamantes - Ton City"
-            }]
+            messages: [
+                {
+                    address: CONFIG.BILLETERA_POOL,
+                    amount: montoPool.toString(),
+                    payload: "Compra diamantes - Ton City"
+                },
+                {
+                    address: CONFIG.BILLETERA_PROPIETARIO,
+                    amount: montoDueño.toString(),
+                    payload: "Comisión - Ton City"
+                }
+            ]
         };
         await tonConnectUI.sendTransaction(transaccion);
-        let diamantesComprados = Math.floor(tonAmount / CONFIG.PRECIO_COMPRA);
-        if (diamantesComprados < 100) diamantesComprados = 100;
-        userData.diamonds = userData.diamonds + diamantesComprados;
-        if (!userData.haInvertido && diamantesComprados >= 100) userData.haInvertido = true;
-        await saveUserData();
+
+        const resp = await fetch('/api/confirm-purchase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userData.id, tonAmount: tonAmount })
+        });
+        const data = await resp.json();
+
+        if (!data.success) {
+            alert('⚠️ Pagaste, pero aún no lo confirmamos: ' + (data.error || 'intenta abrir el banco de nuevo en unos segundos'));
+            return;
+        }
+
+        userData.diamonds = data.diamonds;
         actualizarUI();
         spawnConfetti();
-        alert('✅ ¡Compra exitosa!\n\nRecibiste ' + diamantesComprados + ' 💎');
+        alert('✅ ¡Compra exitosa!\n\nRecibiste ' + diamantesAComprar + ' 💎');
         closeAll();
     } catch (error) {
         console.error('Error en compra:', error);
@@ -1815,7 +1837,6 @@ async function saveUserData() {
     if (!userData.id) return;
     try {
         const datos = {
-            diamonds: Math.floor(userData.diamonds),
             lvl_piscina: userData.lvl_piscina,
             lvl_fabrica: userData.lvl_fabrica,
             lvl_escuela: userData.lvl_escuela,
@@ -1824,15 +1845,11 @@ async function saveUserData() {
             premium_expires: userData.premium_expires,
             daily_streak: userData.daily_streak,
             last_daily_claim: userData.last_daily_claim,
-            haInvertido: userData.haInvertido,
             event_progress: userData.event_progress || {},
-            accumulated_ton: userData.accumulated_ton || 0,
-            retiradoHoy: userData.retiradoHoy || 0,
             gameStats: userData.gameStats,
             referral_earnings: userData.referral_earnings || 0,
             last_ad_watch: userData.last_ad_watch,
-            last_casino_rescue: userData.last_casino_rescue,
-            last_withdraw_week: userData.last_withdraw_week
+            last_casino_rescue: userData.last_casino_rescue
         };
         await _supabase.from('game_data').update(datos).eq('telegram_id', userData.id);
         console.log('💾 Datos guardados correctamente');
