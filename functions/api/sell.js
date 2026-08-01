@@ -117,7 +117,6 @@ async function sendTon(env, toAddress, amountTon) {
 
   const client = new TonClient({
     endpoint: "https://toncenter.com/api/v2/jsonRPC",
-    apiKey: env.TON_API_KEY,
   });
 
   const wallet = WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey });
@@ -146,5 +145,4 @@ function json(obj, status = 200) {
     status,
     headers: { "Content-Type": "application/json" },
   });
-        }
-        
+}
