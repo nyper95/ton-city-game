@@ -1832,6 +1832,7 @@ async function saveUserData() {
     if (!userData.id) return;
     try {
         const datos = {
+            diamonds: Math.floor(userData.diamonds),
             lvl_piscina: userData.lvl_piscina,
             lvl_fabrica: userData.lvl_fabrica,
             lvl_escuela: userData.lvl_escuela,
