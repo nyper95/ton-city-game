@@ -1846,9 +1846,17 @@ async function saveUserData() {
             last_ad_watch: userData.last_ad_watch,
             last_casino_rescue: userData.last_casino_rescue
         };
-        await _supabase.from('game_data').update(datos).eq('telegram_id', userData.id);
-        console.log('💾 Datos guardados correctamente');
-    } catch (error) { console.error('Error guardando:', error); }
+        const resultado = await _supabase.from('game_data').update(datos).eq('telegram_id', userData.id);
+        if (resultado.error) {
+            alert('🔴 DEBUG - Error al guardar: ' + JSON.stringify(resultado.error));
+        } else if (!resultado.data && resultado.status === 200 && resultado.count === 0) {
+            alert('🟡 DEBUG - Guardado ejecutado pero 0 filas afectadas. telegram_id usado: ' + userData.id);
+        }
+        console.log('💾 Datos guardados correctamente', resultado);
+    } catch (error) {
+        console.error('Error guardando:', error);
+        alert('🔴 DEBUG - Excepción al guardar: ' + error.message);
+    }
 }
 
 async function loadUserFromDB(tgId) {
