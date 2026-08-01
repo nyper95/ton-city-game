@@ -1,7 +1,7 @@
 // ======================================================
-// TON CITY - VERSIÓN FINAL COMPLETA 2026
+// DIAMOND CITY - VERSIÓN FINAL COMPLETA 2026
 // ======================================================
-console.log('🚀 TON CITY - Iniciando sistema profesional...');
+console.log('🚀 DIAMOND CITY - Iniciando sistema profesional...');
 
 const tg = window.Telegram.WebApp;
 tg.expand();
@@ -340,7 +340,7 @@ function actualizarPerfil() {
     const rangoElem = document.getElementById('perfil-rango-display');
     if (rangoElem) rangoElem.textContent = userData.rank || 'Ciudadano';
     const proyeccionElem = document.getElementById('perfil-proyeccion');
-    if (proyeccionElem) proyeccionElem.textContent = (userData.projectedReward || 0).toFixed(4) + ' TON';
+    if (proyeccionElem) proyeccionElem.textContent = (userData.projectedReward || 0).toFixed(4) + ' GRAM';
     const premiumElem = document.getElementById('perfil-premium');
     if (premiumElem) premiumElem.textContent = esPremium() ? 'Sí ⭐' : 'No';
     const rankBadgeElem = document.getElementById('perfil-rank-badge');
@@ -390,9 +390,9 @@ function actualizarRankingModal() {
     const rangoElem = document.getElementById('user-rank-display');
     if (rangoElem) rangoElem.textContent = userData.rank || 'Ciudadano';
     const poolElem = document.getElementById('pool-total-ranking');
-    if (poolElem) poolElem.textContent = (globalPoolData.pool_ton || 0).toFixed(4) + ' TON';
+    if (poolElem) poolElem.textContent = (globalPoolData.pool_ton || 0).toFixed(4) + ' GRAM';
     const proyeccionElem = document.getElementById('projected-reward-display');
-    if (proyeccionElem) proyeccionElem.textContent = (userData.projectedReward || 0).toFixed(4) + ' TON';
+    if (proyeccionElem) proyeccionElem.textContent = (userData.projectedReward || 0).toFixed(4) + ' GRAM';
 }
 
 // ==========================================
@@ -425,7 +425,7 @@ function actualizarListaCompra() {
         const botonTexto = walletConectada ? 'COMPRAR' : 'CONECTAR';
         const botonDisabled = walletConectada ? '' : 'disabled';
         html += '<div style="background:#0f172a;border-radius:12px;padding:16px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;">';
-        html += '<div><strong>' + pack.ton.toFixed(2) + ' TON</strong><div style="font-size:12px;color:#94a3b8;">+' + pack.diamonds + ' 💎</div></div>';
+        html += '<div><strong>' + pack.ton.toFixed(2) + ' GRAM</strong><div style="font-size:12px;color:#94a3b8;">+' + pack.diamonds + ' 💎</div></div>';
         html += '<button onclick="comprarTON(' + pack.ton + ')" style="background:' + botonColor + ';border:none;padding:10px 20px;border-radius:30px;color:white;font-weight:700;cursor:pointer;" ' + botonDisabled + '>' + botonTexto + '</button>';
         html += '</div>';
     }
@@ -459,14 +459,14 @@ function actualizarPanelVenta() {
     const ventaDiamondsElem = document.getElementById('venta-diamonds');
     if (ventaDiamondsElem) ventaDiamondsElem.textContent = diamantesDisponibles;
     const ventaPoolElem = document.getElementById('venta-pool');
-    if (ventaPoolElem) ventaPoolElem.textContent = poolTotal.toFixed(4) + ' TON';
+    if (ventaPoolElem) ventaPoolElem.textContent = poolTotal.toFixed(4) + ' GRAM';
     const tasaBase = 10000;
     const poolFactor = Math.max(0.5, Math.min(2, poolTotal / 10));
     const tasaActual = Math.floor(tasaBase / poolFactor);
     window._tasaVentaActual = tasaActual;
     const tonRecibir = ventaCantidad / tasaActual;
     const ventaTonRecibirElem = document.getElementById('venta-ton-recibir');
-    if (ventaTonRecibirElem) ventaTonRecibirElem.textContent = tonRecibir.toFixed(4) + ' TON';
+    if (ventaTonRecibirElem) ventaTonRecibirElem.textContent = tonRecibir.toFixed(4) + ' GRAM';
     const btnVender = document.getElementById('vender-btn');
     const errorVenta = document.getElementById('venta-error');
     if (!btnVender) return;
@@ -485,18 +485,18 @@ function actualizarPanelVenta() {
         textoBoton = '💎 DIAMANTES INSUFICIENTES';
     } else if (tonRecibir < 1) {
         hayError = true;
-        mensajeError = '⚠️ El mínimo de retiro es 1 TON';
-        textoBoton = '📉 MÍNIMO 1 TON';
+        mensajeError = '⚠️ El mínimo de retiro es 1 GRAM';
+        textoBoton = '📉 MÍNIMO 1 GRAM';
     } else if ((userData.retiradoHoy || 0) + tonRecibir > 5) {
         hayError = true;
         mensajeError = '⚠️ Límite diario de 5 TON alcanzado';
-        textoBoton = '🚫 LÍMITE DIARIO 5 TON';
+        textoBoton = '🚫 LÍMITE DIARIO 5 GRAM';
     } else if (tonRecibir > poolTotal) {
         hayError = true;
         mensajeError = '⚠️ No hay suficientes TON en el pool';
         textoBoton = '🏊 POOL INSUFICIENTE';
     } else {
-        textoBoton = '💱 CAMBIAR ' + ventaCantidad + ' 💎 POR ' + tonRecibir.toFixed(4) + ' TON';
+        textoBoton = '💱 CAMBIAR ' + ventaCantidad + ' 💎 POR ' + tonRecibir.toFixed(4) + ' GRAM';
     }
     btnVender.disabled = hayError;
     btnVender.textContent = textoBoton;
@@ -541,8 +541,8 @@ async function venderDiamantes() {
     const tasa = window._tasaVentaActual || 10000;
     const tonRecibir = ventaCantidad / tasa;
     if (!tonConnectUI || !tonConnectUI.connected) return alert('❌ Conecta tu wallet primero');
-    if (tonRecibir < 1) return alert('❌ El mínimo de retiro es 1 TON');
-    if (!confirm('¿Confirmas el cambio?\n\nDiamantes: ' + ventaCantidad + ' 💎\nRecibirás aproximadamente: ' + (tonRecibir - CONFIG.RED_TON_FEE).toFixed(4) + ' TON')) return;
+    if (tonRecibir < 1) return alert('❌ El mínimo de retiro es 1 GRAM');
+    if (!confirm('¿Confirmas el cambio?\n\nDiamantes: ' + ventaCantidad + ' 💎\nRecibirás aproximadamente: ' + (tonRecibir - CONFIG.RED_TON_FEE).toFixed(4) + ' GRAM')) return;
 
     try {
         const resp = await fetch('/api/sell', {
@@ -568,7 +568,7 @@ async function venderDiamantes() {
         actualizarPanelVenta();
         actualizarUI();
         spawnConfetti();
-        alert('✅ ¡Transacción exitosa!\n\nRecibiste ' + data.tonEnviado.toFixed(4) + ' TON en tu wallet.');
+        alert('✅ ¡Transacción exitosa!\n\nRecibiste ' + data.tonEnviado.toFixed(4) + ' GRAM en tu wallet.');
     } catch (error) {
         console.error('Error en venta:', error);
         alert('❌ Ocurrió un error procesando la venta, intenta de nuevo');
@@ -578,7 +578,7 @@ async function venderDiamantes() {
 async function comprarTON(tonAmount) {
     if (!tonConnectUI || !tonConnectUI.connected) return alert('❌ Conecta tu wallet primero');
     const diamantesAComprar = Math.max(100, Math.floor(tonAmount / CONFIG.PRECIO_COMPRA));
-    if (!confirm('¿Confirmas la compra?\n\nPagarás: ' + tonAmount.toFixed(2) + ' TON\nRecibirás: ' + diamantesAComprar + ' 💎')) return;
+    if (!confirm('¿Confirmas la compra?\n\nPagarás: ' + tonAmount.toFixed(2) + ' GRAM\nRecibirás: ' + diamantesAComprar + ' 💎')) return;
 
     const montoPool = Math.floor(tonAmount * 0.8 * 1000000000);
     const montoDueño = Math.floor(tonAmount * 0.2 * 1000000000);
@@ -684,7 +684,7 @@ function openStore() {
         html += '<div style="background:#0f172a;border-radius:16px;padding:20px;margin:12px 0;">';
         html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
         html += '<strong style="font-size:18px;">' + plan.name + '</strong>';
-        html += '<span style="color:#facc15;font-weight:700;font-size:18px;">' + plan.price + ' TON</span>';
+        html += '<span style="color:#facc15;font-weight:700;font-size:18px;">' + plan.price + ' GRAM</span>';
         html += '</div>';
         html += '<button onclick="comprarPremium(' + plan.days + ')" style="background:' + botonColor + ';border:none;border-radius:30px;padding:14px;width:100%;color:white;font-weight:700;font-size:16px;cursor:pointer;" ' + botonDisabled + '>' + botonTexto + '</button>';
         html += '</div>';
@@ -702,7 +702,7 @@ async function comprarPremium(days) {
         }
     }
     if (!planSeleccionado) return alert('❌ Plan no encontrado');
-    if (!confirm('¿Activar Premium ' + planSeleccionado.name + ' por ' + planSeleccionado.price + ' TON?\n\nDisfrutarás de todos los beneficios Premium.')) return;
+    if (!confirm('¿Activar Premium ' + planSeleccionado.name + ' por ' + planSeleccionado.price + ' GRAM?\n\nDisfrutarás de todos los beneficios Premium.')) return;
     try {
         const transaccion = {
             validUntil: Math.floor(Date.now() / 1000) + 300,
@@ -959,7 +959,8 @@ function abrirJuego(juego) {
     }
     if (!modalId) return;
     showModal(modalId);
-    const balanceElem = document.getElementById(juego + '-balance');
+    const idBalance = juego === 'highlow' ? 'hl-balance' : (juego + '-balance');
+    const balanceElem = document.getElementById(idBalance);
     if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
     if (juego === 'highlow') {
         document.getElementById('hl-number').textContent = '0000';
@@ -1941,7 +1942,7 @@ function startProduction() {
 // INICIALIZACIÓN PRINCIPAL
 // ==========================================
 async function initApp() {
-    console.log('🔄 Iniciando TON CITY...');
+    console.log('🔄 Iniciando DIAMOND CITY...');
     tg.expand();
     tg.ready();
     let usuario = null;
@@ -1978,7 +1979,7 @@ async function initApp() {
     setInterval(saveUserData, 10000);
     setInterval(async function() { await updateRankingAndPool(); actualizarEventosUI(); }, 60000);
     window.addEventListener('beforeunload', function() { saveUserData(); });
-    console.log('✅ TON CITY - Sistema completamente inicializado');
+    console.log('✅ DIAMOND CITY - Sistema completamente inicializado');
 }
 
 window.addEventListener('DOMContentLoaded', initApp);
@@ -2029,4 +2030,4 @@ window.checkFabricaHitPiece = checkFabricaHitPiece;
 window.startSlingshot = startSlingshot;
 window.releaseSlingshot = releaseSlingshot;
 
-console.log('📦 TON CITY - Todos los módulos exportados correctamente');
+console.log('📦 DIAMOND CITY - Todos los módulos exportados correctamente');
