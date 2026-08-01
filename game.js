@@ -1841,21 +1841,19 @@ async function saveUserData() {
             daily_streak: userData.daily_streak,
             last_daily_claim: userData.last_daily_claim,
             event_progress: userData.event_progress || {},
-            gameStats: userData.gameStats,
+            gamestats: userData.gameStats,
             referral_earnings: userData.referral_earnings || 0,
             last_ad_watch: userData.last_ad_watch,
             last_casino_rescue: userData.last_casino_rescue
         };
         const resultado = await _supabase.from('game_data').update(datos).eq('telegram_id', userData.id);
         if (resultado.error) {
-            alert('🔴 DEBUG - Error al guardar: ' + JSON.stringify(resultado.error));
-        } else if (!resultado.data && resultado.status === 200 && resultado.count === 0) {
-            alert('🟡 DEBUG - Guardado ejecutado pero 0 filas afectadas. telegram_id usado: ' + userData.id);
+            console.error('Error al guardar:', resultado.error);
+        } else {
+            console.log('💾 Datos guardados correctamente');
         }
-        console.log('💾 Datos guardados correctamente', resultado);
     } catch (error) {
         console.error('Error guardando:', error);
-        alert('🔴 DEBUG - Excepción al guardar: ' + error.message);
     }
 }
 
@@ -1879,7 +1877,7 @@ async function loadUserFromDB(tgId) {
                 accumulated_ton: 0,
                 retiradoHoy: 0,
                 last_withdraw_week: null,
-                gameStats: {
+                gamestats: {
                     escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
                     fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
                     piscina: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
@@ -1910,7 +1908,7 @@ async function loadUserFromDB(tgId) {
                 referral_code: datos.referral_code || 'REF' + tgId.toString().slice(-6),
                 last_ad_watch: datos.last_ad_watch || null,
                 last_casino_rescue: datos.last_casino_rescue || null,
-                gameStats: datos.gameStats || {
+                gameStats: datos.gamestats || {
                     escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
                     fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
                     piscina: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
