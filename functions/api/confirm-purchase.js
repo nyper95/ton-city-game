@@ -37,7 +37,7 @@ export async function onRequestPost(context) {
     };
 
     const tcRes = await fetch(
-      `https://toncenter.com/api/v2/getTransactions?address=${env.POOL_ADDRESS}&limit=20&api_key=${env.TON_API_KEY}`
+      `https://toncenter.com/api/v2/getTransactions?address=${env.POOL_ADDRESS}&limit=20`
     );
     const tcData = await tcRes.json();
     const transacciones = tcData.result || [];
