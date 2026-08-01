@@ -1,8 +1,9 @@
 // ======================================================
 // TON CITY - /api/pool-balance (Cloudflare Pages Function)
-// Devuelve el balance REAL de la wallet del pool, consultando
-// la blockchain desde el servidor (nunca expone la API key
-// al navegador).
+// Devuelve el balance REAL de la wallet del pool consultando
+// toncenter.com (sin API key: suficiente para bajo volumen,
+// límite de 1 solicitud/segundo). Se puede añadir una key de
+// TONCENTER más adelante si hace falta más límite.
 // ======================================================
 
 export async function onRequestGet(context) {
@@ -10,7 +11,7 @@ export async function onRequestGet(context) {
 
   try {
     const res = await fetch(
-      `https://toncenter.com/api/v2/getAddressBalance?address=${env.POOL_ADDRESS}&api_key=${env.TON_API_KEY}`
+      `https://toncenter.com/api/v2/getAddressBalance?address=${env.POOL_ADDRESS}`
     );
     const data = await res.json();
 
