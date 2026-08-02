@@ -46,6 +46,10 @@
         .roulette-wheel.spinning{animation:wheelSpin 1.2s cubic-bezier(0.2,0.8,0.3,1);}
         .roulette-wheel-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;background:var(--bg-dark);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;border:2px solid var(--primary);}
         .camara-activa{background:#ef4444!important;transform:scale(1.15);animation:chamberSpin 0.15s linear infinite;}
+        .power-zone-verde{position:absolute;top:0;height:100%;background:rgba(74,222,128,0.45);border-left:2px solid #4ade80;border-right:2px solid #4ade80;transition:left 0.3s,width 0.3s;}
+        .jump-tap-btn{display:block;margin:16px auto 0;background:linear-gradient(135deg,#38bdf8,#0ea5e9);border:none;color:white;font-weight:800;font-size:18px;padding:16px 32px;border-radius:30px;box-shadow:0 0 20px rgba(56,189,248,0.6);cursor:pointer;}
+        .jump-tap-btn:active{transform:scale(0.95);}
+        @keyframes splashDrop{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-60px) scale(0.4);opacity:0}}
 
         body {
             font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
@@ -368,17 +372,18 @@
             <button class="upgrade-btn" id="piscina-btn" onclick="buyUpgrade('piscina')">MEJORAR</button>
         </div>
         <div id="piscina-game-panel" class="hidden">
-            <div class="game-instructions"><i class="fa-solid fa-water"></i> <strong>Salto de Precisión</strong> - Mantén presionado, la aguja sube. Suelta en zona verde (40-60%).</div>
+            <div class="game-instructions"><i class="fa-solid fa-water"></i> <strong>Clavado de Precisión</strong> - La aguja se mueve sola. Toca "¡SALTAR!" justo cuando esté en la zona verde. Entre más rápido y angosta esté la zona, más difícil el nivel.</div>
             <div class="game-area">
-                <div class="flex-row"><span>🎯 <span id="jump-perfect">0</span>/<span id="jump-required">3</span></span><span>🏆 <span id="jump-best">0</span></span></div>
+                <div class="flex-row"><span>🎯 <span id="jump-perfect">0</span>/<span id="jump-required">3</span></span><span>🔥 Racha: <span id="piscina-combo">0</span></span><span>🏆 <span id="jump-best">0</span></span></div>
                 <div class="lives-container" id="piscina-lives"></div>
                 <button class="start-game-btn" id="piscina-start-btn" onclick="iniciarJuegoPiscina()">▶ INICIAR JUEGO</button>
-                <div class="slingshot-area" id="slingshot-area" onmousedown="startSlingshot(event)" onmouseup="releaseSlingshot()" ontouchstart="startSlingshot(event)" ontouchend="releaseSlingshot()">
-                    <div style="position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);text-align:center;pointer-events:none;">
-                        MANTÉN PARA CARGAR<br>SUELTA PARA SALTAR<br><span id="jump-power-display" style="font-size:24px;color:white;">0%</span>
+                <div class="slingshot-area" id="slingshot-area">
+                    <div style="position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.5);text-align:center;pointer-events:none;">
+                        <span id="jump-power-display" style="font-size:32px;color:white;font-weight:800;">0%</span>
                     </div>
-                    <div class="power-meter"><div class="power-fill-bar" id="power-fill"></div><div class="power-needle" id="power-needle"></div></div>
+                    <div class="power-meter" id="power-meter-track"><div class="power-zone-verde" id="power-zone"></div><div class="power-needle" id="power-needle"></div></div>
                     <div class="power-labels"><span>0%</span><span>50%</span><span>100%</span></div>
+                    <button class="jump-tap-btn" id="jump-tap-btn" onclick="saltarPiscina()">💦 ¡SALTAR!</button>
                 </div>
                 <div id="jump-result" style="text-align:center;margin-top:10px;font-size:18px;"></div>
                 <div id="piscina-revive" class="revive-btn" style="display:none;" onclick="reviveGame('piscina')">❤️ Revivir</div>
