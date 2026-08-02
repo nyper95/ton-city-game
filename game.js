@@ -1052,68 +1052,102 @@ function jugarHighLow(eleccion) {
     if (eleccion === 'low' && numero < 5000) gana = true;
     if (eleccion === 'high' && numero >= 5000) gana = true;
     const numeroElem = document.getElementById('hl-number');
-    if (numeroElem) numeroElem.textContent = numero.toString().padStart(4, '0');
-    const balanceElem = document.getElementById('hl-balance');
-    if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
-    const resultadoElem = document.getElementById('hl-result');
-    if (gana) {
-        const ganancia = apuesta * 2;
-        userData.diamonds = userData.diamonds + ganancia;
-        if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
-        if (navigator.vibrate) navigator.vibrate(50);
-    } else {
-        if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
-    }
-    actualizarUI();
-    saveUserData();
+    if (numeroElem) numeroElem.classList.add('spinning');
+    let vueltas = 0;
+    const spinInterval = setInterval(function() {
+        if (numeroElem) numeroElem.textContent = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        vueltas++;
+        if (vueltas >= 10) {
+            clearInterval(spinInterval);
+            if (numeroElem) {
+                numeroElem.classList.remove('spinning');
+                numeroElem.textContent = numero.toString().padStart(4, '0');
+            }
+            const balanceElem = document.getElementById('hl-balance');
+            if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
+            const resultadoElem = document.getElementById('hl-result');
+            if (gana) {
+                const ganancia = apuesta * 2;
+                userData.diamonds = userData.diamonds + ganancia;
+                if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
+                if (navigator.vibrate) navigator.vibrate(50);
+                spawnConfetti();
+            } else {
+                if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
+            }
+            actualizarUI();
+            saveUserData();
+        }
+    }, 70);
+}
+
+let numeroElegidoRuleta = null;
+
+function mostrarPanelNumero() {
+    const panel = document.getElementById('ruleta-numero-panel');
+    if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function confirmarNumeroRuleta() {
+    const input = document.getElementById('ruleta-numero-input');
+    const elegido = parseInt(input.value);
+    if (isNaN(elegido) || elegido < 0 || elegido > 36) return alert('❌ Elige un número entre 0 y 36');
+    numeroElegidoRuleta = elegido;
+    jugarRuleta('numero');
+    document.getElementById('ruleta-numero-panel').style.display = 'none';
 }
 
 function jugarRuleta(tipo) {
     const apuesta = apuestaActual.ruleta;
     if (userData.diamonds < apuesta) return alert('❌ Diamantes insuficientes');
     if (!puedeJugar('ruleta')) return alert('❌ Límite diario');
+    if (tipo === 'numero' && numeroElegidoRuleta === null) return;
     userData.diamonds = userData.diamonds - apuesta;
     registrarJugada('ruleta');
     let numero = Math.random() < 0.03 ? 0 : Math.floor(Math.random() * 37);
     const numeroElem = document.getElementById('ruleta-number');
-    if (numeroElem) numeroElem.textContent = numero;
-    const balanceElem = document.getElementById('ruleta-balance');
-    if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
-    let gana = false;
-    switch (tipo) {
-        case 'rojo':
-            const rojos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
-            gana = rojos.indexOf(numero) !== -1;
-            break;
-        case 'negro':
-            const negros = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35];
-            gana = negros.indexOf(numero) !== -1;
-            break;
-        case 'par': gana = numero !== 0 && numero % 2 === 0; break;
-        case 'impar': gana = numero % 2 === 1; break;
-        case 'bajo': gana = numero >= 1 && numero <= 18; break;
-        case 'alto': gana = numero >= 19 && numero <= 36; break;
-        case 'numero':
-            const elegido = parseInt(prompt('Elige un número del 0 al 36:'));
-            if (isNaN(elegido) || elegido < 0 || elegido > 36) {
-                userData.diamonds = userData.diamonds + apuesta;
-                actualizarUI();
-                return;
-            }
-            gana = numero === elegido;
-            break;
+    const ruedaElem = document.getElementById('ruleta-wheel');
+    if (ruedaElem) {
+        ruedaElem.classList.remove('spinning');
+        void ruedaElem.offsetWidth;
+        ruedaElem.classList.add('spinning');
     }
-    const resultadoElem = document.getElementById('ruleta-result');
-    if (gana) {
-        const ganancia = (tipo === 'numero') ? apuesta * 36 : apuesta * 2;
-        userData.diamonds = userData.diamonds + ganancia;
-        if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
-        if (navigator.vibrate) navigator.vibrate(50);
-    } else {
-        if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
-    }
-    actualizarUI();
-    saveUserData();
+    setTimeout(function() {
+        if (numeroElem) numeroElem.textContent = numero;
+        const balanceElem = document.getElementById('ruleta-balance');
+        if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
+        let gana = false;
+        switch (tipo) {
+            case 'rojo':
+                const rojos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+                gana = rojos.indexOf(numero) !== -1;
+                break;
+            case 'negro':
+                const negros = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35];
+                gana = negros.indexOf(numero) !== -1;
+                break;
+            case 'par': gana = numero !== 0 && numero % 2 === 0; break;
+            case 'impar': gana = numero % 2 === 1; break;
+            case 'bajo': gana = numero >= 1 && numero <= 18; break;
+            case 'alto': gana = numero >= 19 && numero <= 36; break;
+            case 'numero':
+                gana = numero === numeroElegidoRuleta;
+                numeroElegidoRuleta = null;
+                break;
+        }
+        const resultadoElem = document.getElementById('ruleta-result');
+        if (gana) {
+            const ganancia = (tipo === 'numero') ? apuesta * 36 : apuesta * 2;
+            userData.diamonds = userData.diamonds + ganancia;
+            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
+            if (navigator.vibrate) navigator.vibrate(50);
+            spawnConfetti();
+        } else {
+            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
+        }
+        actualizarUI();
+        saveUserData();
+    }, 1200);
 }
 
 function jugarTragaperras() {
@@ -1124,7 +1158,12 @@ function jugarTragaperras() {
     registrarJugada('tragaperras');
     const slots = document.querySelectorAll('.slot');
     slots.forEach(function(slot) { slot.classList.add('spinning'); });
+    const simbolosSpin = ['💎', '₿', 'Ξ', '🪙', '📈', '📉'];
+    const spinCycle = setInterval(function() {
+        slots.forEach(function(slot) { slot.textContent = simbolosSpin[Math.floor(Math.random() * simbolosSpin.length)]; });
+    }, 80);
     setTimeout(function() {
+        clearInterval(spinCycle);
         const simbolos = [
             { nombre: '💎', multiplicador: 30 },
             { nombre: '₿', multiplicador: 15 },
@@ -1178,7 +1217,12 @@ function jugarDados(eleccion) {
     const dado2Elem = document.getElementById('dado2');
     if (dado1Elem) dado1Elem.classList.add('rolling');
     if (dado2Elem) dado2Elem.classList.add('rolling');
+    const dadosSpinCycle = setInterval(function() {
+        if (dado1Elem) dado1Elem.textContent = caras[Math.floor(Math.random() * 6)];
+        if (dado2Elem) dado2Elem.textContent = caras[Math.floor(Math.random() * 6)];
+    }, 70);
     setTimeout(function() {
+        clearInterval(dadosSpinCycle);
         if (dado1Elem) { dado1Elem.textContent = caras[dado1 - 1]; dado1Elem.classList.remove('rolling'); }
         if (dado2Elem) { dado2Elem.textContent = caras[dado2 - 1]; dado2Elem.classList.remove('rolling'); }
         const suma = dado1 + dado2;
@@ -1229,23 +1273,37 @@ function jugarRuletaRusa(camara) {
     const bala = Math.floor(Math.random() * 6) + 1;
     const gana = camara !== bala;
     const emojiElem = document.getElementById('ruletarusa-emoji');
-    if (emojiElem) emojiElem.textContent = gana ? '🎉' : '💥';
-    const balanceElem = document.getElementById('ruletarusa-balance');
-    if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
-    const resultadoElem = document.getElementById('ruletarusa-result');
-    if (gana) {
-        const ganancia = apuesta * 3;
-        userData.diamonds = userData.diamonds + ganancia;
-        if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡SOBREVIVISTE! +' + ganancia + ' 💎</span>';
-        spawnConfetti();
-        if (navigator.vibrate) navigator.vibrate(100);
-    } else {
-        if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;font-size:20px;">💥 ¡La bala estaba en la cámara ' + bala + '! Perdiste ' + apuesta + ' 💎</span>';
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
-    }
-    actualizarUI();
-    saveUserData();
-    crearCamarasRuletaRusa();
+    if (emojiElem) emojiElem.textContent = '🔫';
+    const botones = document.querySelectorAll('#ruletarusa-camaras button');
+    botones.forEach(function(b) { b.disabled = true; });
+    let vueltas = 0;
+    const suspenso = setInterval(function() {
+        botones.forEach(function(b) { b.classList.remove('camara-activa'); });
+        const activa = botones[vueltas % botones.length];
+        if (activa) activa.classList.add('camara-activa');
+        vueltas++;
+        if (vueltas >= 12) {
+            clearInterval(suspenso);
+            botones.forEach(function(b) { b.classList.remove('camara-activa'); });
+            if (emojiElem) emojiElem.textContent = gana ? '🎉' : '💥';
+            const balanceElem = document.getElementById('ruletarusa-balance');
+            if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
+            const resultadoElem = document.getElementById('ruletarusa-result');
+            if (gana) {
+                const ganancia = apuesta * 3;
+                userData.diamonds = userData.diamonds + ganancia;
+                if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡SOBREVIVISTE! +' + ganancia + ' 💎</span>';
+                spawnConfetti();
+                if (navigator.vibrate) navigator.vibrate(100);
+            } else {
+                if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;font-size:20px;">💥 ¡La bala estaba en la cámara ' + bala + '! Perdiste ' + apuesta + ' 💎</span>';
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+            }
+            actualizarUI();
+            saveUserData();
+            crearCamarasRuletaRusa();
+        }
+    }, 120);
 }
 
 // ==========================================
@@ -1257,6 +1315,8 @@ function openBuilding(building) {
     const modalId = 'modal' + nombreCapitalizado;
     showModal(modalId);
     actualizarPanelMejora(building);
+    const headerLevelElem = document.getElementById(building + '-game-level');
+    if (headerLevelElem) headerLevelElem.textContent = userData['lvl_' + building] || 0;
 }
 
 function actualizarPanelMejora(building) {
@@ -1422,7 +1482,7 @@ function mostrarSecuenciaEscuela() {
     let indice = 0;
     const velocidad = Math.max(300, 800 - escuelaLevel * 10);
     function mostrarSiguiente() {
-        if (indice >= escuelaSequence.length) { crearPupitres(); return; }
+        if (indice >= escuelaSequence.length) { display.innerHTML = ''; crearPupitres(); return; }
         display.innerHTML = '';
         const carta = document.createElement('div');
         carta.className = 'sequence-card highlight';
@@ -1514,6 +1574,22 @@ function iniciarJuegoFabrica() {
     crearPiezasFabrica();
 }
 
+function crearUnaPiezaFabrica() {
+    const belt = document.getElementById('conveyor');
+    if (!belt || !gameActiveStates.fabrica) return;
+    const piece = document.createElement('div');
+    piece.className = 'moving-piece';
+    const isGood = Math.random() > Math.min(0.25, fabricaLevel / 200);
+    piece.classList.add(isGood ? 'piece-good' : 'piece-bad');
+    piece.textContent = isGood ? '🔧' : '💢';
+    piece.style.top = (20 + Math.random() * 60) + 'px';
+    piece.style.animationDuration = (3 + Math.random() * 4) + 's';
+    piece.style.animationDelay = '0s';
+    piece.onclick = function(e) { e.stopPropagation(); checkFabricaHitPiece(this); };
+    belt.appendChild(piece);
+    fabricaPieces.push({ el: piece, isGood: isGood, clicked: false });
+}
+
 function crearPiezasFabrica() {
     const belt = document.getElementById('conveyor');
     if (!belt) return;
@@ -1522,18 +1598,15 @@ function crearPiezasFabrica() {
     fabricaPieces = [];
     const numPieces = Math.min(2 + Math.floor(fabricaLevel / 20), 8);
     for (let i = 0; i < numPieces; i++) {
-        const piece = document.createElement('div');
-        piece.className = 'moving-piece';
-        const isGood = Math.random() > Math.min(0.25, fabricaLevel / 200);
-        piece.classList.add(isGood ? 'piece-good' : 'piece-bad');
-        piece.textContent = isGood ? '🔧' : '💢';
-        piece.style.top = (20 + Math.random() * 60) + 'px';
-        piece.style.animationDuration = (3 + Math.random() * 4) + 's';
-        piece.style.animationDelay = (Math.random() * 3) + 's';
-        piece.onclick = function(e) { e.stopPropagation(); checkFabricaHitPiece(this); };
-        belt.appendChild(piece);
-        fabricaPieces.push({ el: piece, isGood: isGood, clicked: false });
+        crearUnaPiezaFabrica();
     }
+    // Mantiene la cinta siempre con piezas disponibles: cada pocos segundos
+    // revisa si faltan piezas jugables y agrega una nueva.
+    fabricaAnimInterval = setInterval(function() {
+        if (!gameActiveStates.fabrica) { clearInterval(fabricaAnimInterval); return; }
+        const piezasVivas = fabricaPieces.filter(function(p) { return !p.clicked; }).length;
+        if (piezasVivas < numPieces) crearUnaPiezaFabrica();
+    }, 1500);
 }
 
 function checkFabricaHitPiece(piece) {
@@ -1581,6 +1654,7 @@ function checkFabricaHitPiece(piece) {
     } else if (!inZone) {
         if (!loseLife('fabrica')) return;
         document.getElementById('asm-result').innerHTML = '<span style="color:#ef4444;">❌ Fuera de zona</span>';
+        setTimeout(function() { piece.remove(); }, 300);
     }
     setTimeout(function() { document.getElementById('asm-result').innerHTML = ''; }, 1000);
 }
@@ -1717,8 +1791,6 @@ function crearCelulasHospital() {
     const area = document.getElementById('surgery-area');
     if (!area) return;
     area.querySelectorAll('.cell').forEach(function(c) { c.remove(); });
-    const targetIndicator = document.getElementById('target-indicator');
-    if (targetIndicator) targetIndicator.style.display = 'flex';
     const totalCells = hospitalTotal + Math.floor(hospitalLevel / 5) + 3;
     for (let i = 0; i < totalCells; i++) {
         const celula = document.createElement('div');
@@ -1887,6 +1959,17 @@ async function loadUserFromDB(tgId) {
             };
             await _supabase.from('game_data').insert([nuevoUsuario]);
             userData = Object.assign({}, userData, nuevoUsuario, { id: tgId.toString() });
+            // Si esta persona entró con un código de invitación, acreditar a quien la invitó
+            const codigoInvitacion = tg.initDataUnsafe && tg.initDataUnsafe.start_param;
+            if (codigoInvitacion) {
+                try {
+                    await fetch('/api/register-referral', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ newUserId: tgId.toString(), referralCode: codigoInvitacion })
+                    });
+                } catch (e) { console.error('Error registrando referido:', e); }
+            }
         } else {
             const datos = resultado.data;
             userData = Object.assign({}, userData, datos, {
