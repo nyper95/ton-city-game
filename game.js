@@ -364,15 +364,21 @@ function openFriends() {
 
 function copyReferralCode() {
     if (!userData.referral_code) return alert('❌ Código de referencia no disponible');
-    const enlaceCompleto = 'https://t.me/ton_city_bot?start=' + userData.referral_code;
+    const enlaceCompleto = 'https://t.me/City_Diamond_Bot?start=' + userData.referral_code;
+    const mensaje = '🏙️💎 ¡Únete a Diamond City!\n\n' +
+        '🏢 Construye tu propia metrópolis\n' +
+        '💎 Genera diamantes con tus edificios\n' +
+        '🎰 Juega en el casino y gana premios\n' +
+        '🏆 Compite por ser el mejor alcalde\n\n' +
+        '¡Entra con mi enlace y arrancamos juntos! 👇\n' + enlaceCompleto;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(enlaceCompleto).then(function() {
-            alert('✅ ¡Enlace copiado!');
+        navigator.clipboard.writeText(mensaje).then(function() {
+            alert('✅ ¡Mensaje de invitación copiado! Pégalo donde quieras compartirlo.');
         }).catch(function() {
-            prompt('Copia este enlace:', enlaceCompleto);
+            prompt('Copia este mensaje:', mensaje);
         });
     } else {
-        prompt('Copia este enlace:', enlaceCompleto);
+        prompt('Copia este mensaje:', mensaje);
     }
 }
 
@@ -1001,14 +1007,16 @@ function cerrarJuego() {
 }
 
 function cambiarApuesta(juego, delta) {
+    const prefijos = { highlow: 'hl' };
+    const prefijo = prefijos[juego] || juego;
     const valorActual = apuestaActual[juego] || 10;
     let nuevoValor = valorActual + delta;
     if (nuevoValor < 1) nuevoValor = 1;
     if (nuevoValor > 1000) nuevoValor = 1000;
     apuestaActual[juego] = nuevoValor;
-    const displayElem = document.getElementById(juego + '-bet-display');
+    const displayElem = document.getElementById(prefijo + '-bet-display');
     if (displayElem) displayElem.textContent = nuevoValor;
-    const betElem = document.getElementById(juego + '-bet');
+    const betElem = document.getElementById(prefijo + '-bet');
     if (betElem) betElem.textContent = nuevoValor + ' 💎';
 }
 
@@ -1662,59 +1670,88 @@ function checkFabricaHitPiece(piece) {
 // ==========================================
 // MINIJUEGO 3: PISCINA (AGUJA ANIMADA)
 // ==========================================
+let piscinaCombo = 0;
+let piscinaDireccion = 1;
+let piscinaZonaInicio = 30;
+let piscinaZonaFin = 70;
+
 function iniciarJuegoPiscina() {
     gameActiveStates.piscina = true;
     piscinaLevel = userData.gameStats.piscina.currentLevel || 1;
     piscinaBest = userData.gameStats.piscina.bestLevel || 0;
     piscinaPerfect = 0;
+    piscinaCombo = 0;
     piscinaRequired = Math.min(3 + Math.floor(piscinaLevel / 30), 8);
     gameLives.piscina = userData.gameStats.piscina.lives || 3;
     updateLivesUI('piscina');
     document.getElementById('jump-perfect').textContent = piscinaPerfect;
     document.getElementById('jump-required').textContent = piscinaRequired;
     document.getElementById('jump-best').textContent = piscinaBest;
+    document.getElementById('piscina-combo').textContent = piscinaCombo;
     document.getElementById('piscina-game-level').textContent = piscinaLevel;
     document.getElementById('jump-result').innerHTML = '';
-    piscinaPower = 0;
-    piscinaHoldStart = 0;
     piscinaGameStarted = true;
-    document.getElementById('power-fill').style.width = '0%';
-    document.getElementById('power-needle').style.left = '0%';
-    document.getElementById('jump-power-display').textContent = '0%';
     const startBtn = document.getElementById('piscina-start-btn');
     if (startBtn) startBtn.style.display = 'none';
+    iniciarRondaPiscina();
 }
 
-function startSlingshot(e) {
-    if (!gameActiveStates.piscina || !piscinaGameStarted) return;
-    e.preventDefault();
-    piscinaHoldStart = Date.now();
+function iniciarRondaPiscina() {
+    // La zona verde se achica y la velocidad sube con el nivel: más difícil con el tiempo
+    const anchoZona = Math.max(14, 40 - piscinaLevel * 0.8);
+    const centro = 35 + Math.random() * 30;
+    piscinaZonaInicio = Math.max(2, centro - anchoZona / 2);
+    piscinaZonaFin = Math.min(98, centro + anchoZona / 2);
+    const zonaElem = document.getElementById('power-zone');
+    if (zonaElem) {
+        zonaElem.style.left = piscinaZonaInicio + '%';
+        zonaElem.style.width = (piscinaZonaFin - piscinaZonaInicio) + '%';
+    }
+    piscinaPower = 0;
+    piscinaDireccion = 1;
+    const duracionCiclo = Math.max(700, 1600 - piscinaLevel * 15); // ms para un recorrido completo
     if (piscinaChargeInterval) clearInterval(piscinaChargeInterval);
+    const pasoPorTick = (100 / (duracionCiclo / 30)) * 2;
     piscinaChargeInterval = setInterval(function() {
-        const transcurrido = Date.now() - piscinaHoldStart;
-        piscinaPower = Math.min(100, transcurrido / 15);
-        document.getElementById('power-fill').style.width = piscinaPower + '%';
-        document.getElementById('power-needle').style.left = piscinaPower + '%';
-        document.getElementById('jump-power-display').textContent = Math.floor(piscinaPower) + '%';
+        piscinaPower += pasoPorTick * piscinaDireccion;
+        if (piscinaPower >= 100) { piscinaPower = 100; piscinaDireccion = -1; }
+        if (piscinaPower <= 0) { piscinaPower = 0; piscinaDireccion = 1; }
+        const needle = document.getElementById('power-needle');
+        if (needle) needle.style.left = piscinaPower + '%';
+        const display = document.getElementById('jump-power-display');
+        if (display) display.textContent = Math.floor(piscinaPower) + '%';
     }, 30);
 }
 
-function releaseSlingshot() {
-    if (!gameActiveStates.piscina || !piscinaGameStarted || piscinaHoldStart === 0) return;
+function crearSplash(exito) {
+    const area = document.getElementById('slingshot-area');
+    if (!area) return;
+    const emojis = exito ? ['💧', '✨', '🌊'] : ['💦'];
+    for (let i = 0; i < 6; i++) {
+        const drop = document.createElement('div');
+        drop.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        drop.style.cssText = 'position:absolute;left:' + (40 + Math.random() * 20) + '%;bottom:20px;font-size:' + (16 + Math.random() * 10) + 'px;animation:splashDrop 0.7s ease forwards;pointer-events:none;z-index:20;';
+        area.appendChild(drop);
+        setTimeout(function() { if (drop.parentNode) drop.remove(); }, 700);
+    }
+}
+
+function saltarPiscina() {
+    if (!gameActiveStates.piscina || !piscinaGameStarted) return;
     if (piscinaChargeInterval) clearInterval(piscinaChargeInterval);
-    const duracion = Date.now() - piscinaHoldStart;
-    piscinaPower = Math.min(100, duracion / 15);
-    piscinaHoldStart = 0;
-    document.getElementById('power-fill').style.width = '0%';
-    document.getElementById('power-needle').style.left = '0%';
-    document.getElementById('jump-power-display').textContent = '0%';
-    const esPerfecto = piscinaPower > 36 && piscinaPower < 64;
+    const potenciaFinal = piscinaPower;
+    const esPerfecto = potenciaFinal >= piscinaZonaInicio && potenciaFinal <= piscinaZonaFin;
     if (esPerfecto) {
+        piscinaCombo++;
         piscinaPerfect++;
         document.getElementById('jump-perfect').textContent = piscinaPerfect;
-        document.getElementById('jump-result').innerHTML = '<span style="color:#4ade80;">🎯 ¡Clavado perfecto! (' + Math.floor(piscinaPower) + '%)</span>';
+        document.getElementById('piscina-combo').textContent = piscinaCombo;
+        crearSplash(true);
+        const bonusCombo = 1 + Math.min(piscinaCombo * 0.1, 1);
+        document.getElementById('jump-result').innerHTML = '<span style="color:#4ade80;">🎯 ¡Clavado perfecto! x' + bonusCombo.toFixed(1) + '</span>';
+        if (navigator.vibrate) navigator.vibrate(40);
         if (piscinaPerfect >= piscinaRequired) {
-            const recompensa = calcularRecompensa(6, 'piscina');
+            const recompensa = Math.floor(calcularRecompensa(6, 'piscina') * bonusCombo);
             userData.diamonds = userData.diamonds + recompensa;
             piscinaLevel++;
             if (piscinaLevel > piscinaBest) {
@@ -1734,15 +1771,26 @@ function releaseSlingshot() {
             saveUserData();
             if (navigator.vibrate) navigator.vibrate(100);
             spawnConfetti();
-            setTimeout(function() { iniciarJuegoPiscina(); }, 2000);
+            setTimeout(function() { iniciarJuegoPiscina(); }, 1800);
             return;
         }
     } else {
-        loseLife('piscina');
-        document.getElementById('jump-result').innerHTML = '<span style="color:#ef4444;">💧 ¡Fallaste! Potencia: ' + Math.floor(piscinaPower) + '% (Necesitas 40-60%)</span>';
+        piscinaCombo = 0;
+        document.getElementById('piscina-combo').textContent = piscinaCombo;
+        crearSplash(false);
+        const sigueVivo = loseLife('piscina');
+        if (sigueVivo) {
+            document.getElementById('jump-result').innerHTML = '<span style="color:#ef4444;">💦 ¡Fallaste! (' + Math.floor(potenciaFinal) + '%, zona ' + Math.floor(piscinaZonaInicio) + '-' + Math.floor(piscinaZonaFin) + '%)</span>';
+        } else {
+            return;
+        }
     }
-    piscinaPower = 0;
-    setTimeout(function() { document.getElementById('jump-result').innerHTML = ''; }, 1500);
+    setTimeout(function() {
+        if (gameActiveStates.piscina && gameLives.piscina > 0) {
+            document.getElementById('jump-result').innerHTML = '';
+            iniciarRondaPiscina();
+        }
+    }, 1200);
 }
 
 // ==========================================
@@ -1917,7 +1965,8 @@ async function saveUserData() {
             gamestats: userData.gameStats,
             referral_earnings: userData.referral_earnings || 0,
             last_ad_watch: userData.last_ad_watch,
-            last_casino_rescue: userData.last_casino_rescue
+            last_casino_rescue: userData.last_casino_rescue,
+            last_production_update: userData.last_production_update || new Date().toISOString()
         };
         const resultado = await _supabase.from('game_data').update(datos).eq('telegram_id', userData.id);
         if (resultado.error) {
@@ -1950,6 +1999,7 @@ async function loadUserFromDB(tgId) {
                 accumulated_ton: 0,
                 retiradoHoy: 0,
                 last_withdraw_week: null,
+                last_production_update: new Date().toISOString(),
                 gamestats: {
                     escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
                     fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
@@ -1992,6 +2042,7 @@ async function loadUserFromDB(tgId) {
                 referral_code: datos.referral_code || 'REF' + tgId.toString().slice(-6),
                 last_ad_watch: datos.last_ad_watch || null,
                 last_casino_rescue: datos.last_casino_rescue || null,
+                last_production_update: datos.last_production_update || null,
                 gameStats: datos.gamestats || {
                     escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
                     fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
@@ -1999,6 +2050,7 @@ async function loadUserFromDB(tgId) {
                     hospital: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 }
                 }
             });
+            aplicarProduccionOffline();
         }
         document.getElementById('user-display').textContent = userData.username;
         actualizarUI();
@@ -2016,9 +2068,29 @@ function startProduction() {
         if (!userData.id) return;
         const produccionPorSegundo = getTotalProduction() / 3600;
         userData.diamonds = userData.diamonds + produccionPorSegundo;
+        userData.last_production_update = new Date().toISOString();
         const diamantesElem = document.getElementById('diamonds');
         if (diamantesElem) diamantesElem.textContent = Math.floor(userData.diamonds);
     }, 1000);
+}
+
+function aplicarProduccionOffline() {
+    if (!userData.last_production_update) {
+        userData.last_production_update = new Date().toISOString();
+        return;
+    }
+    const ahora = new Date();
+    const ultimaVez = new Date(userData.last_production_update);
+    let segundosTranscurridos = (ahora - ultimaVez) / 1000;
+    if (segundosTranscurridos <= 0) return;
+    // Tope de 12 horas para evitar abusos si alguien manipula la fecha del teléfono
+    const TOPE_SEGUNDOS = 12 * 60 * 60;
+    if (segundosTranscurridos > TOPE_SEGUNDOS) segundosTranscurridos = TOPE_SEGUNDOS;
+    const produccionGanada = (getTotalProduction() / 3600) * segundosTranscurridos;
+    if (produccionGanada > 0) {
+        userData.diamonds = userData.diamonds + produccionGanada;
+    }
+    userData.last_production_update = ahora.toISOString();
 }
 
 // ==========================================
@@ -2108,6 +2180,7 @@ window.switchTab = switchTab;
 window.iniciarJuegoEscuela = iniciarJuegoEscuela;
 window.iniciarJuegoFabrica = iniciarJuegoFabrica;
 window.iniciarJuegoPiscina = iniciarJuegoPiscina;
+window.saltarPiscina = saltarPiscina;
 window.iniciarJuegoHospital = iniciarJuegoHospital;
 window.checkFabricaHitPiece = checkFabricaHitPiece;
 window.startSlingshot = startSlingshot;
