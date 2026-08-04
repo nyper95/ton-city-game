@@ -340,7 +340,7 @@ function actualizarPerfil() {
     const rangoElem = document.getElementById('perfil-rango-display');
     if (rangoElem) rangoElem.textContent = userData.rank || 'Ciudadano';
     const proyeccionElem = document.getElementById('perfil-proyeccion');
-    if (proyeccionElem) proyeccionElem.textContent = (userData.projectedReward || 0).toFixed(4) + ' GRAM';
+    if (proyeccionElem) proyeccionElem.textContent = Math.floor(userData.projectedReward || 0) + ' 💎';
     const premiumElem = document.getElementById('perfil-premium');
     if (premiumElem) premiumElem.textContent = esPremium() ? 'Sí ⭐' : 'No';
     const rankBadgeElem = document.getElementById('perfil-rank-badge');
@@ -396,9 +396,9 @@ function actualizarRankingModal() {
     const rangoElem = document.getElementById('user-rank-display');
     if (rangoElem) rangoElem.textContent = userData.rank || 'Ciudadano';
     const poolElem = document.getElementById('pool-total-ranking');
-    if (poolElem) poolElem.textContent = (globalPoolData.pool_ton || 0).toFixed(4) + ' GRAM';
+    if (poolElem) poolElem.textContent = 'Solo diamantes 💎, sin retiro real';
     const proyeccionElem = document.getElementById('projected-reward-display');
-    if (proyeccionElem) proyeccionElem.textContent = (userData.projectedReward || 0).toFixed(4) + ' GRAM';
+    if (proyeccionElem) proyeccionElem.textContent = Math.floor(userData.projectedReward || 0) + ' 💎';
 }
 
 // ==========================================
@@ -407,7 +407,6 @@ function actualizarRankingModal() {
 function openBank() {
     closeAll();
     showModal('modalBank');
-    switchBancoTab('compra');
     actualizarListaCompra();
 }
 
@@ -438,168 +437,18 @@ function actualizarListaCompra() {
     bankList.innerHTML = html;
 }
 
-function switchBancoTab(tab) {
-    bancoTabActual = tab;
-    const tabs = document.querySelectorAll('.banco-tab');
-    tabs.forEach(function(t, index) {
-        t.classList.remove('active');
-        if (tab === 'compra' && index === 0) t.classList.add('active');
-        if (tab === 'venta' && index === 1) t.classList.add('active');
-    });
-    const compraPanel = document.getElementById('banco-compra-panel');
-    const ventaPanel = document.getElementById('banco-venta-panel');
-    if (tab === 'compra') {
-        if (compraPanel) compraPanel.classList.remove('hidden');
-        if (ventaPanel) ventaPanel.classList.add('hidden');
-        actualizarListaCompra();
-    } else {
-        if (compraPanel) compraPanel.classList.add('hidden');
-        if (ventaPanel) ventaPanel.classList.remove('hidden');
-        actualizarPanelVenta();
-    }
-}
-
-function actualizarPanelVenta() {
-    const diamantesDisponibles = Math.floor(userData.diamonds || 0);
-    const poolTotal = globalPoolData.pool_ton || 0;
-    const ventaDiamondsElem = document.getElementById('venta-diamonds');
-    if (ventaDiamondsElem) ventaDiamondsElem.textContent = diamantesDisponibles;
-    const ventaPoolElem = document.getElementById('venta-pool');
-    if (ventaPoolElem) ventaPoolElem.textContent = poolTotal.toFixed(4) + ' GRAM';
-    const tasaBase = 10000;
-    const poolFactor = Math.max(0.5, Math.min(2, poolTotal / 10));
-    const tasaActual = Math.floor(tasaBase / poolFactor);
-    window._tasaVentaActual = tasaActual;
-    const tonRecibir = ventaCantidad / tasaActual;
-    const ventaTonRecibirElem = document.getElementById('venta-ton-recibir');
-    if (ventaTonRecibirElem) ventaTonRecibirElem.textContent = tonRecibir.toFixed(4) + ' GRAM';
-    const btnVender = document.getElementById('vender-btn');
-    const errorVenta = document.getElementById('venta-error');
-    if (!btnVender) return;
-    let walletConectada = false;
-    if (tonConnectUI && tonConnectUI.connected) walletConectada = true;
-    let hayError = false;
-    let mensajeError = '';
-    let textoBoton = '';
-    if (!walletConectada) {
-        hayError = true;
-        mensajeError = '⚠️ Conecta tu wallet en la pestaña COMPRAR primero';
-        textoBoton = '🔒 CONECTA WALLET PARA VENDER';
-    } else if (ventaCantidad > diamantesDisponibles) {
-        hayError = true;
-        mensajeError = '⚠️ No tienes suficientes diamantes';
-        textoBoton = '💎 DIAMANTES INSUFICIENTES';
-    } else if (tonRecibir < 1) {
-        hayError = true;
-        mensajeError = '⚠️ El mínimo de retiro es 1 GRAM';
-        textoBoton = '📉 MÍNIMO 1 GRAM';
-    } else if ((userData.retiradoHoy || 0) + tonRecibir > 5) {
-        hayError = true;
-        mensajeError = '⚠️ Límite diario de 5 TON alcanzado';
-        textoBoton = '🚫 LÍMITE DIARIO 5 GRAM';
-    } else if (tonRecibir > poolTotal) {
-        hayError = true;
-        mensajeError = '⚠️ No hay suficientes TON en el pool';
-        textoBoton = '🏊 POOL INSUFICIENTE';
-    } else {
-        textoBoton = '💱 CAMBIAR ' + ventaCantidad + ' 💎 POR ' + tonRecibir.toFixed(4) + ' GRAM';
-    }
-    btnVender.disabled = hayError;
-    btnVender.textContent = textoBoton;
-    if (errorVenta) {
-        if (hayError) {
-            errorVenta.style.display = 'block';
-            errorVenta.textContent = mensajeError;
-        } else {
-            errorVenta.style.display = 'none';
-        }
-    }
-}
-
-function onVentaInputChange() {
-    const input = document.getElementById('venta-input');
-    if (!input) return;
-    let valor = parseInt(input.value);
-    if (isNaN(valor) || valor < 100) valor = 100;
-    const diamantesDisponibles = userData.diamonds || 0;
-    if (valor > diamantesDisponibles) valor = diamantesDisponibles;
-    ventaCantidad = valor;
-    input.value = valor;
-    actualizarPanelVenta();
-}
-
-function setVentaPreset(cantidad) {
-    const diamantesDisponibles = userData.diamonds || 0;
-    ventaCantidad = Math.min(diamantesDisponibles, cantidad);
-    const input = document.getElementById('venta-input');
-    if (input) input.value = ventaCantidad;
-    actualizarPanelVenta();
-}
-
-function setVentaPresetMax() {
-    ventaCantidad = userData.diamonds || 0;
-    const input = document.getElementById('venta-input');
-    if (input) input.value = ventaCantidad;
-    actualizarPanelVenta();
-}
-
-async function venderDiamantes() {
-    const tasa = window._tasaVentaActual || 10000;
-    const tonRecibir = ventaCantidad / tasa;
-    if (!tonConnectUI || !tonConnectUI.connected) return alert('❌ Conecta tu wallet primero');
-    if (tonRecibir < 1) return alert('❌ El mínimo de retiro es 1 GRAM');
-    if (!confirm('¿Confirmas el cambio?\n\nDiamantes: ' + ventaCantidad + ' 💎\nRecibirás aproximadamente: ' + (tonRecibir - CONFIG.RED_TON_FEE).toFixed(4) + ' GRAM')) return;
-
-    try {
-        const resp = await fetch('/api/sell', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: userData.id,
-                diamondsAmount: ventaCantidad,
-                tonAddress: currentWallet.account.address
-            })
-        });
-        const data = await resp.json();
-
-        if (!data.success) {
-            alert('❌ ' + (data.error || 'No se pudo procesar la venta'));
-            return;
-        }
-
-        userData.diamonds = data.diamonds;
-        ventaCantidad = 100;
-        const input = document.getElementById('venta-input');
-        if (input) input.value = 100;
-        actualizarPanelVenta();
-        actualizarUI();
-        spawnConfetti();
-        alert('✅ ¡Transacción exitosa!\n\nRecibiste ' + data.tonEnviado.toFixed(4) + ' GRAM en tu wallet.');
-    } catch (error) {
-        console.error('Error en venta:', error);
-        alert('❌ Ocurrió un error procesando la venta, intenta de nuevo');
-    }
-}
-
 async function comprarTON(tonAmount) {
     if (!tonConnectUI || !tonConnectUI.connected) return alert('❌ Conecta tu wallet primero');
     const diamantesAComprar = Math.max(100, Math.floor(tonAmount / CONFIG.PRECIO_COMPRA));
     if (!confirm('¿Confirmas la compra?\n\nPagarás: ' + tonAmount.toFixed(2) + ' GRAM\nRecibirás: ' + diamantesAComprar + ' 💎')) return;
-
-    const montoPool = Math.floor(tonAmount * 0.8 * 1000000000);
-    const montoDueño = Math.floor(tonAmount * 0.2 * 1000000000);
 
     try {
         const transaccion = {
             validUntil: Math.floor(Date.now() / 1000) + 300,
             messages: [
                 {
-                    address: CONFIG.BILLETERA_POOL,
-                    amount: montoPool.toString()
-                },
-                {
                     address: CONFIG.BILLETERA_PROPIETARIO,
-                    amount: montoDueño.toString()
+                    amount: Math.floor(tonAmount * 1000000000).toString()
                 }
             ]
         };
@@ -651,8 +500,7 @@ async function initTONConnect() {
             }
             const modalBank = document.getElementById('modalBank');
             if (modalBank && modalBank.style.display === 'block') {
-                if (bancoTabActual === 'compra') actualizarListaCompra();
-                else actualizarPanelVenta();
+                actualizarListaCompra();
             }
         });
         console.log('✅ TON Connect inicializado');
@@ -1921,28 +1769,18 @@ async function updateRankingAndPool() {
             else userData.rank = "Ciudadano";
             userData.weekly_rank = posicion + 1;
         }
-        const poolUsuarios = globalPoolData.pool_ton * 0.8 * CONFIG.RESERVA_POOL;
-        if (posicion < 3) userData.projectedReward = (poolUsuarios * 0.4) / 3;
-        else if (posicion < 10) userData.projectedReward = (poolUsuarios * 0.25) / 7;
-        else if (posicion < 50) userData.projectedReward = (poolUsuarios * 0.20) / 40;
+        const PREMIO_SEMANAL_DIAMANTES = 20000;
+        if (posicion < 3) userData.projectedReward = (PREMIO_SEMANAL_DIAMANTES * 0.4) / 3;
+        else if (posicion < 10) userData.projectedReward = (PREMIO_SEMANAL_DIAMANTES * 0.25) / 7;
+        else if (posicion < 50) userData.projectedReward = (PREMIO_SEMANAL_DIAMANTES * 0.20) / 40;
         else {
             const ciudadanos = globalPoolData.user_rankings.slice(50);
             let totalDiamantesCiudadanos = 0;
             for (let i = 0; i < ciudadanos.length; i++) totalDiamantesCiudadanos = totalDiamantesCiudadanos + ciudadanos[i].diamonds;
-            if (totalDiamantesCiudadanos > 0 && userData.diamonds > 0) userData.projectedReward = (poolUsuarios * 0.15) * (userData.diamonds / totalDiamantesCiudadanos);
+            if (totalDiamantesCiudadanos > 0 && userData.diamonds > 0) userData.projectedReward = (PREMIO_SEMANAL_DIAMANTES * 0.15) * (userData.diamonds / totalDiamantesCiudadanos);
             else userData.projectedReward = 0;
         }
     } catch (error) { console.error('Error ranking:', error); }
-}
-
-async function updateRealPoolBalance() {
-    try {
-        const respuesta = await fetch('/api/pool-balance');
-        if (respuesta.ok) {
-            const datos = await respuesta.json();
-            if (datos.success) globalPoolData.pool_ton = datos.pool_ton;
-        }
-    } catch (error) { console.error('Error pool:', error); }
 }
 
 // ==========================================
@@ -2127,7 +1965,6 @@ async function initApp() {
     }
     await initTONConnect();
     setTimeout(initAds, 3000);
-    await updateRealPoolBalance();
     await updateRankingAndPool();
     startProduction();
     actualizarEventosUI();
@@ -2168,11 +2005,6 @@ window.buyUpgrade = buyUpgrade;
 window.closeAll = closeAll;
 window.copyReferralCode = copyReferralCode;
 window.disconnectWallet = disconnectWallet;
-window.switchBancoTab = switchBancoTab;
-window.onVentaInputChange = onVentaInputChange;
-window.setVentaPreset = setVentaPreset;
-window.setVentaPresetMax = setVentaPresetMax;
-window.venderDiamantes = venderDiamantes;
 window.startEventTask = startEventTask;
 window.reviveGame = reviveGame;
 window.useAdMultiplier = useAdMultiplier;
