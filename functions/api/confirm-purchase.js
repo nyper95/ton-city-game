@@ -1,8 +1,8 @@
 // ======================================================
-// TON CITY - /api/confirm-purchase (Cloudflare Pages Function)
-// v2: la compra ahora es UNA sola transacción con 2 mensajes
-// (80% al pool, 20% al dueño). Verificamos que el pago al POOL
-// realmente llegó antes de acreditar diamantes.
+// DIAMOND CITY - /api/confirm-purchase (Cloudflare Pages Function)
+// v3: ya no existe "pool" ni retiro real. El 100% del pago va
+// directo a la wallet del dueño. Este endpoint solo verifica que
+// el pago realmente llegó antes de acreditar diamantes.
 // ======================================================
 
 const PACKS = [
@@ -13,8 +13,6 @@ const PACKS = [
   { ton: 5.00, diamonds: 5000 },
   { ton: 10.00, diamonds: 10000 },
 ];
-
-const PORCENTAJE_POOL = 0.8;
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -28,16 +26,15 @@ export async function onRequestPost(context) {
     const pack = PACKS.find((p) => Math.abs(p.ton - Number(tonAmount)) < 0.0001);
     if (!pack) return json({ error: "Monto de compra no válido" }, 400);
 
-    const montoEsperadoEnPool = pack.ton * PORCENTAJE_POOL;
-
     const supaHeaders = {
       apikey: env.SUPABASE_SERVICE_KEY,
       Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
       "Content-Type": "application/json",
     };
 
+    // Verificar transacciones recientes a la wallet del DUEÑO (ya no al pool)
     const tcRes = await fetch(
-      `https://toncenter.com/api/v2/getTransactions?address=${env.POOL_ADDRESS}&limit=20`
+      `https://toncenter.com/api/v2/getTransactions?address=${env.OWNER_ADDRESS}&limit=20`
     );
     const tcData = await tcRes.json();
     const transacciones = tcData.result || [];
@@ -53,7 +50,7 @@ export async function onRequestPost(context) {
 
       if (!txHash) continue;
       if (ahoraSegundos - txTime > 300) continue;
-      if (Math.abs(tonRecibido - montoEsperadoEnPool) > 0.001) continue;
+      if (Math.abs(tonRecibido - pack.ton) > 0.001) continue;
 
       const seenRes = await fetch(
         `${env.SUPABASE_URL}/rest/v1/processed_transactions?tx_hash=eq.${encodeURIComponent(txHash)}&select=tx_hash`,
@@ -91,20 +88,6 @@ export async function onRequestPost(context) {
       method: "PATCH",
       headers: supaHeaders,
       body: JSON.stringify({ diamonds: nuevosDiamantes, haInvertido: true }),
-    });
-
-    const poolRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/game_data?telegram_id=eq.MASTER&select=pool_ton,total_diamonds`,
-      { headers: supaHeaders }
-    );
-    const poolRows = await poolRes.json();
-    const nuevoPool = Number(poolRows[0]?.pool_ton || 100) + montoEsperadoEnPool;
-    const nuevoTotal = Number(poolRows[0]?.total_diamonds || 100000) + pack.diamonds;
-
-    await fetch(`${env.SUPABASE_URL}/rest/v1/game_data?telegram_id=eq.MASTER`, {
-      method: "PATCH",
-      headers: supaHeaders,
-      body: JSON.stringify({ pool_ton: nuevoPool, total_diamonds: nuevoTotal }),
     });
 
     return json({ success: true, diamonds: nuevosDiamantes });
