@@ -44,6 +44,7 @@ let userData = {
     lvl_escuela: 0,
     lvl_hospital: 0,
     referral_code: null,
+    city_name: null,
     referral_earnings: 0,
     referred_users: [],
     last_online: null,
@@ -229,6 +230,55 @@ function calcularRecompensa(baseReward, building) {
     return Math.floor(baseReward * multiplier);
 }
 
+function mostrarOnboardingSiHaceFalta() {
+    if (!userData.city_name) {
+        const pantalla = document.getElementById('onboarding-screen');
+        if (pantalla) pantalla.classList.remove('hidden');
+    }
+}
+
+async function confirmarNombreCiudad() {
+    const input = document.getElementById('onboarding-city-input');
+    const nombre = input ? input.value.trim() : '';
+    if (!nombre || nombre.length < 2) return alert('❌ Escribe un nombre para tu ciudad (mínimo 2 letras)');
+    if (nombre.length > 20) return alert('❌ Máximo 20 caracteres');
+    userData.city_name = nombre;
+    const pantalla = document.getElementById('onboarding-screen');
+    if (pantalla) pantalla.classList.add('hidden');
+    actualizarUI();
+    await saveUserData();
+}
+
+function getConsejoAsistente() {
+    const hoy = new Date().toDateString();
+
+    if (userData.last_daily_claim !== hoy) {
+        return '¡Alcalde! Todavía no reclama su recompensa diaria de hoy. Está justo arriba, tocando el aviso amarillo. 🎁';
+    }
+    if ((userData.diamonds || 0) < 200) {
+        return 'Las arcas de la ciudad están un poco bajas. Puede ver un anuncio en el Parque de Diversiones para conseguir 20 💎 gratis, o comprar un pack en el Banco. 📉';
+    }
+    const nivelesBajos = ['lvl_piscina', 'lvl_fabrica', 'lvl_escuela', 'lvl_hospital'].filter(function(k) { return (userData[k] || 0) < 5; });
+    if (nivelesBajos.length > 0) {
+        return 'Sus edificios todavía pueden crecer bastante. Entre más los mejore, más diamantes producen cada hora sin que tenga que hacer nada. 🏗️';
+    }
+    if (!esPremium()) {
+        return '¿Sabía que los ciudadanos Premium producen el doble de diamantes y no ven anuncios obligatorios? Puede revisarlo en el edificio Premium. ⭐';
+    }
+    if ((userData.referred_users || []).length === 0) {
+        return 'Invitar amigos a ' + (userData.city_name || 'su ciudad') + ' le da diamantes extra a usted por cada uno que se una. Encuentre su código en la pestaña Amigos. 👥';
+    }
+    const evento = getEventoActual();
+    return 'Esta semana hay bonificación especial en ' + evento.nombre + '. Aproveche mientras dure para producir más rápido. 🎪';
+}
+
+function abrirAsistente() {
+    closeAll();
+    showModal('modalAsistente');
+    const mensajeElem = document.getElementById('asistente-mensaje');
+    if (mensajeElem) mensajeElem.textContent = getConsejoAsistente();
+}
+
 function actualizarUI() {
     const diamElem = document.getElementById('diamonds');
     if (diamElem) diamElem.textContent = Math.floor(userData.diamonds || 0);
@@ -244,6 +294,8 @@ function actualizarUI() {
     if (lvlHospital) lvlHospital.textContent = userData.lvl_hospital;
     const userDisplay = document.getElementById('user-display');
     if (userDisplay) userDisplay.textContent = userData.username || 'Usuario';
+    const cityNameElem = document.getElementById('city-name-display');
+    if (cityNameElem) cityNameElem.textContent = userData.city_name ? '🏙️ ' + userData.city_name : '';
     const casinoSaldo = document.getElementById('casino-saldo');
     if (casinoSaldo) casinoSaldo.textContent = Math.floor(userData.diamonds);
     const casinoRescue = document.getElementById('casino-rescue');
@@ -264,7 +316,7 @@ function closeAll() {
         'modalPerfil', 'modalFriends', 'modalRanking', 'modalBank', 'modalStore',
         'modalCasino', 'modalHighLow', 'modalRuleta', 'modalTragaperras', 'modalDados',
         'modalRuletaRusa', 'modalEscuela', 'modalFabrica', 'modalPiscina', 'modalHospital',
-        'modalEvent', 'modalDailyReward', 'modalAds'
+        'modalEvent', 'modalDailyReward', 'modalAds', 'modalAsistente'
     ];
     modals.forEach(function(id) {
         const modal = document.getElementById(id);
@@ -1804,7 +1856,8 @@ async function saveUserData() {
             referral_earnings: userData.referral_earnings || 0,
             last_ad_watch: userData.last_ad_watch,
             last_casino_rescue: userData.last_casino_rescue,
-            last_production_update: userData.last_production_update || new Date().toISOString()
+            last_production_update: userData.last_production_update || new Date().toISOString(),
+            city_name: userData.city_name || null
         };
         const resultado = await _supabase.from('game_data').update(datos).eq('telegram_id', userData.id);
         if (resultado.error) {
@@ -1881,6 +1934,7 @@ async function loadUserFromDB(tgId) {
                 last_ad_watch: datos.last_ad_watch || null,
                 last_casino_rescue: datos.last_casino_rescue || null,
                 last_production_update: datos.last_production_update || null,
+                city_name: datos.city_name || null,
                 gameStats: datos.gamestats || {
                     escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
                     fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
@@ -1971,6 +2025,7 @@ async function initApp() {
     setInterval(saveUserData, 10000);
     setInterval(async function() { await updateRankingAndPool(); actualizarEventosUI(); }, 60000);
     window.addEventListener('beforeunload', function() { saveUserData(); });
+    mostrarOnboardingSiHaceFalta();
     console.log('✅ DIAMOND CITY - Sistema completamente inicializado');
 }
 
@@ -2017,5 +2072,7 @@ window.iniciarJuegoHospital = iniciarJuegoHospital;
 window.checkFabricaHitPiece = checkFabricaHitPiece;
 window.startSlingshot = startSlingshot;
 window.releaseSlingshot = releaseSlingshot;
+window.confirmarNombreCiudad = confirmarNombreCiudad;
+window.abrirAsistente = abrirAsistente;
 
 console.log('📦 DIAMOND CITY - Todos los módulos exportados correctamente');
