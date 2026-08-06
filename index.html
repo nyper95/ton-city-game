@@ -75,6 +75,14 @@
         .ranking-ciudad{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
         .ranking-alcalde{font-size:11px;color:var(--text-secondary);}
         .ranking-produccion{font-size:13px;font-weight:700;color:var(--accent-green);white-space:nowrap;}
+        .feed-noticias{margin:0 20px 24px;background:var(--glass-bg);backdrop-filter:blur(10px);border:1px solid var(--glass-border);border-radius:20px;padding:6px;max-height:280px;overflow-y:auto;}
+        .feed-item{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:14px;}
+        .feed-item:not(:last-child){border-bottom:1px solid rgba(255,255,255,0.05);}
+        .feed-icono{font-size:20px;width:32px;text-align:center;flex-shrink:0;}
+        .feed-texto{flex:1;min-width:0;}
+        .feed-titulo{font-weight:700;font-size:13px;color:var(--primary);}
+        .feed-subtitulo{font-size:12px;color:var(--text-secondary);margin-top:2px;}
+        .feed-tiempo{font-size:10px;color:var(--text-secondary);opacity:0.6;margin-top:3px;}
         .asistente-boton{position:fixed;right:16px;bottom:90px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f472b6,#ec4899);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 4px 18px -4px rgba(236,72,153,0.6);cursor:pointer;z-index:50;}
         .asistente-boton.urgente{animation:pulse-glow 1.5s infinite;}
         .asistente-boton.urgente::after{content:'';position:absolute;top:2px;right:2px;width:15px;height:15px;border-radius:50%;background:#ef4444;border:2px solid var(--bg-dark);animation:parpadeoRojo 1s infinite;}
@@ -299,6 +307,12 @@
         <div class="building-card fabrica" onclick="openBuilding('fabrica')"><div class="building-icon"><i class="fa-solid fa-industry"></i></div><div class="building-name">Fábrica</div><div class="building-level">Nivel <span id="lvl_fabrica">0</span></div></div>
         <div class="building-card escuela" onclick="openBuilding('escuela')"><div class="building-icon"><i class="fa-solid fa-school"></i></div><div class="building-name">Escuela</div><div class="building-level">Nivel <span id="lvl_escuela">0</span></div></div>
         <div class="building-card hospital" onclick="openBuilding('hospital')"><div class="building-icon"><i class="fa-solid fa-hospital"></i></div><div class="building-name">Hospital</div><div class="building-level">Nivel <span id="lvl_hospital">0</span></div></div>
+    </div>
+
+    <!-- FEED DE NOTICIAS -->
+    <div class="section-title"><i class="fa-solid fa-newspaper"></i> Feed de Noticias</div>
+    <div id="feed-noticias" class="feed-noticias">
+        <div class="feed-item"><div class="feed-icono">👋</div><div class="feed-texto"><div class="feed-titulo">Bienvenido a su ciudad</div><div class="feed-subtitulo">Los eventos recientes aparecerán aquí</div></div></div>
     </div>
 
     <div class="overlay" id="overlay" onclick="closeAll()"></div>
