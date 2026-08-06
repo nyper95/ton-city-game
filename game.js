@@ -249,27 +249,36 @@ async function confirmarNombreCiudad() {
     await saveUserData();
 }
 
+function getSaludoValeria() {
+    const hora = new Date().getHours();
+    if (hora < 12) return '🏛️ Buenos días, Alcalde(sa).';
+    if (hora < 19) return '🏛️ Buenas tardes, Alcalde(sa).';
+    return '🏛️ Buenas noches, Alcalde(sa).';
+}
+
 function getConsejoAsistente() {
     const hoy = new Date().toDateString();
+    const saludo = getSaludoValeria();
+    const ciudad = userData.city_name || 'esta ciudad';
 
     if (userData.last_daily_claim !== hoy) {
-        return '¡Alcalde! Todavía no reclama su recompensa diaria de hoy. Está justo arriba, tocando el aviso amarillo. 🎁';
+        return saludo + '\n\n🔔 Informe pendiente: la recaudación diaria de ' + ciudad + ' todavía no ha sido reclamada. Le recomiendo autorizarla desde el aviso amarillo antes de continuar.';
     }
     if ((userData.diamonds || 0) < 200) {
-        return 'Las arcas de la ciudad están un poco bajas. Puede ver un anuncio en el Parque de Diversiones para conseguir 20 💎 gratis, o comprar un pack en el Banco. 📉';
+        return saludo + '\n\n💎 Las arcas municipales están por debajo de lo recomendable. Sugiero ver un anuncio en el Parque de Diversiones (+20 💎 sin costo) o autorizar una compra en el Banco.';
     }
     const nivelesBajos = ['lvl_piscina', 'lvl_fabrica', 'lvl_escuela', 'lvl_hospital'].filter(function(k) { return (userData[k] || 0) < 5; });
     if (nivelesBajos.length > 0) {
-        return 'Sus edificios todavía pueden crecer bastante. Entre más los mejore, más diamantes producen cada hora sin que tenga que hacer nada. 🏗️';
+        return saludo + '\n\n📊 He revisado los planos de infraestructura: varios edificios aún operan muy por debajo de su capacidad. Cada mejora incrementa la producción por hora de forma permanente. Recomiendo priorizar inversión ahí.';
     }
     if (!esPremium()) {
-        return '¿Sabía que los ciudadanos Premium producen el doble de diamantes y no ven anuncios obligatorios? Puede revisarlo en el edificio Premium. ⭐';
+        return saludo + '\n\n⚡ Un dato para su consideración: el estatus Premium duplica la producción de toda la ciudad y elimina los anuncios obligatorios. El retorno de inversión es considerable. Puede revisarlo en el edificio Premium.';
     }
     if ((userData.referred_users || []).length === 0) {
-        return 'Invitar amigos a ' + (userData.city_name || 'su ciudad') + ' le da diamantes extra a usted por cada uno que se una. Encuentre su código en la pestaña Amigos. 👥';
+        return saludo + '\n\n👥 ' + ciudad + ' todavía no tiene ciudadanos referidos. Cada persona que invite y se una le genera diamantes adicionales a usted. Encontrará su código de invitación en la pestaña Amigos.';
     }
     const evento = getEventoActual();
-    return 'Esta semana hay bonificación especial en ' + evento.nombre + '. Aproveche mientras dure para producir más rápido. 🎪';
+    return saludo + '\n\n🏆 Reporte semanal: hay bonificación especial activa en ' + evento.nombre + '. Le sugiero aprovecharla mientras dure para maximizar la recaudación de ' + ciudad + '.';
 }
 
 function abrirAsistente() {
@@ -284,6 +293,12 @@ function actualizarUI() {
     if (diamElem) diamElem.textContent = Math.floor(userData.diamonds || 0);
     const rateElem = document.getElementById('rate');
     if (rateElem) rateElem.textContent = Math.floor(getTotalProduction());
+    const promedioNiveles = ((userData.lvl_piscina || 0) + (userData.lvl_fabrica || 0) + (userData.lvl_escuela || 0) + (userData.lvl_hospital || 0)) / 4;
+    const pctNivel = Math.min(100, Math.round((promedioNiveles / 50) * 100));
+    const pctElem = document.getElementById('nivel-municipal-pct');
+    if (pctElem) pctElem.textContent = pctNivel + '%';
+    const gaugeNivel = document.getElementById('gauge-nivel');
+    if (gaugeNivel) gaugeNivel.style.background = 'conic-gradient(#a78bfa ' + (pctNivel * 3.6) + 'deg, rgba(255,255,255,0.08) ' + (pctNivel * 3.6) + 'deg)';
     const lvlPiscina = document.getElementById('lvl_piscina');
     if (lvlPiscina) lvlPiscina.textContent = userData.lvl_piscina;
     const lvlFabrica = document.getElementById('lvl_fabrica');
