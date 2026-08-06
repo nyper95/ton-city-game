@@ -45,6 +45,7 @@ let userData = {
     lvl_hospital: 0,
     referral_code: null,
     city_name: null,
+    newsFeed: [],
     referral_earnings: 0,
     referred_users: [],
     last_online: null,
@@ -228,6 +229,37 @@ function calcularRecompensa(baseReward, building) {
         pendingMultiplier = null;
     }
     return Math.floor(baseReward * multiplier);
+}
+
+function tiempoRelativo(iso) {
+    const segundos = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (segundos < 60) return 'Justo ahora';
+    if (segundos < 3600) return 'Hace ' + Math.floor(segundos / 60) + ' min';
+    if (segundos < 86400) return 'Hace ' + Math.floor(segundos / 3600) + ' h';
+    return 'Hace ' + Math.floor(segundos / 86400) + ' días';
+}
+
+function registrarEvento(icono, titulo, subtitulo) {
+    if (!userData.newsFeed) userData.newsFeed = [];
+    userData.newsFeed.unshift({ icono: icono, titulo: titulo, subtitulo: subtitulo, fecha: new Date().toISOString() });
+    userData.newsFeed = userData.newsFeed.slice(0, 15);
+    renderizarFeedNoticias();
+}
+
+function renderizarFeedNoticias() {
+    const cont = document.getElementById('feed-noticias');
+    if (!cont) return;
+    const eventos = userData.newsFeed || [];
+    if (eventos.length === 0) {
+        cont.innerHTML = '<div class="feed-item"><div class="feed-icono">👋</div><div class="feed-texto"><div class="feed-titulo">Bienvenido a su ciudad</div><div class="feed-subtitulo">Los eventos recientes aparecerán aquí</div></div></div>';
+        return;
+    }
+    let html = '';
+    for (let i = 0; i < eventos.length; i++) {
+        const e = eventos[i];
+        html += '<div class="feed-item"><div class="feed-icono">' + e.icono + '</div><div class="feed-texto"><div class="feed-titulo">' + e.titulo + '</div><div class="feed-subtitulo">' + e.subtitulo + '</div><div class="feed-tiempo">' + tiempoRelativo(e.fecha) + '</div></div></div>';
+    }
+    cont.innerHTML = html;
 }
 
 function mostrarOnboardingSiHaceFalta() {
@@ -581,6 +613,7 @@ async function comprarTON(tonAmount) {
         }
 
         userData.diamonds = data.diamonds;
+        registrarEvento('💎', 'Compra de diamantes confirmada', '+' + diamantesAComprar + ' 💎 acreditados');
         actualizarUI();
         spawnConfetti();
         alert('✅ ¡Compra exitosa!\n\nRecibiste ' + diamantesAComprar + ' 💎');
@@ -683,6 +716,7 @@ async function comprarPremium(days) {
         const fechaExpiracion = new Date();
         fechaExpiracion.setDate(fechaExpiracion.getDate() + days);
         userData.premium_expires = fechaExpiracion.toISOString();
+        registrarEvento('⭐', 'Estatus Premium activado', planSeleccionado.name + ' · Producción x2 habilitada');
         await saveUserData();
         actualizarPremiumUI();
         actualizarUI();
@@ -780,6 +814,7 @@ function showAd() {
         if (completado) {
             userData.diamonds = userData.diamonds + 20;
             userData.last_ad_watch = new Date().toISOString();
+            registrarEvento('📺', 'Anuncio patrocinador completado', '+20 💎 acreditados a la tesorería');
             saveUserData();
             actualizarUI();
             alert('🎁 ¡Gracias! Recibiste +20 💎');
@@ -875,6 +910,7 @@ async function claimDailyReward() {
     userData.diamonds = userData.diamonds + recompensa;
     userData.daily_streak = nuevoDia;
     userData.last_daily_claim = new Date().toISOString();
+    registrarEvento('🎁', 'Recompensa diaria reclamada', 'Día ' + nuevoDia + ' de 30 · +' + recompensa + ' 💎');
     await saveUserData();
     actualizarUI();
     spawnConfetti();
@@ -1324,6 +1360,10 @@ function buyUpgrade(building) {
     actualizarUI();
     actualizarPanelMejora(building);
     const nombres = { escuela: 'Escuela', fabrica: 'Fábrica', piscina: 'Piscina', hospital: 'Hospital' };
+    const iconos = { escuela: '🏫', fabrica: '🏭', piscina: '🏊', hospital: '🏥' };
+    const producciones = { escuela: 15, fabrica: 25, piscina: 10, hospital: 18 };
+    const produccionEdificio = userData['lvl_' + building] * producciones[building];
+    registrarEvento(iconos[building], nombres[building] + ' mejorada a nivel ' + userData['lvl_' + building], 'Ahora produce ' + produccionEdificio + ' 💎/h');
     alert('✅ ¡' + nombres[building] + ' mejorada a nivel ' + userData['lvl_' + building] + '!');
 }
 
@@ -1929,7 +1969,8 @@ async function saveUserData() {
             last_ad_watch: userData.last_ad_watch,
             last_casino_rescue: userData.last_casino_rescue,
             last_production_update: userData.last_production_update || new Date().toISOString(),
-            city_name: userData.city_name || null
+            city_name: userData.city_name || null,
+            news_feed: userData.newsFeed || []
         };
         const resultado = await _supabase.from('game_data').update(datos).eq('telegram_id', userData.id);
         if (resultado.error) {
@@ -2007,6 +2048,7 @@ async function loadUserFromDB(tgId) {
                 last_casino_rescue: datos.last_casino_rescue || null,
                 last_production_update: datos.last_production_update || null,
                 city_name: datos.city_name || null,
+                newsFeed: datos.news_feed || [],
                 gameStats: datos.gamestats || {
                     escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
                     fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
@@ -2098,6 +2140,7 @@ async function initApp() {
     setInterval(async function() { await updateRankingAndPool(); actualizarEventosUI(); }, 60000);
     window.addEventListener('beforeunload', function() { saveUserData(); });
     mostrarOnboardingSiHaceFalta();
+    renderizarFeedNoticias();
     console.log('✅ DIAMOND CITY - Sistema completamente inicializado');
 }
 
