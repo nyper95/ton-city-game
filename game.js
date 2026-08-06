@@ -258,10 +258,11 @@ function getSaludoValeria() {
 
 function getConsejoAsistente() {
     const hoy = new Date().toDateString();
+    const ultimoReclamo = userData.last_daily_claim ? new Date(userData.last_daily_claim).toDateString() : null;
     const saludo = getSaludoValeria();
     const ciudad = userData.city_name || 'esta ciudad';
 
-    if (userData.last_daily_claim !== hoy) {
+    if (ultimoReclamo !== hoy) {
         return saludo + '\n\n🔔 Informe pendiente: la recaudación diaria de ' + ciudad + ' todavía no ha sido reclamada. Le recomiendo autorizarla desde el aviso amarillo antes de continuar.';
     }
     if ((userData.diamonds || 0) < 200) {
@@ -281,16 +282,41 @@ function getConsejoAsistente() {
     return saludo + '\n\n🏆 Reporte semanal: hay bonificación especial activa en ' + evento.nombre + '. Le sugiero aprovecharla mientras dure para maximizar la recaudación de ' + ciudad + '.';
 }
 
+function hayAlgoUrgenteParaValeria() {
+    const hoy = new Date().toDateString();
+    const ultimoReclamo = userData.last_daily_claim ? new Date(userData.last_daily_claim).toDateString() : null;
+    if (ultimoReclamo !== hoy) return true;
+    if ((userData.diamonds || 0) < 200) return true;
+    return false;
+}
+
+function actualizarBadgeValeria() {
+    const boton = document.getElementById('asistente-boton');
+    if (!boton) return;
+    if (hayAlgoUrgenteParaValeria()) boton.classList.add('urgente');
+    else boton.classList.remove('urgente');
+}
+
 function abrirAsistente() {
     closeAll();
     showModal('modalAsistente');
     const mensajeElem = document.getElementById('asistente-mensaje');
     if (mensajeElem) mensajeElem.textContent = getConsejoAsistente();
+    actualizarBadgeValeria();
 }
 
 function actualizarUI() {
     const diamElem = document.getElementById('diamonds');
-    if (diamElem) diamElem.textContent = Math.floor(userData.diamonds || 0);
+    if (diamElem) {
+        const valor = Math.floor(userData.diamonds || 0);
+        diamElem.textContent = valor;
+        const digitos = valor.toString().length;
+        let tamano = 22;
+        if (digitos >= 5) tamano = 17;
+        if (digitos >= 7) tamano = 13;
+        if (digitos >= 9) tamano = 11;
+        diamElem.style.fontSize = tamano + 'px';
+    }
     const rateElem = document.getElementById('rate');
     if (rateElem) rateElem.textContent = Math.floor(getTotalProduction());
     const promedioNiveles = ((userData.lvl_piscina || 0) + (userData.lvl_fabrica || 0) + (userData.lvl_escuela || 0) + (userData.lvl_hospital || 0)) / 4;
@@ -299,6 +325,7 @@ function actualizarUI() {
     if (pctElem) pctElem.textContent = pctNivel + '%';
     const gaugeNivel = document.getElementById('gauge-nivel');
     if (gaugeNivel) gaugeNivel.style.background = 'conic-gradient(#a78bfa ' + (pctNivel * 3.6) + 'deg, rgba(255,255,255,0.08) ' + (pctNivel * 3.6) + 'deg)';
+    actualizarBadgeValeria();
     const lvlPiscina = document.getElementById('lvl_piscina');
     if (lvlPiscina) lvlPiscina.textContent = userData.lvl_piscina;
     const lvlFabrica = document.getElementById('lvl_fabrica');
@@ -462,10 +489,30 @@ function openRanking() {
 function actualizarRankingModal() {
     const rangoElem = document.getElementById('user-rank-display');
     if (rangoElem) rangoElem.textContent = userData.rank || 'Ciudadano';
-    const poolElem = document.getElementById('pool-total-ranking');
-    if (poolElem) poolElem.textContent = 'Solo diamantes 💎, sin retiro real';
+    const posicionElem = document.getElementById('user-position-display');
+    if (posicionElem) posicionElem.textContent = userData.weekly_rank ? '#' + userData.weekly_rank : 'Sin calcular todavía';
     const proyeccionElem = document.getElementById('projected-reward-display');
     if (proyeccionElem) proyeccionElem.textContent = Math.floor(userData.projectedReward || 0) + ' 💎';
+
+    const lista = document.getElementById('ranking-lista');
+    if (!lista) return;
+    const top = globalPoolData.user_rankings.slice(0, 30);
+    if (top.length === 0) {
+        lista.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">Todavía no hay suficientes alcaldes registrados.</div>';
+        return;
+    }
+    let html = '';
+    for (let i = 0; i < top.length; i++) {
+        const j = top[i];
+        const esYo = j.id === userData.id;
+        const medalla = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1)));
+        html += '<div class="ranking-fila' + (esYo ? ' yo' : '') + '">';
+        html += '<div class="ranking-pos">' + medalla + '</div>';
+        html += '<div class="ranking-info"><div class="ranking-ciudad">🏙️ ' + j.city_name + '</div><div class="ranking-alcalde">' + (esYo ? 'Tú · ' : '') + j.username + '</div></div>';
+        html += '<div class="ranking-produccion">⚡' + Math.floor(j.produccion) + '/h</div>';
+        html += '</div>';
+    }
+    lista.innerHTML = html;
 }
 
 // ==========================================
@@ -1822,11 +1869,21 @@ function crearCelulasHospital() {
 // ==========================================
 async function updateRankingAndPool() {
     try {
-        const resultado = await _supabase.from('game_data').select('telegram_id, diamonds').neq('telegram_id', 'MASTER');
+        const resultado = await _supabase.from('game_data').select('telegram_id, username, city_name, diamonds, lvl_piscina, lvl_fabrica, lvl_escuela, lvl_hospital, premium_expires').neq('telegram_id', 'MASTER');
         if (!resultado.error && resultado.data) {
+            const ahora = new Date();
             globalPoolData.user_rankings = resultado.data.map(function(u) {
-                return { id: u.telegram_id, diamonds: Number(u.diamonds) || 0 };
-            }).sort(function(a, b) { return b.diamonds - a.diamonds; });
+                let produccion = (u.lvl_escuela || 0) * 15 + (u.lvl_fabrica || 0) * 25 + (u.lvl_piscina || 0) * 10 + (u.lvl_hospital || 0) * 18;
+                const esPremiumU = u.premium_expires && new Date(u.premium_expires) > ahora;
+                if (esPremiumU) produccion = produccion * 2;
+                return {
+                    id: u.telegram_id,
+                    username: u.username || 'Alcalde',
+                    city_name: u.city_name || 'Ciudad sin nombre',
+                    diamonds: Number(u.diamonds) || 0,
+                    produccion: produccion
+                };
+            }).sort(function(a, b) { return b.produccion - a.produccion; });
         }
         const posicion = globalPoolData.user_rankings.findIndex(function(u) { return u.id === userData.id; });
         if (posicion !== -1) {
@@ -1842,9 +1899,9 @@ async function updateRankingAndPool() {
         else if (posicion < 50) userData.projectedReward = (PREMIO_SEMANAL_DIAMANTES * 0.20) / 40;
         else {
             const ciudadanos = globalPoolData.user_rankings.slice(50);
-            let totalDiamantesCiudadanos = 0;
-            for (let i = 0; i < ciudadanos.length; i++) totalDiamantesCiudadanos = totalDiamantesCiudadanos + ciudadanos[i].diamonds;
-            if (totalDiamantesCiudadanos > 0 && userData.diamonds > 0) userData.projectedReward = (PREMIO_SEMANAL_DIAMANTES * 0.15) * (userData.diamonds / totalDiamantesCiudadanos);
+            let totalProduccionCiudadanos = 0;
+            for (let i = 0; i < ciudadanos.length; i++) totalProduccionCiudadanos = totalProduccionCiudadanos + ciudadanos[i].produccion;
+            if (totalProduccionCiudadanos > 0 && getTotalProduction() > 0) userData.projectedReward = (PREMIO_SEMANAL_DIAMANTES * 0.15) * (getTotalProduction() / totalProduccionCiudadanos);
             else userData.projectedReward = 0;
         }
     } catch (error) { console.error('Error ranking:', error); }
