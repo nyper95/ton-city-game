@@ -58,14 +58,27 @@
         .city-name-tag{font-size:13px;color:var(--primary);opacity:0.9;}
         .stats-panel{display:flex;justify-content:space-around;background:linear-gradient(135deg,rgba(250,204,21,0.06),var(--glass-bg));backdrop-filter:blur(10px);border:1px solid var(--glass-border);border-radius:28px;margin:8px 20px 20px;padding:20px 10px;box-shadow:0 8px 32px -8px rgba(250,204,21,0.15),inset 0 1px 0 rgba(255,255,255,0.06);}
         .gauge-item{display:flex;flex-direction:column;align-items:center;gap:8px;}
-        .gauge-ring{width:78px;height:78px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--primary) 0deg,var(--primary) 360deg,rgba(255,255,255,0.08) 0deg);position:relative;transition:background 0.6s ease;}
+        .gauge-ring{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--primary) 0deg,var(--primary) 360deg,rgba(255,255,255,0.08) 0deg);position:relative;transition:background 0.6s ease;}
         .gauge-ring::before{content:'';position:absolute;inset:6px;border-radius:50%;background:var(--bg-dark);}
-        .gauge-center{position:relative;z-index:2;color:var(--primary);}
+        .gauge-center{position:relative;z-index:2;color:var(--primary);max-width:66px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px;}
         #gauge-produccion{background:conic-gradient(var(--accent-green) 0deg,var(--accent-green) 360deg,rgba(255,255,255,0.08) 0deg);}
         #gauge-produccion .gauge-center{color:var(--accent-green);}
         #gauge-nivel .gauge-center{color:#a78bfa;}
         .gauge-label{font-size:11px;color:var(--text-secondary);text-align:center;}
-        .asistente-boton{position:fixed;right:16px;bottom:90px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f472b6,#ec4899);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 4px 18px -4px rgba(236,72,153,0.6);cursor:pointer;z-index:50;animation:pulse-glow 3s infinite;}
+        .ranking-fila{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;background:var(--bg-card);margin-bottom:8px;}
+        .ranking-fila.yo{border:2px solid var(--primary);background:rgba(250,204,21,0.08);}
+        .ranking-pos{width:32px;text-align:center;font-weight:800;font-size:15px;color:var(--text-secondary);}
+        .ranking-fila:nth-child(1) .ranking-pos{color:#fbbf24;font-size:20px;}
+        .ranking-fila:nth-child(2) .ranking-pos{color:#cbd5e1;font-size:18px;}
+        .ranking-fila:nth-child(3) .ranking-pos{color:#f0985a;font-size:18px;}
+        .ranking-info{flex:1;overflow:hidden;}
+        .ranking-ciudad{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .ranking-alcalde{font-size:11px;color:var(--text-secondary);}
+        .ranking-produccion{font-size:13px;font-weight:700;color:var(--accent-green);white-space:nowrap;}
+        .asistente-boton{position:fixed;right:16px;bottom:90px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f472b6,#ec4899);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 4px 18px -4px rgba(236,72,153,0.6);cursor:pointer;z-index:50;}
+        .asistente-boton.urgente{animation:pulse-glow 1.5s infinite;}
+        .asistente-boton.urgente::after{content:'';position:absolute;top:2px;right:2px;width:15px;height:15px;border-radius:50%;background:#ef4444;border:2px solid var(--bg-dark);animation:parpadeoRojo 1s infinite;}
+        @keyframes parpadeoRojo{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.85);}}
         .asistente-burbuja{background:var(--bg-elevated);border-radius:20px;padding:18px;line-height:1.6;border:1px solid var(--glass-border);white-space:pre-line;}
 
         body {
@@ -321,19 +334,13 @@
 
     <!-- MODAL RANKING -->
     <div class="modal" id="modalRanking">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Ranking diario</div></div>
-        <div style="text-align:center;margin:20px 0;"><div style="font-size:64px;">🏆</div><h3>Sistema de Rangos</h3></div>
-        <div class="rank-list">
-            <div class="rank-item diamond"><span>💎 Diamante</span><span>Top 1-3</span><span>40% pool</span></div>
-            <div class="rank-item gold"><span>🥇 Oro</span><span>Top 4-10</span><span>25% pool</span></div>
-            <div class="rank-item silver"><span>🥈 Plata</span><span>Top 11-50</span><span>20% pool</span></div>
-            <div class="rank-item citizen"><span>👥 Ciudadano</span><span>Resto</span><span>15% pool</span></div>
-        </div>
-        <div class="building-stats" style="margin-top:16px;">
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Ranking Municipal</div></div>
+        <div class="building-stats" style="margin-bottom:14px;">
             <div class="stat-row"><span>🏅 Tu rango</span><span class="badge" id="user-rank-display">Ciudadano</span></div>
-            <div class="stat-row"><span>💎 Premios</span><span id="pool-total-ranking" style="color:var(--accent-green);">Solo diamantes</span></div>
-            <div class="stat-row"><span>📊 Bono semanal</span><span id="projected-reward-display" style="color:var(--primary);">0 💎</span></div>
+            <div class="stat-row"><span>📍 Tu posición</span><span id="user-position-display" style="color:var(--primary);">-</span></div>
+            <div class="stat-row"><span>📊 Bono semanal estimado</span><span id="projected-reward-display" style="color:var(--primary);">0 💎</span></div>
         </div>
+        <div id="ranking-lista"></div>
         <button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:white;padding:12px;border-radius:20px;width:100%;margin-top:10px;">CERRAR</button>
     </div>
 
@@ -360,93 +367,36 @@
     <!-- MODAL ESCUELA -->
     <div class="modal modal-full" id="modalEscuela">
         <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">🏫 Escuela · Nvl <span id="escuela-game-level">1</span></div></div>
-        <div class="tabs"><div class="tab active" onclick="switchTab('escuela','upgrade')">MEJORAS</div><div class="tab" onclick="switchTab('escuela','game')">JUEGO</div></div>
         <div id="escuela-upgrade-panel">
             <div class="building-stats"><div class="stat-row"><span>Nivel</span><span id="escuela-level">0</span></div><div class="stat-row"><span>Prod</span><span id="escuela-prod">0 💎/h</span></div><div class="stat-row"><span>Mejora</span><span id="escuela-price">500 💎</span></div></div>
             <button class="upgrade-btn" id="escuela-btn" onclick="buyUpgrade('escuela')">MEJORAR</button>
-        </div>
-        <div id="escuela-game-panel" class="hidden">
-            <div class="game-instructions"><i class="fa-solid fa-lightbulb"></i> <strong>Mente Maestra</strong> - Memoriza 5 números y repítelos en orden.</div>
-            <div class="game-area">
-                <div class="flex-row"><span>🎯 Nivel <span id="mem-level">1</span></span><span>🏆 Récord <span id="mem-best">0</span></span></div>
-                <div class="lives-container" id="escuela-lives"></div>
-                <button class="start-game-btn" id="escuela-start-btn" onclick="iniciarJuegoEscuela()">▶ INICIAR JUEGO</button>
-                <div id="sequence-display" style="display:flex;justify-content:center;gap:6px;margin:20px 0;flex-wrap:wrap;min-height:70px;"></div>
-                <div id="pupitres-grid" class="pupitres-grid"></div>
-                <div id="mem-result" style="text-align:center;margin:10px 0;font-size:18px;min-height:30px;"></div>
-                <div id="escuela-revive" class="revive-btn" style="display:none;" onclick="reviveGame('escuela')">❤️ Revivir</div>
-            </div>
         </div>
     </div>
 
     <!-- MODAL FÁBRICA -->
     <div class="modal modal-full" id="modalFabrica">
         <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">🏭 Fábrica · Nvl <span id="fabrica-game-level">1</span></div></div>
-        <div class="tabs"><div class="tab active" onclick="switchTab('fabrica','upgrade')">MEJORAS</div><div class="tab" onclick="switchTab('fabrica','game')">JUEGO</div></div>
         <div id="fabrica-upgrade-panel">
             <div class="building-stats"><div class="stat-row"><span>Nivel</span><span id="fabrica-level">0</span></div><div class="stat-row"><span>Prod</span><span id="fabrica-prod">0 💎/h</span></div><div class="stat-row"><span>Mejora</span><span id="fabrica-price">1500 💎</span></div></div>
             <button class="upgrade-btn" id="fabrica-btn" onclick="buyUpgrade('fabrica')">MEJORAR</button>
-        </div>
-        <div id="fabrica-game-panel" class="hidden">
-            <div class="game-instructions"><i class="fa-solid fa-gear"></i> <strong>Línea de Ensamblaje</strong> - Toca las piezas buenas (🔧) al pasar por la zona violeta. Evita las rojas (💢).</div>
-            <div class="game-area">
-                <div class="flex-row"><span>🔧 <span id="asm-completed">0</span>/<span id="asm-required">5</span></span><span>🏆 <span id="asm-best">0</span></span></div>
-                <div class="lives-container" id="fabrica-lives"></div>
-                <button class="start-game-btn" id="fabrica-start-btn" onclick="iniciarJuegoFabrica()">▶ INICIAR JUEGO</button>
-                <div class="conveyor-belt" id="conveyor"><div class="calibration-zone"></div></div>
-                <div id="asm-result" style="text-align:center;margin-top:10px;font-size:18px;min-height:30px;"></div>
-                <div id="fabrica-revive" class="revive-btn" style="display:none;" onclick="reviveGame('fabrica')">❤️ Revivir</div>
-            </div>
         </div>
     </div>
 
     <!-- MODAL PISCINA -->
     <div class="modal modal-full" id="modalPiscina">
         <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">🏊 Piscina · Nvl <span id="piscina-game-level">1</span></div></div>
-        <div class="tabs"><div class="tab active" onclick="switchTab('piscina','upgrade')">MEJORAS</div><div class="tab" onclick="switchTab('piscina','game')">JUEGO</div></div>
         <div id="piscina-upgrade-panel">
             <div class="building-stats"><div class="stat-row"><span>Nivel</span><span id="piscina-level">0</span></div><div class="stat-row"><span>Prod</span><span id="piscina-prod">0 💎/h</span></div><div class="stat-row"><span>Mejora</span><span id="piscina-price">800 💎</span></div></div>
             <button class="upgrade-btn" id="piscina-btn" onclick="buyUpgrade('piscina')">MEJORAR</button>
-        </div>
-        <div id="piscina-game-panel" class="hidden">
-            <div class="game-instructions"><i class="fa-solid fa-water"></i> <strong>Clavado de Precisión</strong> - La aguja se mueve sola. Toca "¡SALTAR!" justo cuando esté en la zona verde. Entre más rápido y angosta esté la zona, más difícil el nivel.</div>
-            <div class="game-area">
-                <div class="flex-row"><span>🎯 <span id="jump-perfect">0</span>/<span id="jump-required">3</span></span><span>🔥 Racha: <span id="piscina-combo">0</span></span><span>🏆 <span id="jump-best">0</span></span></div>
-                <div class="lives-container" id="piscina-lives"></div>
-                <button class="start-game-btn" id="piscina-start-btn" onclick="iniciarJuegoPiscina()">▶ INICIAR JUEGO</button>
-                <div class="slingshot-area" id="slingshot-area">
-                    <div style="position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.5);text-align:center;pointer-events:none;">
-                        <span id="jump-power-display" style="font-size:32px;color:white;font-weight:800;">0%</span>
-                    </div>
-                    <div class="power-meter" id="power-meter-track"><div class="power-zone-verde" id="power-zone"></div><div class="power-needle" id="power-needle"></div></div>
-                    <div class="power-labels"><span>0%</span><span>50%</span><span>100%</span></div>
-                    <button class="jump-tap-btn" id="jump-tap-btn" onclick="saltarPiscina()">💦 ¡SALTAR!</button>
-                </div>
-                <div id="jump-result" style="text-align:center;margin-top:10px;font-size:18px;"></div>
-                <div id="piscina-revive" class="revive-btn" style="display:none;" onclick="reviveGame('piscina')">❤️ Revivir</div>
-            </div>
         </div>
     </div>
 
     <!-- MODAL HOSPITAL -->
     <div class="modal modal-full" id="modalHospital">
         <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">🏥 Hospital · Nvl <span id="hospital-game-level">1</span></div></div>
-        <div class="tabs"><div class="tab active" onclick="switchTab('hospital','upgrade')">MEJORAS</div><div class="tab" onclick="switchTab('hospital','game')">JUEGO</div></div>
         <div id="hospital-upgrade-panel">
             <div class="building-stats"><div class="stat-row"><span>Nivel</span><span id="hospital-level">0</span></div><div class="stat-row"><span>Prod</span><span id="hospital-prod">0 💎/h</span></div><div class="stat-row"><span>Mejora</span><span id="hospital-price">1200 💎</span></div></div>
             <button class="upgrade-btn" id="hospital-btn" onclick="buyUpgrade('hospital')">MEJORAR</button>
-        </div>
-        <div id="hospital-game-panel" class="hidden">
-            <div class="game-instructions"><i class="fa-solid fa-heartbeat"></i> <strong>Cirugía de Emergencia</strong> - Elimina SOLO los virus marrones 🦠. Tocar otros tipos resta vida.</div>
-            <div class="game-area">
-                <div class="flex-row"><span>🦠 <span id="virus-extracted">0</span>/<span id="virus-total">3</span></span><span>🏆 <span id="surgery-best">0</span></span></div>
-                <div class="lives-container" id="hospital-lives"></div>
-                <button class="start-game-btn" id="hospital-start-btn" onclick="iniciarJuegoHospital()">▶ INICIAR JUEGO</button>
-                <div class="time-bar"><div class="time-fill" id="time-fill"></div></div>
-                <div class="surgery-area" id="surgery-area"></div>
-                <div id="surgery-result" style="text-align:center;margin-top:10px;font-size:18px;"></div>
-                <div id="hospital-revive" class="revive-btn" style="display:none;" onclick="reviveGame('hospital')">❤️ Revivir</div>
-            </div>
         </div>
     </div>
 
