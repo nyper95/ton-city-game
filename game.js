@@ -46,6 +46,8 @@ let userData = {
     referral_code: null,
     city_name: null,
     newsFeed: [],
+    genero: 'M',
+    idioma: 'es',
     referral_earnings: 0,
     referred_users: [],
     last_online: null,
@@ -154,6 +156,10 @@ let piscinaPower = 0;
 let piscinaHoldStart = 0;
 let piscinaChargeInterval = null;
 let piscinaGameStarted = false;
+let piscinaCombo = 0;
+let piscinaDireccion = 1;
+let piscinaZonaInicio = 30;
+let piscinaZonaFin = 70;
 
 // Variables Hospital
 let hospitalLevel = 1;
@@ -185,14 +191,6 @@ function getEventoActual() {
 
 function actualizarEventosUI() {
     const evento = getEventoActual();
-    const banner = document.getElementById('event-banner');
-    if (banner) {
-        banner.style.display = 'flex';
-        const tituloBanner = document.getElementById('event-banner-title');
-        const subtituloBanner = document.getElementById('event-banner-subtitle');
-        if (tituloBanner) tituloBanner.textContent = evento.nombre;
-        if (subtituloBanner) subtituloBanner.textContent = '¡x' + (esPremium() ? 4 : 2) + ' en ' + evento.nombre + '!';
-    }
     document.querySelectorAll('.building-card').forEach(function(card) {
         card.classList.remove('event-active');
     });
@@ -229,6 +227,133 @@ function calcularRecompensa(baseReward, building) {
         pendingMultiplier = null;
     }
     return Math.floor(baseReward * multiplier);
+}
+
+const TRADUCCIONES = {
+    es: {
+        nav_perfil: 'PERFIL', nav_amigos: 'AMIGOS', nav_ranking: 'RANKING',
+        greeting_hola: 'HOLA,',
+        section_edificios: 'Edificios', section_feed: 'Feed de Noticias',
+        building_banco: 'Banco', building_banco_sub: 'Comprar/Vender GRAM',
+        building_premium: 'Premium', building_premium_sub: 'Planes VIP',
+        building_casino: 'Casino', building_casino_sub: '5 juegos',
+        building_parque: 'Parque', building_parque_sub: 'Anuncios',
+        btn_cerrar: 'CERRAR', btn_mejorar: 'MEJORAR', btn_confirmar: 'CONFIRMAR', btn_reclamar: 'RECLAMAR',
+        onboarding_titulo: '¡Buenos días!',
+        onboarding_texto: 'Soy Valeria, su asistente ejecutiva. Antes de comenzar, necesito dos datos para los registros municipales.',
+        onboarding_placeholder: 'Nombre de tu ciudad',
+        onboarding_fundar: '🏙️ FUNDAR MI CIUDAD',
+        feed_titulo: 'Bienvenido a su ciudad', feed_sub: 'Los eventos recientes aparecerán aquí',
+        ranking_titulo: 'Ranking Municipal', ranking_tu_rango: 'Tu rango', ranking_tu_posicion: 'Tu posición', ranking_bono: 'Bono semanal estimado',
+        amigos_titulo: 'Amigos',
+        idioma_titulo: 'Idioma'
+    },
+    en: {
+        nav_perfil: 'PROFILE', nav_amigos: 'FRIENDS', nav_ranking: 'RANKING',
+        greeting_hola: 'HI,',
+        section_edificios: 'Buildings', section_feed: 'News Feed',
+        building_banco: 'Bank', building_banco_sub: 'Buy/Sell GRAM',
+        building_premium: 'Premium', building_premium_sub: 'VIP Plans',
+        building_casino: 'Casino', building_casino_sub: '5 games',
+        building_parque: 'Park', building_parque_sub: 'Watch ads',
+        btn_cerrar: 'CLOSE', btn_mejorar: 'UPGRADE', btn_confirmar: 'CONFIRM', btn_reclamar: 'CLAIM',
+        onboarding_titulo: 'Good morning!',
+        onboarding_texto: "I'm Valeria, your executive assistant. Before we begin, I need two details for the municipal records.",
+        onboarding_placeholder: 'Name your city',
+        onboarding_fundar: '🏙️ FOUND MY CITY',
+        feed_titulo: 'Welcome to your city', feed_sub: 'Recent events will appear here',
+        ranking_titulo: 'Municipal Ranking', ranking_tu_rango: 'Your rank', ranking_tu_posicion: 'Your position', ranking_bono: 'Estimated weekly bonus',
+        amigos_titulo: 'Friends',
+        idioma_titulo: 'Language'
+    },
+    pt: {
+        nav_perfil: 'PERFIL', nav_amigos: 'AMIGOS', nav_ranking: 'RANKING',
+        greeting_hola: 'OLÁ,',
+        section_edificios: 'Edifícios', section_feed: 'Feed de Notícias',
+        building_banco: 'Banco', building_banco_sub: 'Comprar/Vender GRAM',
+        building_premium: 'Premium', building_premium_sub: 'Planos VIP',
+        building_casino: 'Cassino', building_casino_sub: '5 jogos',
+        building_parque: 'Parque', building_parque_sub: 'Ver anúncios',
+        btn_cerrar: 'FECHAR', btn_mejorar: 'MELHORAR', btn_confirmar: 'CONFIRMAR', btn_reclamar: 'RESGATAR',
+        onboarding_titulo: 'Bom dia!',
+        onboarding_texto: 'Sou Valeria, sua assistente executiva. Antes de começar, preciso de dois dados para os registros municipais.',
+        onboarding_placeholder: 'Nome da sua cidade',
+        onboarding_fundar: '🏙️ FUNDAR MINHA CIDADE',
+        feed_titulo: 'Bem-vindo à sua cidade', feed_sub: 'Os eventos recentes aparecerão aqui',
+        ranking_titulo: 'Ranking Municipal', ranking_tu_rango: 'Seu rank', ranking_tu_posicion: 'Sua posição', ranking_bono: 'Bônus semanal estimado',
+        amigos_titulo: 'Amigos',
+        idioma_titulo: 'Idioma'
+    },
+    ru: {
+        nav_perfil: 'ПРОФИЛЬ', nav_amigos: 'ДРУЗЬЯ', nav_ranking: 'РЕЙТИНГ',
+        greeting_hola: 'ПРИВЕТ,',
+        section_edificios: 'Здания', section_feed: 'Лента новостей',
+        building_banco: 'Банк', building_banco_sub: 'Купить/продать GRAM',
+        building_premium: 'Премиум', building_premium_sub: 'VIP-планы',
+        building_casino: 'Казино', building_casino_sub: '5 игр',
+        building_parque: 'Парк', building_parque_sub: 'Смотреть рекламу',
+        btn_cerrar: 'ЗАКРЫТЬ', btn_mejorar: 'УЛУЧШИТЬ', btn_confirmar: 'ПОДТВЕРДИТЬ', btn_reclamar: 'ПОЛУЧИТЬ',
+        onboarding_titulo: 'Доброе утро!',
+        onboarding_texto: 'Я Валерия, ваш исполнительный ассистент. Прежде чем начать, мне нужны два реквизита для муниципальных записей.',
+        onboarding_placeholder: 'Название вашего города',
+        onboarding_fundar: '🏙️ ОСНОВАТЬ ГОРОД',
+        feed_titulo: 'Добро пожаловать в ваш город', feed_sub: 'Здесь будут появляться последние события',
+        ranking_titulo: 'Городской рейтинг', ranking_tu_rango: 'Ваш ранг', ranking_tu_posicion: 'Ваша позиция', ranking_bono: 'Ожидаемый недельный бонус',
+        amigos_titulo: 'Друзья',
+        idioma_titulo: 'Язык'
+    }
+};
+
+function t(key) {
+    const idioma = userData.idioma || 'es';
+    return (TRADUCCIONES[idioma] && TRADUCCIONES[idioma][key]) || TRADUCCIONES.es[key] || key;
+}
+
+function aplicarIdioma() {
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        el.textContent = t(el.getAttribute('data-i18n'));
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+        el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+    });
+}
+
+const NOMBRES_IDIOMA = { es: 'Español', en: 'English', pt: 'Português', ru: 'Русский' };
+
+function seleccionarIdioma(codigo) {
+    userData.idioma = codigo;
+    aplicarIdioma();
+    const label = document.getElementById('idioma-actual-label');
+    if (label) label.textContent = NOMBRES_IDIOMA[codigo] || 'Español';
+    closeAll();
+    saveUserData();
+}
+
+function abrirSelectorIdioma() {
+    closeAll();
+    showModal('modalIdioma');
+}
+
+function getTituloAlcalde() {
+    return userData.genero === 'F' ? 'Alcaldesa' : 'Alcalde';
+}
+
+function seleccionarGenero(g) {
+    userData.genero = g;
+    const btnM = document.getElementById('genero-M');
+    const btnF = document.getElementById('genero-F');
+    if (btnM) btnM.classList.toggle('active', g === 'M');
+    if (btnF) btnF.classList.toggle('active', g === 'F');
+}
+
+function cambiarGeneroPerfil(g) {
+    userData.genero = g;
+    const btnM = document.getElementById('perfil-genero-M');
+    const btnF = document.getElementById('perfil-genero-F');
+    if (btnM) btnM.classList.toggle('active', g === 'M');
+    if (btnF) btnF.classList.toggle('active', g === 'F');
+    actualizarUI();
+    saveUserData();
 }
 
 function tiempoRelativo(iso) {
@@ -283,35 +408,49 @@ async function confirmarNombreCiudad() {
 
 function getSaludoValeria() {
     const hora = new Date().getHours();
-    if (hora < 12) return '🏛️ Buenos días, Alcalde(sa).';
-    if (hora < 19) return '🏛️ Buenas tardes, Alcalde(sa).';
-    return '🏛️ Buenas noches, Alcalde(sa).';
+    if (hora < 12) return '🏛️ Buenos días, ' + getTituloAlcalde() + '.';
+    if (hora < 19) return '🏛️ Buenas tardes, ' + getTituloAlcalde() + '.';
+    return '🏛️ Buenas noches, ' + getTituloAlcalde() + '.';
 }
 
-function getConsejoAsistente() {
+function getConsejosAsistente() {
     const hoy = new Date().toDateString();
     const ultimoReclamo = userData.last_daily_claim ? new Date(userData.last_daily_claim).toDateString() : null;
-    const saludo = getSaludoValeria();
     const ciudad = userData.city_name || 'esta ciudad';
+    const consejos = [];
 
     if (ultimoReclamo !== hoy) {
-        return saludo + '\n\n🔔 Informe pendiente: la recaudación diaria de ' + ciudad + ' todavía no ha sido reclamada. Le recomiendo autorizarla desde el aviso amarillo antes de continuar.';
+        consejos.push('🔔 Informe pendiente: la recaudación diaria de ' + ciudad + ' todavía no ha sido reclamada. Le recomiendo autorizarla desde el aviso amarillo.');
     }
     if ((userData.diamonds || 0) < 200) {
-        return saludo + '\n\n💎 Las arcas municipales están por debajo de lo recomendable. Sugiero ver un anuncio en el Parque de Diversiones (+20 💎 sin costo) o autorizar una compra en el Banco.';
+        consejos.push('💎 Las arcas municipales están por debajo de lo recomendable. Sugiero ver un anuncio en el Parque (+20 💎 sin costo) o autorizar una compra en el Banco.');
     }
     const nivelesBajos = ['lvl_piscina', 'lvl_fabrica', 'lvl_escuela', 'lvl_hospital'].filter(function(k) { return (userData[k] || 0) < 5; });
     if (nivelesBajos.length > 0) {
-        return saludo + '\n\n📊 He revisado los planos de infraestructura: varios edificios aún operan muy por debajo de su capacidad. Cada mejora incrementa la producción por hora de forma permanente. Recomiendo priorizar inversión ahí.';
+        consejos.push('📊 Varios edificios aún operan muy por debajo de su capacidad. Cada mejora incrementa la producción por hora de forma permanente.');
     }
     if (!esPremium()) {
-        return saludo + '\n\n⚡ Un dato para su consideración: el estatus Premium duplica la producción de toda la ciudad y elimina los anuncios obligatorios. El retorno de inversión es considerable. Puede revisarlo en el edificio Premium.';
+        consejos.push('⚡ El estatus Premium duplica la producción de toda la ciudad y elimina los anuncios obligatorios. Puede revisarlo en el edificio Premium.');
     }
     if ((userData.referred_users || []).length === 0) {
-        return saludo + '\n\n👥 ' + ciudad + ' todavía no tiene ciudadanos referidos. Cada persona que invite y se una le genera diamantes adicionales a usted. Encontrará su código de invitación en la pestaña Amigos.';
+        consejos.push('👥 ' + ciudad + ' todavía no tiene ciudadanos referidos. Cada persona que invite le genera diamantes adicionales. Encontrará su código en la pestaña Amigos.');
     }
     const evento = getEventoActual();
-    return saludo + '\n\n🏆 Reporte semanal: hay bonificación especial activa en ' + evento.nombre + '. Le sugiero aprovecharla mientras dure para maximizar la recaudación de ' + ciudad + '.';
+    consejos.push('🏆 Hay bonificación especial activa esta semana en ' + evento.nombre + '. Aprovéchela mientras dure.');
+
+    if (consejos.length === 0) {
+        consejos.push('✅ Todo está en orden en ' + ciudad + '. Excelente gestión hasta el momento.');
+    }
+    return consejos.slice(0, 3);
+}
+
+function destelloResultado(modalId, gano) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.classList.remove('ganaste', 'perdiste');
+    void modal.offsetWidth;
+    modal.classList.add(gano ? 'ganaste' : 'perdiste');
+    setTimeout(function() { modal.classList.remove('ganaste', 'perdiste'); }, 900);
 }
 
 function hayAlgoUrgenteParaValeria() {
@@ -319,6 +458,9 @@ function hayAlgoUrgenteParaValeria() {
     const ultimoReclamo = userData.last_daily_claim ? new Date(userData.last_daily_claim).toDateString() : null;
     if (ultimoReclamo !== hoy) return true;
     if ((userData.diamonds || 0) < 200) return true;
+    const nivelesBajos = ['lvl_piscina', 'lvl_fabrica', 'lvl_escuela', 'lvl_hospital'].filter(function(k) { return (userData[k] || 0) < 3; });
+    if (nivelesBajos.length >= 3) return true;
+    if (!esPremium() && (userData.diamonds || 0) > 3000) return true;
     return false;
 }
 
@@ -333,7 +475,14 @@ function abrirAsistente() {
     closeAll();
     showModal('modalAsistente');
     const mensajeElem = document.getElementById('asistente-mensaje');
-    if (mensajeElem) mensajeElem.textContent = getConsejoAsistente();
+    if (mensajeElem) {
+        const consejos = getConsejosAsistente();
+        let html = '<div style="margin-bottom:10px;">' + getSaludoValeria() + '</div>';
+        for (let i = 0; i < consejos.length; i++) {
+            html += '<div class="valeria-consejo">' + consejos[i] + '</div>';
+        }
+        mensajeElem.innerHTML = html;
+    }
     actualizarBadgeValeria();
 }
 
@@ -368,6 +517,8 @@ function actualizarUI() {
     if (lvlHospital) lvlHospital.textContent = userData.lvl_hospital;
     const userDisplay = document.getElementById('user-display');
     if (userDisplay) userDisplay.textContent = userData.username || 'Usuario';
+    const tituloElem = document.getElementById('titulo-tratamiento');
+    if (tituloElem) tituloElem.textContent = getTituloAlcalde().toUpperCase();
     const cityNameElem = document.getElementById('city-name-display');
     if (cityNameElem) cityNameElem.textContent = userData.city_name ? '🏙️ ' + userData.city_name : '';
     const casinoSaldo = document.getElementById('casino-saldo');
@@ -390,7 +541,7 @@ function closeAll() {
         'modalPerfil', 'modalFriends', 'modalRanking', 'modalBank', 'modalStore',
         'modalCasino', 'modalHighLow', 'modalRuleta', 'modalTragaperras', 'modalDados',
         'modalRuletaRusa', 'modalEscuela', 'modalFabrica', 'modalPiscina', 'modalHospital',
-        'modalEvent', 'modalDailyReward', 'modalAds', 'modalAsistente'
+        'modalEvent', 'modalDailyReward', 'modalAds', 'modalAsistente', 'modalIdioma'
     ];
     modals.forEach(function(id) {
         const modal = document.getElementById(id);
@@ -471,6 +622,10 @@ function actualizarPerfil() {
     if (premiumElem) premiumElem.textContent = esPremium() ? 'Sí ⭐' : 'No';
     const rankBadgeElem = document.getElementById('perfil-rank-badge');
     if (rankBadgeElem) rankBadgeElem.textContent = userData.rank || 'Ciudadano';
+    const btnGeneroM = document.getElementById('perfil-genero-M');
+    const btnGeneroF = document.getElementById('perfil-genero-F');
+    if (btnGeneroM) btnGeneroM.classList.toggle('active', (userData.genero || 'M') === 'M');
+    if (btnGeneroF) btnGeneroF.classList.toggle('active', userData.genero === 'F');
 }
 
 // ==========================================
@@ -540,7 +695,8 @@ function actualizarRankingModal() {
         const medalla = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1)));
         html += '<div class="ranking-fila' + (esYo ? ' yo' : '') + '">';
         html += '<div class="ranking-pos">' + medalla + '</div>';
-        html += '<div class="ranking-info"><div class="ranking-ciudad">🏙️ ' + j.city_name + '</div><div class="ranking-alcalde">' + (esYo ? 'Tú · ' : '') + j.username + '</div></div>';
+        const tituloJugador = j.genero === 'F' ? 'Alcaldesa' : 'Alcalde';
+        html += '<div class="ranking-info"><div class="ranking-ciudad">🏙️ ' + j.city_name + '</div><div class="ranking-alcalde">' + (esYo ? 'Tú · ' : '') + tituloJugador + ' ' + j.username + '</div></div>';
         html += '<div class="ranking-produccion">⚡' + Math.floor(j.produccion) + '/h</div>';
         html += '</div>';
     }
@@ -803,7 +959,7 @@ function actualizarEstadoAnuncio() {
 
 function showAd() {
     if (esPremium()) {
-        userData.diamonds = userData.diamonds + 20;
+        userData.diamonds = (userData.diamonds || 0) + 20;
         saveUserData();
         actualizarUI();
         alert('⭐ Como usuario Premium, recibes +20 💎');
@@ -812,7 +968,7 @@ function showAd() {
     }
     showRewardedAd(function(completado) {
         if (completado) {
-            userData.diamonds = userData.diamonds + 20;
+            userData.diamonds = (userData.diamonds || 0) + 20;
             userData.last_ad_watch = new Date().toISOString();
             registrarEvento('📺', 'Anuncio patrocinador completado', '+20 💎 acreditados a la tesorería');
             saveUserData();
@@ -827,7 +983,7 @@ function showAd() {
 
 function rescueWithAd() {
     if (esPremium()) {
-        userData.diamonds = userData.diamonds + 50;
+        userData.diamonds = (userData.diamonds || 0) + 50;
         actualizarUI();
         alert('⭐ Rescate Premium: +50 💎');
         return;
@@ -840,7 +996,7 @@ function rescueWithAd() {
     }
     showRewardedAd(function(completado) {
         if (completado) {
-            userData.diamonds = userData.diamonds + 50;
+            userData.diamonds = (userData.diamonds || 0) + 50;
             userData.last_casino_rescue = new Date().toISOString();
             saveUserData();
             actualizarUI();
@@ -907,7 +1063,7 @@ async function claimDailyReward() {
     }
     if (nuevoDia > 30) nuevoDia = 30;
     const recompensa = getDailyRewardAmount(nuevoDia);
-    userData.diamonds = userData.diamonds + recompensa;
+    userData.diamonds = (userData.diamonds || 0) + recompensa;
     userData.daily_streak = nuevoDia;
     userData.last_daily_claim = new Date().toISOString();
     registrarEvento('🎁', 'Recompensa diaria reclamada', 'Día ' + nuevoDia + ' de 30 · +' + recompensa + ' 💎');
@@ -1078,8 +1234,10 @@ function jugarHighLow(eleccion) {
                 if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
                 if (navigator.vibrate) navigator.vibrate(50);
                 spawnConfetti();
+                destelloResultado('modalHighLow', true);
             } else {
                 if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
+                destelloResultado('modalHighLow', false);
             }
             actualizarUI();
             saveUserData();
@@ -1148,8 +1306,10 @@ function jugarRuleta(tipo) {
             if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
             if (navigator.vibrate) navigator.vibrate(50);
             spawnConfetti();
+            destelloResultado('modalRuleta', true);
         } else {
             if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
+            destelloResultado('modalRuleta', false);
         }
         actualizarUI();
         saveUserData();
@@ -1202,8 +1362,10 @@ function jugarTragaperras() {
             if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡JACKPOT! x' + multiplicador + ' (+' + premio + ' 💎)</span>';
             spawnConfetti();
             if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+            destelloResultado('modalTragaperras', true);
         } else {
             if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
+            destelloResultado('modalTragaperras', false);
         }
         actualizarUI();
         saveUserData();
@@ -1247,8 +1409,11 @@ function jugarDados(eleccion) {
             userData.diamonds = userData.diamonds + ganancia;
             if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
             if (navigator.vibrate) navigator.vibrate(50);
+            spawnConfetti();
+            destelloResultado('modalDados', true);
         } else {
             if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
+            destelloResultado('modalDados', false);
         }
         actualizarUI();
         saveUserData();
@@ -1301,9 +1466,11 @@ function jugarRuletaRusa(camara) {
                 if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡SOBREVIVISTE! +' + ganancia + ' 💎</span>';
                 spawnConfetti();
                 if (navigator.vibrate) navigator.vibrate(100);
+                destelloResultado('modalRuletaRusa', true);
             } else {
                 if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;font-size:20px;">💥 ¡La bala estaba en la cámara ' + bala + '! Perdiste ' + apuesta + ' 💎</span>';
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+                destelloResultado('modalRuletaRusa', false);
             }
             actualizarUI();
             saveUserData();
@@ -1541,7 +1708,7 @@ function seleccionarPupitre(numero) {
     }
     if (escuelaUserInput.length === escuelaSequence.length) {
         const recompensa = calcularRecompensa(5, 'escuela');
-        userData.diamonds = userData.diamonds + recompensa;
+        userData.diamonds = (userData.diamonds || 0) + recompensa;
         escuelaLevel++;
         escuelaStreak++;
         if (escuelaLevel > escuelaBest) {
@@ -1610,8 +1777,6 @@ function crearPiezasFabrica() {
     for (let i = 0; i < numPieces; i++) {
         crearUnaPiezaFabrica();
     }
-    // Mantiene la cinta siempre con piezas disponibles: cada pocos segundos
-    // revisa si faltan piezas jugables y agrega una nueva.
     fabricaAnimInterval = setInterval(function() {
         if (!gameActiveStates.fabrica) { clearInterval(fabricaAnimInterval); return; }
         const piezasVivas = fabricaPieces.filter(function(p) { return !p.clicked; }).length;
@@ -1636,7 +1801,7 @@ function checkFabricaHitPiece(piece) {
         setTimeout(function() { piece.remove(); }, 300);
         if (fabricaCompleted >= fabricaRequired) {
             const recompensa = calcularRecompensa(8, 'fabrica');
-            userData.diamonds = userData.diamonds + recompensa;
+            userData.diamonds = (userData.diamonds || 0) + recompensa;
             fabricaLevel++;
             if (fabricaLevel > fabricaBest) {
                 fabricaBest = fabricaLevel;
@@ -1672,11 +1837,6 @@ function checkFabricaHitPiece(piece) {
 // ==========================================
 // MINIJUEGO 3: PISCINA (AGUJA ANIMADA)
 // ==========================================
-let piscinaCombo = 0;
-let piscinaDireccion = 1;
-let piscinaZonaInicio = 30;
-let piscinaZonaFin = 70;
-
 function iniciarJuegoPiscina() {
     gameActiveStates.piscina = true;
     piscinaLevel = userData.gameStats.piscina.currentLevel || 1;
@@ -1699,7 +1859,6 @@ function iniciarJuegoPiscina() {
 }
 
 function iniciarRondaPiscina() {
-    // La zona verde se achica y la velocidad sube con el nivel: más difícil con el tiempo
     const anchoZona = Math.max(14, 40 - piscinaLevel * 0.8);
     const centro = 35 + Math.random() * 30;
     piscinaZonaInicio = Math.max(2, centro - anchoZona / 2);
@@ -1711,7 +1870,7 @@ function iniciarRondaPiscina() {
     }
     piscinaPower = 0;
     piscinaDireccion = 1;
-    const duracionCiclo = Math.max(700, 1600 - piscinaLevel * 15); // ms para un recorrido completo
+    const duracionCiclo = Math.max(700, 1600 - piscinaLevel * 15);
     if (piscinaChargeInterval) clearInterval(piscinaChargeInterval);
     const pasoPorTick = (100 / (duracionCiclo / 30)) * 2;
     piscinaChargeInterval = setInterval(function() {
@@ -1723,6 +1882,20 @@ function iniciarRondaPiscina() {
         const display = document.getElementById('jump-power-display');
         if (display) display.textContent = Math.floor(piscinaPower) + '%';
     }, 30);
+}
+
+function startSlingshot() {
+    if (!gameActiveStates.piscina || !piscinaGameStarted) return;
+    if (piscinaChargeInterval) clearInterval(piscinaChargeInterval);
+    const needle = document.getElementById('power-needle');
+    if (needle) needle.style.animation = 'pulse 0.3s ease 3';
+    setTimeout(function() {
+        if (needle) needle.style.animation = '';
+    }, 1000);
+}
+
+function releaseSlingshot() {
+    saltarPiscina();
 }
 
 function crearSplash(exito) {
@@ -1754,7 +1927,7 @@ function saltarPiscina() {
         if (navigator.vibrate) navigator.vibrate(40);
         if (piscinaPerfect >= piscinaRequired) {
             const recompensa = Math.floor(calcularRecompensa(6, 'piscina') * bonusCombo);
-            userData.diamonds = userData.diamonds + recompensa;
+            userData.diamonds = (userData.diamonds || 0) + recompensa;
             piscinaLevel++;
             if (piscinaLevel > piscinaBest) {
                 piscinaBest = piscinaLevel;
@@ -1871,7 +2044,7 @@ function crearCelulasHospital() {
                 if (hospitalExtracted >= hospitalTotal) {
                     clearInterval(hospitalTimer);
                     const recompensa = calcularRecompensa(7, 'hospital');
-                    userData.diamonds = userData.diamonds + recompensa;
+                    userData.diamonds = (userData.diamonds || 0) + recompensa;
                     hospitalLevel++;
                     if (hospitalLevel > hospitalBest) {
                         hospitalBest = hospitalLevel;
@@ -1909,7 +2082,7 @@ function crearCelulasHospital() {
 // ==========================================
 async function updateRankingAndPool() {
     try {
-        const resultado = await _supabase.from('game_data').select('telegram_id, username, city_name, diamonds, lvl_piscina, lvl_fabrica, lvl_escuela, lvl_hospital, premium_expires').neq('telegram_id', 'MASTER');
+        const resultado = await _supabase.from('game_data').select('telegram_id, username, city_name, diamonds, lvl_piscina, lvl_fabrica, lvl_escuela, lvl_hospital, premium_expires, genero').neq('telegram_id', 'MASTER');
         if (!resultado.error && resultado.data) {
             const ahora = new Date();
             globalPoolData.user_rankings = resultado.data.map(function(u) {
@@ -1919,6 +2092,7 @@ async function updateRankingAndPool() {
                 return {
                     id: u.telegram_id,
                     username: u.username || 'Alcalde',
+                    genero: u.genero || 'M',
                     city_name: u.city_name || 'Ciudad sin nombre',
                     diamonds: Number(u.diamonds) || 0,
                     produccion: produccion
@@ -1954,14 +2128,14 @@ async function saveUserData() {
     if (!userData.id) return;
     try {
         const datos = {
-            diamonds: Math.floor(userData.diamonds),
-            lvl_piscina: userData.lvl_piscina,
-            lvl_fabrica: userData.lvl_fabrica,
-            lvl_escuela: userData.lvl_escuela,
-            lvl_hospital: userData.lvl_hospital,
+            diamonds: Math.floor(userData.diamonds || 0),
+            lvl_piscina: userData.lvl_piscina || 0,
+            lvl_fabrica: userData.lvl_fabrica || 0,
+            lvl_escuela: userData.lvl_escuela || 0,
+            lvl_hospital: userData.lvl_hospital || 0,
             last_online: new Date().toISOString(),
             premium_expires: userData.premium_expires,
-            daily_streak: userData.daily_streak,
+            daily_streak: userData.daily_streak || 0,
             last_daily_claim: userData.last_daily_claim,
             event_progress: userData.event_progress || {},
             gamestats: userData.gameStats,
@@ -1970,7 +2144,9 @@ async function saveUserData() {
             last_casino_rescue: userData.last_casino_rescue,
             last_production_update: userData.last_production_update || new Date().toISOString(),
             city_name: userData.city_name || null,
-            news_feed: userData.newsFeed || []
+            news_feed: userData.newsFeed || [],
+            genero: userData.genero || 'M',
+            idioma: userData.idioma || 'es'
         };
         const resultado = await _supabase.from('game_data').update(datos).eq('telegram_id', userData.id);
         if (resultado.error) {
@@ -2013,7 +2189,6 @@ async function loadUserFromDB(tgId) {
             };
             await _supabase.from('game_data').insert([nuevoUsuario]);
             userData = Object.assign({}, userData, nuevoUsuario, { id: tgId.toString() });
-            // Si esta persona entró con un código de invitación, acreditar a quien la invitó
             const codigoInvitacion = tg.initDataUnsafe && tg.initDataUnsafe.start_param;
             if (codigoInvitacion) {
                 try {
@@ -2049,6 +2224,8 @@ async function loadUserFromDB(tgId) {
                 last_production_update: datos.last_production_update || null,
                 city_name: datos.city_name || null,
                 newsFeed: datos.news_feed || [],
+                genero: datos.genero || 'M',
+                idioma: datos.idioma || 'es',
                 gameStats: datos.gamestats || {
                     escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
                     fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
@@ -2073,7 +2250,7 @@ function startProduction() {
     setInterval(function() {
         if (!userData.id) return;
         const produccionPorSegundo = getTotalProduction() / 3600;
-        userData.diamonds = userData.diamonds + produccionPorSegundo;
+        userData.diamonds = (userData.diamonds || 0) + produccionPorSegundo;
         userData.last_production_update = new Date().toISOString();
         const diamantesElem = document.getElementById('diamonds');
         if (diamantesElem) diamantesElem.textContent = Math.floor(userData.diamonds);
@@ -2089,12 +2266,11 @@ function aplicarProduccionOffline() {
     const ultimaVez = new Date(userData.last_production_update);
     let segundosTranscurridos = (ahora - ultimaVez) / 1000;
     if (segundosTranscurridos <= 0) return;
-    // Tope de 12 horas para evitar abusos si alguien manipula la fecha del teléfono
     const TOPE_SEGUNDOS = 12 * 60 * 60;
     if (segundosTranscurridos > TOPE_SEGUNDOS) segundosTranscurridos = TOPE_SEGUNDOS;
     const produccionGanada = (getTotalProduction() / 3600) * segundosTranscurridos;
-    if (produccionGanada > 0) {
-        userData.diamonds = userData.diamonds + produccionGanada;
+    if (produccionGanada > 0 && isFinite(produccionGanada)) {
+        userData.diamonds = (userData.diamonds || 0) + produccionGanada;
     }
     userData.last_production_update = ahora.toISOString();
 }
@@ -2112,8 +2288,6 @@ async function initApp() {
         userData.id = usuario.id.toString();
         userData.username = usuario.first_name || 'Usuario';
         await loadUserFromDB(usuario.id);
-        // Volver a poner el nombre real de Telegram: loadUserFromDB puede
-        // haberlo pisado con un valor viejo guardado en Supabase.
         userData.username = usuario.first_name || 'Usuario';
     } else {
         userData.id = 'test_' + Date.now();
@@ -2141,6 +2315,9 @@ async function initApp() {
     window.addEventListener('beforeunload', function() { saveUserData(); });
     mostrarOnboardingSiHaceFalta();
     renderizarFeedNoticias();
+    aplicarIdioma();
+    const labelIdioma = document.getElementById('idioma-actual-label');
+    if (labelIdioma) labelIdioma.textContent = NOMBRES_IDIOMA[userData.idioma] || 'Español';
     console.log('✅ DIAMOND CITY - Sistema completamente inicializado');
 }
 
@@ -2189,5 +2366,9 @@ window.startSlingshot = startSlingshot;
 window.releaseSlingshot = releaseSlingshot;
 window.confirmarNombreCiudad = confirmarNombreCiudad;
 window.abrirAsistente = abrirAsistente;
+window.seleccionarIdioma = seleccionarIdioma;
+window.abrirSelectorIdioma = abrirSelectorIdioma;
+window.seleccionarGenero = seleccionarGenero;
+window.cambiarGeneroPerfil = cambiarGeneroPerfil;
 
 console.log('📦 DIAMOND CITY - Todos los módulos exportados correctamente');
