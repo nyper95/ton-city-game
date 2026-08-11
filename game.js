@@ -149,10 +149,6 @@ let piscinaPower = 0;
 let piscinaHoldStart = 0;
 let piscinaChargeInterval = null;
 let piscinaGameStarted = false;
-let piscinaCombo = 0;
-let piscinaDireccion = 1;
-let piscinaZonaInicio = 30;
-let piscinaZonaFin = 70;
 
 // Variables Hospital
 let hospitalLevel = 1;
@@ -174,6 +170,17 @@ function esPremium() {
 function actualizarPremiumUI() {
     const badge = document.getElementById('premium-badge');
     if (badge) badge.style.display = esPremium() ? 'flex' : 'none';
+}
+
+function enVentanaRetiro() {
+    return new Date().getDay() === 0;
+}
+
+function getNumeroSemana() {
+    const ahora = new Date();
+    const inicio = new Date(ahora.getFullYear(), 0, 1);
+    const dias = Math.floor((ahora - inicio) / (24 * 60 * 60 * 1000));
+    return Math.ceil(dias / 7);
 }
 
 function getTotalProduction() {
@@ -400,7 +407,6 @@ function getConsejosAsistente() {
     if ((userData.referred_users || []).length === 0) {
         consejos.push('👥 ' + ciudad + ' todavía no tiene ciudadanos referidos. Cada persona que invite le genera diamantes adicionales. Encontrará su código en la pestaña Amigos.');
     }
-
     if (consejos.length === 0) {
         consejos.push('✅ Todo está en orden en ' + ciudad + '. Excelente gestión hasta el momento.');
     }
@@ -658,7 +664,8 @@ function actualizarRankingModal() {
         const medalla = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1)));
         html += '<div class="ranking-fila' + (esYo ? ' yo' : '') + '">';
         html += '<div class="ranking-pos">' + medalla + '</div>';
-        html += '<div class="ranking-info"><div class="ranking-ciudad">🏙️ ' + j.city_name + '</div><div class="ranking-alcalde">' + (esYo ? '👤 Tú' : '👤 ' + j.username) + '</div></div>';
+        const tituloJugador = j.genero === 'F' ? 'Alcaldesa' : 'Alcalde';
+        html += '<div class="ranking-info"><div class="ranking-ciudad">🏙️ ' + j.city_name + '</div><div class="ranking-alcalde">' + (esYo ? 'Tú · ' : '') + tituloJugador + ' ' + j.username + '</div></div>';
         html += '<div class="ranking-produccion">⚡' + Math.floor(j.produccion) + '/h</div>';
         html += '</div>';
     }
@@ -921,7 +928,7 @@ function actualizarEstadoAnuncio() {
 
 function showAd() {
     if (esPremium()) {
-        userData.diamonds = (userData.diamonds || 0) + 20;
+        userData.diamonds = userData.diamonds + 20;
         saveUserData();
         actualizarUI();
         alert('⭐ Como usuario Premium, recibes +20 💎');
@@ -930,7 +937,7 @@ function showAd() {
     }
     showRewardedAd(function(completado) {
         if (completado) {
-            userData.diamonds = (userData.diamonds || 0) + 20;
+            userData.diamonds = userData.diamonds + 20;
             userData.last_ad_watch = new Date().toISOString();
             registrarEvento('📺', 'Anuncio patrocinador completado', '+20 💎 acreditados a la tesorería');
             saveUserData();
@@ -945,7 +952,7 @@ function showAd() {
 
 function rescueWithAd() {
     if (esPremium()) {
-        userData.diamonds = (userData.diamonds || 0) + 50;
+        userData.diamonds = userData.diamonds + 50;
         actualizarUI();
         alert('⭐ Rescate Premium: +50 💎');
         return;
@@ -958,7 +965,7 @@ function rescueWithAd() {
     }
     showRewardedAd(function(completado) {
         if (completado) {
-            userData.diamonds = (userData.diamonds || 0) + 50;
+            userData.diamonds = userData.diamonds + 50;
             userData.last_casino_rescue = new Date().toISOString();
             saveUserData();
             actualizarUI();
@@ -1025,7 +1032,7 @@ async function claimDailyReward() {
     }
     if (nuevoDia > 30) nuevoDia = 30;
     const recompensa = getDailyRewardAmount(nuevoDia);
-    userData.diamonds = (userData.diamonds || 0) + recompensa;
+    userData.diamonds = userData.diamonds + recompensa;
     userData.daily_streak = nuevoDia;
     userData.last_daily_claim = new Date().toISOString();
     registrarEvento('🎁', 'Recompensa diaria reclamada', 'Día ' + nuevoDia + ' de 30 · +' + recompensa + ' 💎');
@@ -1037,7 +1044,8 @@ async function claimDailyReward() {
 }
 
 // ==========================================
-// CASINO - VERSIÓN MEJORADA CON ANIMACIONES Y COLORES VIVOS
+// ==========================================
+// CASINO
 // ==========================================
 function openCasino() {
     closeAll();
@@ -1064,7 +1072,7 @@ function abrirJuego(juego) {
     const balanceElem = document.getElementById(idBalance);
     if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
     if (juego === 'highlow') {
-        document.getElementById('hl-number').textContent = '🎯';
+        document.getElementById('hl-number').textContent = '0000';
         document.getElementById('hl-result').innerHTML = '';
         document.getElementById('hl-bet-display').textContent = apuestaActual.highlow;
         document.getElementById('hl-bet').textContent = apuestaActual.highlow + ' 💎';
@@ -1073,9 +1081,6 @@ function abrirJuego(juego) {
         document.getElementById('ruleta-result').innerHTML = '';
         document.getElementById('ruleta-bet-display').textContent = apuestaActual.ruleta;
         document.getElementById('ruleta-bet').textContent = apuestaActual.ruleta + ' 💎';
-        document.getElementById('ruleta-wheel').style.animation = 'none';
-        void document.getElementById('ruleta-wheel').offsetWidth;
-        document.getElementById('ruleta-wheel').style.animation = 'spinWheel 0.5s ease';
     } else if (juego === 'tragaperras') {
         document.getElementById('slot1').textContent = '💎';
         document.getElementById('slot2').textContent = '💰';
@@ -1083,15 +1088,13 @@ function abrirJuego(juego) {
         document.getElementById('tragaperras-result').innerHTML = '';
         document.getElementById('tragaperras-bet-display').textContent = apuestaActual.tragaperras;
         document.getElementById('tragaperras-bet').textContent = apuestaActual.tragaperras + ' 💎';
-        document.querySelectorAll('.slot').forEach(s => s.style.animation = 'none');
     } else if (juego === 'dados') {
         document.getElementById('dado1').textContent = '⚀';
         document.getElementById('dado2').textContent = '⚀';
-        document.getElementById('dados-suma').textContent = '🎲 Suma: 2';
+        document.getElementById('dados-suma').textContent = 'Suma: 2';
         document.getElementById('dados-result').innerHTML = '';
         document.getElementById('dados-bet-display').textContent = apuestaActual.dados;
         document.getElementById('dados-bet').textContent = apuestaActual.dados + ' 💎';
-        document.querySelectorAll('.dado').forEach(d => d.style.animation = 'none');
     } else if (juego === 'ruletarusa') {
         crearCamarasRuletaRusa();
         document.getElementById('ruletarusa-result').innerHTML = '';
@@ -1149,7 +1152,6 @@ function registrarJugada(juego, cantidad) {
     }
 }
 
-// HIGH LOW - Con colores vibrantes y animaciones
 function jugarHighLow(eleccion) {
     const apuesta = apuestaActual.highlow;
     if (userData.diamonds < apuesta) return alert('❌ Diamantes insuficientes');
@@ -1161,28 +1163,16 @@ function jugarHighLow(eleccion) {
     if (eleccion === 'low' && numero < 5000) gana = true;
     if (eleccion === 'high' && numero >= 5000) gana = true;
     const numeroElem = document.getElementById('hl-number');
-    if (numeroElem) {
-        numeroElem.style.animation = 'none';
-        void numeroElem.offsetWidth;
-        numeroElem.style.animation = 'pulseGlow 0.5s ease';
-        numeroElem.style.color = '#facc15';
-        numeroElem.style.textShadow = '0 0 30px rgba(250,204,21,0.5)';
-    }
+    if (numeroElem) numeroElem.classList.add('spinning');
     let vueltas = 0;
     const spinInterval = setInterval(function() {
-        if (numeroElem) {
-            const rand = Math.floor(Math.random() * 10000);
-            numeroElem.textContent = rand.toString().padStart(4, '0');
-            numeroElem.style.color = `hsl(${rand % 360}, 100%, 60%)`;
-        }
+        if (numeroElem) numeroElem.textContent = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
         vueltas++;
-        if (vueltas >= 15) {
+        if (vueltas >= 10) {
             clearInterval(spinInterval);
             if (numeroElem) {
+                numeroElem.classList.remove('spinning');
                 numeroElem.textContent = numero.toString().padStart(4, '0');
-                numeroElem.style.color = gana ? '#4ade80' : '#ef4444';
-                numeroElem.style.textShadow = gana ? '0 0 40px rgba(74,222,128,0.6)' : '0 0 40px rgba(239,68,68,0.6)';
-                numeroElem.style.animation = gana ? 'winPulse 0.6s ease' : 'loseShake 0.5s ease';
             }
             const balanceElem = document.getElementById('hl-balance');
             if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
@@ -1190,31 +1180,20 @@ function jugarHighLow(eleccion) {
             if (gana) {
                 const ganancia = apuesta * 2;
                 userData.diamonds = userData.diamonds + ganancia;
-                if (resultadoElem) {
-                    resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:24px;font-weight:bold;animation:winGlow 0.8s ease;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
-                    resultadoElem.style.background = 'rgba(74,222,128,0.15)';
-                    resultadoElem.style.borderRadius = '12px';
-                    resultadoElem.style.padding = '10px';
-                }
-                if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+                if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
+                if (navigator.vibrate) navigator.vibrate(50);
                 spawnConfetti();
                 destelloResultado('modalHighLow', true);
             } else {
-                if (resultadoElem) {
-                    resultadoElem.innerHTML = '<span style="color:#ef4444;font-size:22px;font-weight:bold;animation:loseShake 0.5s ease;">😞 Perdiste ' + apuesta + ' 💎</span>';
-                    resultadoElem.style.background = 'rgba(239,68,68,0.15)';
-                    resultadoElem.style.borderRadius = '12px';
-                    resultadoElem.style.padding = '10px';
-                }
+                if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
                 destelloResultado('modalHighLow', false);
             }
             actualizarUI();
             saveUserData();
         }
-    }, 80);
+    }, 70);
 }
 
-// RULETA - Con animación de ruleta mejorada
 let numeroElegidoRuleta = null;
 
 function mostrarPanelNumero() {
@@ -1242,20 +1221,12 @@ function jugarRuleta(tipo) {
     const numeroElem = document.getElementById('ruleta-number');
     const ruedaElem = document.getElementById('ruleta-wheel');
     if (ruedaElem) {
-        ruedaElem.style.animation = 'none';
+        ruedaElem.classList.remove('spinning');
         void ruedaElem.offsetWidth;
-        ruedaElem.style.animation = 'spinWheel 1.5s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        ruedaElem.classList.add('spinning');
     }
     setTimeout(function() {
-        if (numeroElem) {
-            numeroElem.textContent = numero;
-            numeroElem.style.fontSize = '48px';
-            numeroElem.style.fontWeight = 'bold';
-            const colores = ['#4ade80', '#facc15', '#f87171', '#60a5fa', '#a78bfa', '#f472b6'];
-            numeroElem.style.color = colores[numero % colores.length];
-            numeroElem.style.textShadow = `0 0 40px ${colores[numero % colores.length]}66`;
-            numeroElem.style.animation = 'popIn 0.5s ease';
-        }
+        if (numeroElem) numeroElem.textContent = numero;
         const balanceElem = document.getElementById('ruleta-balance');
         if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
         let gana = false;
@@ -1281,30 +1252,19 @@ function jugarRuleta(tipo) {
         if (gana) {
             const ganancia = (tipo === 'numero') ? apuesta * 36 : apuesta * 2;
             userData.diamonds = userData.diamonds + ganancia;
-            if (resultadoElem) {
-                resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:24px;font-weight:bold;animation:winGlow 0.8s ease;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
-                resultadoElem.style.background = 'rgba(74,222,128,0.15)';
-                resultadoElem.style.borderRadius = '12px';
-                resultadoElem.style.padding = '10px';
-            }
-            if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
+            if (navigator.vibrate) navigator.vibrate(50);
             spawnConfetti();
             destelloResultado('modalRuleta', true);
         } else {
-            if (resultadoElem) {
-                resultadoElem.innerHTML = '<span style="color:#ef4444;font-size:22px;font-weight:bold;animation:loseShake 0.5s ease;">😞 Perdiste ' + apuesta + ' 💎</span>';
-                resultadoElem.style.background = 'rgba(239,68,68,0.15)';
-                resultadoElem.style.borderRadius = '12px';
-                resultadoElem.style.padding = '10px';
-            }
+            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
             destelloResultado('modalRuleta', false);
         }
         actualizarUI();
         saveUserData();
-    }, 1500);
+    }, 1200);
 }
 
-// TRAGAPERRAS - Con efectos visuales mejorados
 function jugarTragaperras() {
     const apuesta = apuestaActual.tragaperras;
     if (userData.diamonds < apuesta) return alert('❌ Diamantes insuficientes');
@@ -1312,53 +1272,34 @@ function jugarTragaperras() {
     userData.diamonds = userData.diamonds - apuesta;
     registrarJugada('tragaperras');
     const slots = document.querySelectorAll('.slot');
-    slots.forEach(function(slot) {
-        slot.style.animation = 'none';
-        void slot.offsetWidth;
-        slot.style.animation = 'slotSpin 0.3s linear infinite';
-        slot.style.background = 'rgba(250,204,21,0.1)';
-        slot.style.boxShadow = '0 0 20px rgba(250,204,21,0.2)';
-    });
-    const simbolosSpin = ['💎', '₿', 'Ξ', '🪙', '📈', '📉', '🎰', '⭐'];
+    slots.forEach(function(slot) { slot.classList.add('spinning'); });
+    const simbolosSpin = ['💎', '₿', 'Ξ', '🪙', '📈', '📉'];
     const spinCycle = setInterval(function() {
-        slots.forEach(function(slot) {
-            slot.textContent = simbolosSpin[Math.floor(Math.random() * simbolosSpin.length)];
-            slot.style.transform = `scale(${1 + Math.random() * 0.3})`;
-            setTimeout(() => slot.style.transform = 'scale(1)', 50);
-        });
+        slots.forEach(function(slot) { slot.textContent = simbolosSpin[Math.floor(Math.random() * simbolosSpin.length)]; });
     }, 80);
     setTimeout(function() {
         clearInterval(spinCycle);
         const simbolos = [
-            { nombre: '💎', multiplicador: 30, color: '#4ade80' },
-            { nombre: '₿', multiplicador: 15, color: '#facc15' },
-            { nombre: 'Ξ', multiplicador: 8, color: '#60a5fa' },
-            { nombre: '🪙', multiplicador: 3, color: '#f472b6' },
-            { nombre: '📈', multiplicador: 2, color: '#34d399' },
-            { nombre: '📉', multiplicador: 2, color: '#f87171' },
-            { nombre: '🎰', multiplicador: 5, color: '#a78bfa' },
-            { nombre: '⭐', multiplicador: 10, color: '#facc15' }
+            { nombre: '💎', multiplicador: 30 },
+            { nombre: '₿', multiplicador: 15 },
+            { nombre: 'Ξ', multiplicador: 8 },
+            { nombre: '🪙', multiplicador: 3 },
+            { nombre: '📈', multiplicador: 2 },
+            { nombre: '📉', multiplicador: 2 }
         ];
         const resultados = [];
         for (let i = 0; i < 3; i++) {
             const aleatorio = Math.random() * 100;
             let acumulado = 0;
             for (let j = 0; j < simbolos.length; j++) {
-                acumulado = acumulado + 14;
+                acumulado = acumulado + 18;
                 if (aleatorio < acumulado) { resultados.push(simbolos[j]); break; }
             }
         }
-        const slot1 = document.getElementById('slot1');
-        const slot2 = document.getElementById('slot2');
-        const slot3 = document.getElementById('slot3');
-        if (slot1) { slot1.textContent = resultados[0].nombre; slot1.style.color = resultados[0].color; }
-        if (slot2) { slot2.textContent = resultados[1].nombre; slot2.style.color = resultados[1].color; }
-        if (slot3) { slot3.textContent = resultados[2].nombre; slot3.style.color = resultados[2].color; }
-        slots.forEach(function(slot) {
-            slot.style.animation = 'none';
-            slot.style.background = 'rgba(255,255,255,0.05)';
-            slot.style.boxShadow = 'none';
-        });
+        document.getElementById('slot1').textContent = resultados[0].nombre;
+        document.getElementById('slot2').textContent = resultados[1].nombre;
+        document.getElementById('slot3').textContent = resultados[2].nombre;
+        slots.forEach(function(slot) { slot.classList.remove('spinning'); });
         const balanceElem = document.getElementById('tragaperras-balance');
         if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
         const resultadoElem = document.getElementById('tragaperras-result');
@@ -1367,40 +1308,19 @@ function jugarTragaperras() {
             if (esPremium()) multiplicador = multiplicador * 2;
             const premio = apuesta * multiplicador;
             userData.diamonds = userData.diamonds + premio;
-            if (resultadoElem) {
-                resultadoElem.innerHTML = `<span style="color:#facc15;font-size:24px;font-weight:bold;animation:winGlow 0.8s ease;">🎉 ¡JACKPOT! x${multiplicador} (+${premio} 💎)</span>`;
-                resultadoElem.style.background = 'rgba(250,204,21,0.15)';
-                resultadoElem.style.borderRadius = '12px';
-                resultadoElem.style.padding = '10px';
-                resultadoElem.style.border = '2px solid #facc15';
-            }
+            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡JACKPOT! x' + multiplicador + ' (+' + premio + ' 💎)</span>';
             spawnConfetti();
             if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
             destelloResultado('modalTragaperras', true);
-        } else if (resultados[0].nombre === resultados[1].nombre || resultados[1].nombre === resultados[2].nombre || resultados[0].nombre === resultados[2].nombre) {
-            const premio = Math.floor(apuesta * 1.5);
-            userData.diamonds = userData.diamonds + premio;
-            if (resultadoElem) {
-                resultadoElem.innerHTML = `<span style="color:#60a5fa;font-size:20px;font-weight:bold;animation:popIn 0.5s ease;">✨ ¡Casi! +${premio} 💎</span>`;
-                resultadoElem.style.background = 'rgba(96,165,250,0.15)';
-                resultadoElem.style.borderRadius = '12px';
-                resultadoElem.style.padding = '10px';
-            }
         } else {
-            if (resultadoElem) {
-                resultadoElem.innerHTML = `<span style="color:#ef4444;font-size:22px;font-weight:bold;animation:loseShake 0.5s ease;">😞 Perdiste ${apuesta} 💎</span>`;
-                resultadoElem.style.background = 'rgba(239,68,68,0.15)';
-                resultadoElem.style.borderRadius = '12px';
-                resultadoElem.style.padding = '10px';
-            }
+            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
             destelloResultado('modalTragaperras', false);
         }
         actualizarUI();
         saveUserData();
-    }, 800);
+    }, 500);
 }
 
-// DADOS - Con animaciones de dados mejoradas
 function jugarDados(eleccion) {
     const apuesta = apuestaActual.dados;
     if (userData.diamonds < apuesta) return alert('❌ Diamantes insuficientes');
@@ -1410,56 +1330,21 @@ function jugarDados(eleccion) {
     const dado1 = Math.floor(Math.random() * 6) + 1;
     const dado2 = Math.floor(Math.random() * 6) + 1;
     const caras = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-    const colores = ['#4ade80', '#facc15', '#f87171', '#60a5fa', '#a78bfa', '#f472b6'];
     const dado1Elem = document.getElementById('dado1');
     const dado2Elem = document.getElementById('dado2');
-    if (dado1Elem) {
-        dado1Elem.style.animation = 'none';
-        void dado1Elem.offsetWidth;
-        dado1Elem.style.animation = 'diceRoll 0.6s ease';
-    }
-    if (dado2Elem) {
-        dado2Elem.style.animation = 'none';
-        void dado2Elem.offsetWidth;
-        dado2Elem.style.animation = 'diceRoll 0.6s ease';
-    }
+    if (dado1Elem) dado1Elem.classList.add('rolling');
+    if (dado2Elem) dado2Elem.classList.add('rolling');
     const dadosSpinCycle = setInterval(function() {
-        if (dado1Elem) {
-            const rand = Math.floor(Math.random() * 6);
-            dado1Elem.textContent = caras[rand];
-            dado1Elem.style.color = colores[rand];
-            dado1Elem.style.transform = `rotate(${Math.random() * 360}deg) scale(${1 + Math.random() * 0.2})`;
-        }
-        if (dado2Elem) {
-            const rand = Math.floor(Math.random() * 6);
-            dado2Elem.textContent = caras[rand];
-            dado2Elem.style.color = colores[rand];
-            dado2Elem.style.transform = `rotate(${Math.random() * 360}deg) scale(${1 + Math.random() * 0.2})`;
-        }
+        if (dado1Elem) dado1Elem.textContent = caras[Math.floor(Math.random() * 6)];
+        if (dado2Elem) dado2Elem.textContent = caras[Math.floor(Math.random() * 6)];
     }, 70);
     setTimeout(function() {
         clearInterval(dadosSpinCycle);
-        if (dado1Elem) {
-            dado1Elem.textContent = caras[dado1 - 1];
-            dado1Elem.style.color = colores[dado1 - 1];
-            dado1Elem.style.transform = 'scale(1) rotate(0deg)';
-            dado1Elem.style.animation = 'popIn 0.3s ease';
-        }
-        if (dado2Elem) {
-            dado2Elem.textContent = caras[dado2 - 1];
-            dado2Elem.style.color = colores[dado2 - 1];
-            dado2Elem.style.transform = 'scale(1) rotate(0deg)';
-            dado2Elem.style.animation = 'popIn 0.3s ease';
-        }
+        if (dado1Elem) { dado1Elem.textContent = caras[dado1 - 1]; dado1Elem.classList.remove('rolling'); }
+        if (dado2Elem) { dado2Elem.textContent = caras[dado2 - 1]; dado2Elem.classList.remove('rolling'); }
         const suma = dado1 + dado2;
         const sumaElem = document.getElementById('dados-suma');
-        if (sumaElem) {
-            sumaElem.textContent = `🎲 Suma: ${suma}`;
-            sumaElem.style.color = suma === 7 ? '#facc15' : '#94a3b8';
-            sumaElem.style.fontSize = '24px';
-            sumaElem.style.fontWeight = 'bold';
-            sumaElem.style.animation = 'popIn 0.3s ease';
-        }
+        if (sumaElem) sumaElem.textContent = 'Suma: ' + suma;
         const balanceElem = document.getElementById('dados-balance');
         if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
         let gana = false;
@@ -1471,41 +1356,29 @@ function jugarDados(eleccion) {
             let ganancia = (eleccion === 'exacto') ? apuesta * 5 : apuesta * 2;
             if (esPremium()) ganancia = ganancia * 2;
             userData.diamonds = userData.diamonds + ganancia;
-            if (resultadoElem) {
-                resultadoElem.innerHTML = `<span style="color:#4ade80;font-size:24px;font-weight:bold;animation:winGlow 0.8s ease;">🎉 ¡GANASTE! +${ganancia} 💎</span>`;
-                resultadoElem.style.background = 'rgba(74,222,128,0.15)';
-                resultadoElem.style.borderRadius = '12px';
-                resultadoElem.style.padding = '10px';
-            }
-            if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
+            if (navigator.vibrate) navigator.vibrate(50);
             spawnConfetti();
             destelloResultado('modalDados', true);
         } else {
-            if (resultadoElem) {
-                resultadoElem.innerHTML = `<span style="color:#ef4444;font-size:22px;font-weight:bold;animation:loseShake 0.5s ease;">😞 Perdiste ${apuesta} 💎</span>`;
-                resultadoElem.style.background = 'rgba(239,68,68,0.15)';
-                resultadoElem.style.borderRadius = '12px';
-                resultadoElem.style.padding = '10px';
-            }
+            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
             destelloResultado('modalDados', false);
         }
         actualizarUI();
         saveUserData();
-    }, 600);
+    }, 500);
 }
 
-// RULETA RUSA - Con efectos visuales mejorados
 function crearCamarasRuletaRusa() {
     const grid = document.getElementById('ruletarusa-camaras');
     if (!grid) return;
     grid.innerHTML = '';
-    const colores = ['#ef4444', '#f87171', '#facc15', '#4ade80', '#60a5fa', '#a78bfa'];
     for (let i = 1; i <= 6; i++) {
         const boton = document.createElement('button');
         boton.textContent = i;
-        boton.style.cssText = `background:var(--bg-elevated);border:2px solid ${colores[i-1]};border-radius:16px;padding:18px;color:white;font-weight:700;font-size:22px;cursor:pointer;transition:all 0.3s;text-shadow:0 0 20px ${colores[i-1]}66;`;
-        boton.onmouseenter = function() { this.style.background = colores[parseInt(this.textContent)-1]; this.style.transform = 'scale(1.1)'; this.style.boxShadow = `0 0 30px ${colores[parseInt(this.textContent)-1]}44`; };
-        boton.onmouseleave = function() { this.style.background = 'var(--bg-elevated)'; this.style.transform = 'scale(1)'; this.style.boxShadow = 'none'; };
+        boton.style.cssText = 'background:var(--bg-elevated);border:2px solid #ef4444;border-radius:16px;padding:18px;color:white;font-weight:700;font-size:22px;cursor:pointer;transition:all 0.2s;';
+        boton.onmouseenter = function() { this.style.background = '#ef4444'; this.style.transform = 'scale(1.05)'; };
+        boton.onmouseleave = function() { this.style.background = 'var(--bg-elevated)'; this.style.transform = 'scale(1)'; };
         (function(numero) { boton.onclick = function() { jugarRuletaRusa(numero); }; })(i);
         grid.appendChild(boton);
     }
@@ -1520,69 +1393,39 @@ function jugarRuletaRusa(camara) {
     const bala = Math.floor(Math.random() * 6) + 1;
     const gana = camara !== bala;
     const emojiElem = document.getElementById('ruletarusa-emoji');
-    if (emojiElem) {
-        emojiElem.textContent = '🔫';
-        emojiElem.style.animation = 'none';
-        void emojiElem.offsetWidth;
-        emojiElem.style.animation = 'pulseGlow 0.5s ease';
-    }
+    if (emojiElem) emojiElem.textContent = '🔫';
     const botones = document.querySelectorAll('#ruletarusa-camaras button');
     botones.forEach(function(b) { b.disabled = true; });
     let vueltas = 0;
     const suspenso = setInterval(function() {
-        botones.forEach(function(b) { 
-            b.classList.remove('camara-activa');
-            b.style.boxShadow = 'none';
-        });
+        botones.forEach(function(b) { b.classList.remove('camara-activa'); });
         const activa = botones[vueltas % botones.length];
-        if (activa) {
-            activa.classList.add('camara-activa');
-            activa.style.boxShadow = `0 0 40px ${activa.style.borderColor || '#ef4444'}88`;
-        }
+        if (activa) activa.classList.add('camara-activa');
         vueltas++;
-        if (vueltas >= 16) {
+        if (vueltas >= 12) {
             clearInterval(suspenso);
-            botones.forEach(function(b) { 
-                b.classList.remove('camara-activa');
-                b.style.boxShadow = 'none';
-            });
-            if (emojiElem) {
-                emojiElem.textContent = gana ? '🎉' : '💥';
-                emojiElem.style.animation = gana ? 'winGlow 0.6s ease' : 'loseShake 0.5s ease';
-                emojiElem.style.fontSize = gana ? '80px' : '80px';
-            }
+            botones.forEach(function(b) { b.classList.remove('camara-activa'); });
+            if (emojiElem) emojiElem.textContent = gana ? '🎉' : '💥';
             const balanceElem = document.getElementById('ruletarusa-balance');
             if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
             const resultadoElem = document.getElementById('ruletarusa-result');
             if (gana) {
                 const ganancia = apuesta * 3;
                 userData.diamonds = userData.diamonds + ganancia;
-                if (resultadoElem) {
-                    resultadoElem.innerHTML = `<span style="color:#4ade80;font-size:24px;font-weight:bold;animation:winGlow 0.8s ease;">🎉 ¡SOBREVIVISTE! +${ganancia} 💎</span>`;
-                    resultadoElem.style.background = 'rgba(74,222,128,0.15)';
-                    resultadoElem.style.borderRadius = '12px';
-                    resultadoElem.style.padding = '10px';
-                }
+                if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡SOBREVIVISTE! +' + ganancia + ' 💎</span>';
                 spawnConfetti();
                 if (navigator.vibrate) navigator.vibrate(100);
                 destelloResultado('modalRuletaRusa', true);
             } else {
-                if (resultadoElem) {
-                    resultadoElem.innerHTML = `<span style="color:#ef4444;font-size:22px;font-weight:bold;animation:loseShake 0.5s ease;">💥 ¡La bala estaba en la cámara ${bala}! Perdiste ${apuesta} 💎</span>`;
-                    resultadoElem.style.background = 'rgba(239,68,68,0.15)';
-                    resultadoElem.style.borderRadius = '12px';
-                    resultadoElem.style.padding = '10px';
-                }
+                if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;font-size:20px;">💥 ¡La bala estaba en la cámara ' + bala + '! Perdiste ' + apuesta + ' 💎</span>';
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
                 destelloResultado('modalRuletaRusa', false);
             }
             actualizarUI();
             saveUserData();
-            setTimeout(function() {
-                crearCamarasRuletaRusa();
-            }, 2000);
+            crearCamarasRuletaRusa();
         }
-    }, 130);
+    }, 120);
 }
 
 // ==========================================
@@ -1670,11 +1513,9 @@ function updateLivesUI(game) {
         if (i < gameLives[game]) {
             lifeDiv.className = 'life active';
             lifeDiv.innerHTML = '❤️';
-            lifeDiv.style.animation = 'pulseGlow 1s ease infinite';
         } else {
             lifeDiv.className = 'life';
             lifeDiv.innerHTML = '🖤';
-            lifeDiv.style.opacity = '0.3';
         }
         container.appendChild(lifeDiv);
     }
@@ -1694,12 +1535,7 @@ function loseLife(game) {
         else if (game === 'piscina') resultadoId = 'jump';
         else if (game === 'hospital') resultadoId = 'surgery';
         const resultadoElem = document.getElementById(resultadoId + '-result');
-        if (resultadoElem) {
-            resultadoElem.innerHTML = '<span style="color:#ef4444;font-size:24px;font-weight:bold;animation:loseShake 0.5s ease;">💀 GAME OVER</span>';
-            resultadoElem.style.background = 'rgba(239,68,68,0.15)';
-            resultadoElem.style.borderRadius = '12px';
-            resultadoElem.style.padding = '10px';
-        }
+        if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;font-size:20px;">💀 GAME OVER</span>';
         if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
         return false;
     }
@@ -1734,7 +1570,7 @@ function useAdMultiplier(game) {
 }
 
 // ==========================================
-// MINIJUEGO 1: ESCUELA - MENTE MAESTRA
+// MINIJUEGO 1: ESCUELA - MENTE MAESTRA (5 NÚMEROS)
 // ==========================================
 function iniciarJuegoEscuela() {
     gameActiveStates.escuela = true;
@@ -1811,7 +1647,7 @@ function seleccionarPupitre(numero) {
         if (!loseLife('escuela')) return;
         escuelaStreak = 0;
         escuelaUserInput = [];
-        document.getElementById('mem-result').innerHTML = '<span style="color:#ef4444;font-size:20px;animation:loseShake 0.5s ease;">❌ Secuencia incorrecta</span>';
+        document.getElementById('mem-result').innerHTML = '<span style="color:#ef4444;">❌ Secuencia incorrecta</span>';
         setTimeout(function() { nuevaSecuenciaEscuela(); }, 2000);
         return;
     }
@@ -1821,7 +1657,7 @@ function seleccionarPupitre(numero) {
     }
     if (escuelaUserInput.length === escuelaSequence.length) {
         const recompensa = calcularRecompensa(5, 'escuela');
-        userData.diamonds = (userData.diamonds || 0) + recompensa;
+        userData.diamonds = userData.diamonds + recompensa;
         escuelaLevel++;
         escuelaStreak++;
         if (escuelaLevel > escuelaBest) {
@@ -1834,7 +1670,7 @@ function seleccionarPupitre(numero) {
         userData.gameStats.escuela.lives = gameLives.escuela;
         document.getElementById('mem-level').textContent = escuelaLevel;
         document.getElementById('escuela-game-level').textContent = escuelaLevel;
-        document.getElementById('mem-result').innerHTML = '<span style="color:#4ade80;font-size:20px;animation:winGlow 0.5s ease;">✅ ¡Correcto! +' + recompensa + ' 💎</span>';
+        document.getElementById('mem-result').innerHTML = '<span style="color:#4ade80;font-size:18px;">✅ ¡Correcto! +' + recompensa + ' 💎</span>';
         actualizarUI();
         actualizarPanelMejora('escuela');
         saveUserData();
@@ -1844,7 +1680,7 @@ function seleccionarPupitre(numero) {
 }
 
 // ==========================================
-// MINIJUEGO 2: FÁBRICA
+// MINIJUEGO 2: FÁBRICA (MÚLTIPLES PIEZAS)
 // ==========================================
 function iniciarJuegoFabrica() {
     gameActiveStates.fabrica = true;
@@ -1890,6 +1726,8 @@ function crearPiezasFabrica() {
     for (let i = 0; i < numPieces; i++) {
         crearUnaPiezaFabrica();
     }
+    // Mantiene la cinta siempre con piezas disponibles: cada pocos segundos
+    // revisa si faltan piezas jugables y agrega una nueva.
     fabricaAnimInterval = setInterval(function() {
         if (!gameActiveStates.fabrica) { clearInterval(fabricaAnimInterval); return; }
         const piezasVivas = fabricaPieces.filter(function(p) { return !p.clicked; }).length;
@@ -1911,11 +1749,10 @@ function checkFabricaHitPiece(piece) {
         document.getElementById('asm-completed').textContent = fabricaCompleted;
         piece.style.background = '#4ade80';
         piece.textContent = '✅';
-        piece.style.transform = 'scale(1.3)';
         setTimeout(function() { piece.remove(); }, 300);
         if (fabricaCompleted >= fabricaRequired) {
             const recompensa = calcularRecompensa(8, 'fabrica');
-            userData.diamonds = (userData.diamonds || 0) + recompensa;
+            userData.diamonds = userData.diamonds + recompensa;
             fabricaLevel++;
             if (fabricaLevel > fabricaBest) {
                 fabricaBest = fabricaLevel;
@@ -1926,7 +1763,7 @@ function checkFabricaHitPiece(piece) {
             userData.gameStats.fabrica.totalWins = (userData.gameStats.fabrica.totalWins || 0) + 1;
             userData.gameStats.fabrica.lives = gameLives.fabrica;
             document.getElementById('fabrica-game-level').textContent = fabricaLevel;
-            document.getElementById('asm-result').innerHTML = '<span style="color:#4ade80;font-size:20px;animation:winGlow 0.5s ease;">✅ ¡Nivel completado! +' + recompensa + ' 💎</span>';
+            document.getElementById('asm-result').innerHTML = '<span style="color:#4ade80;font-size:18px;">✅ ¡Nivel completado! +' + recompensa + ' 💎</span>';
             actualizarUI();
             actualizarPanelMejora('fabrica');
             saveUserData();
@@ -1938,19 +1775,24 @@ function checkFabricaHitPiece(piece) {
         if (!loseLife('fabrica')) return;
         piece.style.background = '#ef4444';
         piece.textContent = '❌';
-        document.getElementById('asm-result').innerHTML = '<span style="color:#ef4444;animation:loseShake 0.3s ease;">⚠️ Pieza defectuosa</span>';
+        document.getElementById('asm-result').innerHTML = '<span style="color:#ef4444;">⚠️ Pieza defectuosa</span>';
         setTimeout(function() { piece.remove(); }, 300);
     } else if (!inZone) {
         if (!loseLife('fabrica')) return;
-        document.getElementById('asm-result').innerHTML = '<span style="color:#ef4444;animation:loseShake 0.3s ease;">❌ Fuera de zona</span>';
+        document.getElementById('asm-result').innerHTML = '<span style="color:#ef4444;">❌ Fuera de zona</span>';
         setTimeout(function() { piece.remove(); }, 300);
     }
     setTimeout(function() { document.getElementById('asm-result').innerHTML = ''; }, 1000);
 }
 
 // ==========================================
-// MINIJUEGO 3: PISCINA
+// MINIJUEGO 3: PISCINA (AGUJA ANIMADA)
 // ==========================================
+let piscinaCombo = 0;
+let piscinaDireccion = 1;
+let piscinaZonaInicio = 30;
+let piscinaZonaFin = 70;
+
 function iniciarJuegoPiscina() {
     gameActiveStates.piscina = true;
     piscinaLevel = userData.gameStats.piscina.currentLevel || 1;
@@ -1973,6 +1815,7 @@ function iniciarJuegoPiscina() {
 }
 
 function iniciarRondaPiscina() {
+    // La zona verde se achica y la velocidad sube con el nivel: más difícil con el tiempo
     const anchoZona = Math.max(14, 40 - piscinaLevel * 0.8);
     const centro = 35 + Math.random() * 30;
     piscinaZonaInicio = Math.max(2, centro - anchoZona / 2);
@@ -1981,12 +1824,10 @@ function iniciarRondaPiscina() {
     if (zonaElem) {
         zonaElem.style.left = piscinaZonaInicio + '%';
         zonaElem.style.width = (piscinaZonaFin - piscinaZonaInicio) + '%';
-        zonaElem.style.background = 'linear-gradient(90deg, #4ade80, #facc15, #4ade80)';
-        zonaElem.style.boxShadow = '0 0 30px rgba(74,222,128,0.3)';
     }
     piscinaPower = 0;
     piscinaDireccion = 1;
-    const duracionCiclo = Math.max(700, 1600 - piscinaLevel * 15);
+    const duracionCiclo = Math.max(700, 1600 - piscinaLevel * 15); // ms para un recorrido completo
     if (piscinaChargeInterval) clearInterval(piscinaChargeInterval);
     const pasoPorTick = (100 / (duracionCiclo / 30)) * 2;
     piscinaChargeInterval = setInterval(function() {
@@ -1994,51 +1835,20 @@ function iniciarRondaPiscina() {
         if (piscinaPower >= 100) { piscinaPower = 100; piscinaDireccion = -1; }
         if (piscinaPower <= 0) { piscinaPower = 0; piscinaDireccion = 1; }
         const needle = document.getElementById('power-needle');
-        if (needle) {
-            needle.style.left = piscinaPower + '%';
-            const hue = 120 - (piscinaPower / 100) * 120;
-            needle.style.background = `hsl(${hue}, 100%, 60%)`;
-            needle.style.boxShadow = `0 0 30px hsl(${hue}, 100%, 60%)66`;
-        }
+        if (needle) needle.style.left = piscinaPower + '%';
         const display = document.getElementById('jump-power-display');
-        if (display) {
-            display.textContent = Math.floor(piscinaPower) + '%';
-            display.style.color = piscinaPower >= piscinaZonaInicio && piscinaPower <= piscinaZonaFin ? '#4ade80' : '#94a3b8';
-        }
+        if (display) display.textContent = Math.floor(piscinaPower) + '%';
     }, 30);
-}
-
-function startSlingshot() {
-    if (!gameActiveStates.piscina || !piscinaGameStarted) return;
-    if (piscinaChargeInterval) clearInterval(piscinaChargeInterval);
-    const needle = document.getElementById('power-needle');
-    if (needle) {
-        needle.style.animation = 'pulseGlow 0.3s ease 3';
-        needle.style.boxShadow = '0 0 60px rgba(250,204,21,0.8)';
-    }
-    setTimeout(function() {
-        if (needle) {
-            needle.style.animation = '';
-            needle.style.boxShadow = '';
-        }
-    }, 1000);
-}
-
-function releaseSlingshot() {
-    saltarPiscina();
 }
 
 function crearSplash(exito) {
     const area = document.getElementById('slingshot-area');
     if (!area) return;
-    const emojis = exito ? ['💧', '✨', '🌊', '⭐', '💫'] : ['💦', '💧'];
-    for (let i = 0; i < 8; i++) {
+    const emojis = exito ? ['💧', '✨', '🌊'] : ['💦'];
+    for (let i = 0; i < 6; i++) {
         const drop = document.createElement('div');
         drop.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-        const size = 16 + Math.random() * 14;
-        const angle = -90 + Math.random() * 180;
-        const distance = 30 + Math.random() * 60;
-        drop.style.cssText = `position:absolute;left:${40 + Math.random() * 20}%;bottom:20px;font-size:${size}px;animation:splashDrop ${0.4 + Math.random() * 0.5}s ease forwards;pointer-events:none;z-index:20;transform:translate(${Math.cos(angle * Math.PI / 180) * distance}px, ${-Math.sin(angle * Math.PI / 180) * distance}px);`;
+        drop.style.cssText = 'position:absolute;left:' + (40 + Math.random() * 20) + '%;bottom:20px;font-size:' + (16 + Math.random() * 10) + 'px;animation:splashDrop 0.7s ease forwards;pointer-events:none;z-index:20;';
         area.appendChild(drop);
         setTimeout(function() { if (drop.parentNode) drop.remove(); }, 700);
     }
@@ -2056,11 +1866,11 @@ function saltarPiscina() {
         document.getElementById('piscina-combo').textContent = piscinaCombo;
         crearSplash(true);
         const bonusCombo = 1 + Math.min(piscinaCombo * 0.1, 1);
-        document.getElementById('jump-result').innerHTML = `<span style="color:#4ade80;font-size:20px;animation:winGlow 0.5s ease;">🎯 ¡Clavado perfecto! x${bonusCombo.toFixed(1)}</span>`;
+        document.getElementById('jump-result').innerHTML = '<span style="color:#4ade80;">🎯 ¡Clavado perfecto! x' + bonusCombo.toFixed(1) + '</span>';
         if (navigator.vibrate) navigator.vibrate(40);
         if (piscinaPerfect >= piscinaRequired) {
             const recompensa = Math.floor(calcularRecompensa(6, 'piscina') * bonusCombo);
-            userData.diamonds = (userData.diamonds || 0) + recompensa;
+            userData.diamonds = userData.diamonds + recompensa;
             piscinaLevel++;
             if (piscinaLevel > piscinaBest) {
                 piscinaBest = piscinaLevel;
@@ -2071,7 +1881,7 @@ function saltarPiscina() {
             userData.gameStats.piscina.totalWins = (userData.gameStats.piscina.totalWins || 0) + 1;
             userData.gameStats.piscina.lives = gameLives.piscina;
             document.getElementById('piscina-game-level').textContent = piscinaLevel;
-            document.getElementById('jump-result').innerHTML = `<span style="color:#4ade80;font-size:20px;animation:winGlow 0.5s ease;">✅ ¡Nivel completado! +${recompensa} 💎</span>`;
+            document.getElementById('jump-result').innerHTML = '<span style="color:#4ade80;font-size:18px;">✅ ¡Nivel completado! +' + recompensa + ' 💎</span>';
             piscinaPerfect = 0;
             document.getElementById('jump-perfect').textContent = '0';
             actualizarUI();
@@ -2088,7 +1898,7 @@ function saltarPiscina() {
         crearSplash(false);
         const sigueVivo = loseLife('piscina');
         if (sigueVivo) {
-            document.getElementById('jump-result').innerHTML = `<span style="color:#ef4444;animation:loseShake 0.3s ease;">💦 ¡Fallaste! (${Math.floor(potenciaFinal)}%, zona ${Math.floor(piscinaZonaInicio)}-${Math.floor(piscinaZonaFin)}%)</span>`;
+            document.getElementById('jump-result').innerHTML = '<span style="color:#ef4444;">💦 ¡Fallaste! (' + Math.floor(potenciaFinal) + '%, zona ' + Math.floor(piscinaZonaInicio) + '-' + Math.floor(piscinaZonaFin) + '%)</span>';
         } else {
             return;
         }
@@ -2102,7 +1912,7 @@ function saltarPiscina() {
 }
 
 // ==========================================
-// MINIJUEGO 4: HOSPITAL
+// MINIJUEGO 4: HOSPITAL (CÉLULAS MIXTAS)
 // ==========================================
 function iniciarJuegoHospital() {
     gameActiveStates.hospital = true;
@@ -2136,7 +1946,7 @@ function iniciarJuegoHospital() {
         if (hospitalTimeLeft <= 0) {
             clearInterval(hospitalTimer);
             loseLife('hospital');
-            document.getElementById('surgery-result').innerHTML = '<span style="color:#ef4444;animation:loseShake 0.3s ease;">⏰ ¡Tiempo agotado!</span>';
+            document.getElementById('surgery-result').innerHTML = '<span style="color:#ef4444;">⏰ ¡Tiempo agotado!</span>';
             setTimeout(function() { iniciarJuegoHospital(); }, 2000);
         }
     }, 100);
@@ -2155,11 +1965,9 @@ function crearCelulasHospital() {
         if (i < hospitalTotal) {
             celula.classList.add('virus-target');
             celula.textContent = '🦠';
-            celula.style.boxShadow = '0 0 20px rgba(74,222,128,0.3)';
         } else if (tipo < 0.5) {
             celula.classList.add('virus-bad');
             celula.textContent = '☣️';
-            celula.style.boxShadow = '0 0 20px rgba(239,68,68,0.3)';
         } else {
             celula.classList.add('virus-neutral');
             celula.textContent = '🧫';
@@ -2174,14 +1982,12 @@ function crearCelulasHospital() {
                 hospitalExtracted++;
                 document.getElementById('virus-extracted').textContent = hospitalExtracted;
                 this.classList.add('collected');
-                this.style.transform = 'scale(1.5)';
-                this.style.background = '#4ade80';
                 const self = this;
                 setTimeout(function() { if (self.parentNode) self.parentNode.removeChild(self); }, 300);
                 if (hospitalExtracted >= hospitalTotal) {
                     clearInterval(hospitalTimer);
                     const recompensa = calcularRecompensa(7, 'hospital');
-                    userData.diamonds = (userData.diamonds || 0) + recompensa;
+                    userData.diamonds = userData.diamonds + recompensa;
                     hospitalLevel++;
                     if (hospitalLevel > hospitalBest) {
                         hospitalBest = hospitalLevel;
@@ -2192,7 +1998,7 @@ function crearCelulasHospital() {
                     userData.gameStats.hospital.totalWins = (userData.gameStats.hospital.totalWins || 0) + 1;
                     userData.gameStats.hospital.lives = gameLives.hospital;
                     document.getElementById('hospital-game-level').textContent = hospitalLevel;
-                    document.getElementById('surgery-result').innerHTML = '<span style="color:#4ade80;font-size:20px;animation:winGlow 0.5s ease;">✅ ¡Cirugía exitosa! +' + recompensa + ' 💎</span>';
+                    document.getElementById('surgery-result').innerHTML = '<span style="color:#4ade80;font-size:18px;">✅ ¡Cirugía exitosa! +' + recompensa + ' 💎</span>';
                     actualizarUI();
                     actualizarPanelMejora('hospital');
                     saveUserData();
@@ -2206,7 +2012,7 @@ function crearCelulasHospital() {
                 const self = this;
                 setTimeout(function() { if (self.parentNode) self.parentNode.removeChild(self); }, 300);
                 if (!loseLife('hospital')) return;
-                document.getElementById('surgery-result').innerHTML = '<span style="color:#ef4444;animation:loseShake 0.3s ease;">⚠️ ¡Célula incorrecta! -1 vida</span>';
+                document.getElementById('surgery-result').innerHTML = '<span style="color:#ef4444;">⚠️ ¡Célula incorrecta! -1 vida</span>';
                 setTimeout(function() { document.getElementById('surgery-result').innerHTML = ''; }, 1000);
             }
         };
@@ -2238,10 +2044,10 @@ async function updateRankingAndPool() {
         }
         const posicion = globalPoolData.user_rankings.findIndex(function(u) { return u.id === userData.id; });
         if (posicion !== -1) {
-            if (posicion < 3) userData.rank = "💎 Diamante";
-            else if (posicion < 10) userData.rank = "🥇 Oro";
-            else if (posicion < 50) userData.rank = "🥈 Plata";
-            else userData.rank = "🥉 Ciudadano";
+            if (posicion < 3) userData.rank = "Diamante";
+            else if (posicion < 10) userData.rank = "Oro";
+            else if (posicion < 50) userData.rank = "Plata";
+            else userData.rank = "Ciudadano";
             userData.weekly_rank = posicion + 1;
         }
         const PREMIO_SEMANAL_DIAMANTES = 20000;
@@ -2265,14 +2071,14 @@ async function saveUserData() {
     if (!userData.id) return;
     try {
         const datos = {
-            diamonds: Math.floor(userData.diamonds || 0),
-            lvl_piscina: userData.lvl_piscina || 0,
-            lvl_fabrica: userData.lvl_fabrica || 0,
-            lvl_escuela: userData.lvl_escuela || 0,
-            lvl_hospital: userData.lvl_hospital || 0,
+            diamonds: Math.floor(userData.diamonds),
+            lvl_piscina: userData.lvl_piscina,
+            lvl_fabrica: userData.lvl_fabrica,
+            lvl_escuela: userData.lvl_escuela,
+            lvl_hospital: userData.lvl_hospital,
             last_online: new Date().toISOString(),
             premium_expires: userData.premium_expires,
-            daily_streak: userData.daily_streak || 0,
+            daily_streak: userData.daily_streak,
             last_daily_claim: userData.last_daily_claim,
             event_progress: userData.event_progress || {},
             gamestats: userData.gameStats,
@@ -2326,6 +2132,7 @@ async function loadUserFromDB(tgId) {
             };
             await _supabase.from('game_data').insert([nuevoUsuario]);
             userData = Object.assign({}, userData, nuevoUsuario, { id: tgId.toString() });
+            // Si esta persona entró con un código de invitación, acreditar a quien la invitó
             const codigoInvitacion = tg.initDataUnsafe && tg.initDataUnsafe.start_param;
             if (codigoInvitacion) {
                 try {
@@ -2386,7 +2193,7 @@ function startProduction() {
     setInterval(function() {
         if (!userData.id) return;
         const produccionPorSegundo = getTotalProduction() / 3600;
-        userData.diamonds = (userData.diamonds || 0) + produccionPorSegundo;
+        userData.diamonds = userData.diamonds + produccionPorSegundo;
         userData.last_production_update = new Date().toISOString();
         const diamantesElem = document.getElementById('diamonds');
         if (diamantesElem) diamantesElem.textContent = Math.floor(userData.diamonds);
@@ -2402,11 +2209,12 @@ function aplicarProduccionOffline() {
     const ultimaVez = new Date(userData.last_production_update);
     let segundosTranscurridos = (ahora - ultimaVez) / 1000;
     if (segundosTranscurridos <= 0) return;
+    // Tope de 12 horas para evitar abusos si alguien manipula la fecha del teléfono
     const TOPE_SEGUNDOS = 12 * 60 * 60;
     if (segundosTranscurridos > TOPE_SEGUNDOS) segundosTranscurridos = TOPE_SEGUNDOS;
     const produccionGanada = (getTotalProduction() / 3600) * segundosTranscurridos;
-    if (produccionGanada > 0 && isFinite(produccionGanada)) {
-        userData.diamonds = (userData.diamonds || 0) + produccionGanada;
+    if (produccionGanada > 0) {
+        userData.diamonds = userData.diamonds + produccionGanada;
     }
     userData.last_production_update = ahora.toISOString();
 }
@@ -2424,6 +2232,8 @@ async function initApp() {
         userData.id = usuario.id.toString();
         userData.username = usuario.first_name || 'Usuario';
         await loadUserFromDB(usuario.id);
+        // Volver a poner el nombre real de Telegram: loadUserFromDB puede
+        // haberlo pisado con un valor viejo guardado en Supabase.
         userData.username = usuario.first_name || 'Usuario';
     } else {
         userData.id = 'test_' + Date.now();
@@ -2499,11 +2309,5 @@ window.startSlingshot = startSlingshot;
 window.releaseSlingshot = releaseSlingshot;
 window.confirmarNombreCiudad = confirmarNombreCiudad;
 window.abrirAsistente = abrirAsistente;
-window.seleccionarIdioma = seleccionarIdioma;
-window.abrirSelectorIdioma = abrirSelectorIdioma;
-window.seleccionarGenero = seleccionarGenero;
-window.cambiarGeneroPerfil = cambiarGeneroPerfil;
-window.mostrarPanelNumero = mostrarPanelNumero;
-window.confirmarNumeroRuleta = confirmarNumeroRuleta;
 
 console.log('📦 DIAMOND CITY - Todos los módulos exportados correctamente');
