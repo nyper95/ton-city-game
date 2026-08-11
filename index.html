@@ -132,7 +132,6 @@
         .building-card{background:linear-gradient(145deg,var(--bg-elevated),var(--bg-card));border-radius:24px;padding:18px 12px;border:2px solid transparent;cursor:pointer;text-align:center;transition:all 0.25s;position:relative;overflow:hidden;box-shadow:0 8px 20px -8px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.05);}
         .building-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.35),transparent);}
         .building-card:active{transform:scale(0.96) translateY(1px);box-shadow:0 3px 10px -4px rgba(0,0,0,0.6);}
-        .building-card.event-active{border-color:var(--accent-orange)!important;box-shadow:0 0 20px rgba(255,159,10,0.3);animation:pulse-glow 2s infinite;}
         .building-card.piscina{border-color:rgba(56,189,248,0.4);}.building-card.piscina .building-icon{background:radial-gradient(circle at 35% 30%,rgba(56,189,248,0.35),rgba(56,189,248,0.1));color:var(--color-piscina);box-shadow:0 0 16px -4px rgba(56,189,248,0.5);}
         .building-card.fabrica{border-color:rgba(167,139,250,0.4);}.building-card.fabrica .building-icon{background:radial-gradient(circle at 35% 30%,rgba(167,139,250,0.35),rgba(167,139,250,0.1));color:var(--color-fabrica);box-shadow:0 0 16px -4px rgba(167,139,250,0.5);}
         .building-card.escuela{border-color:rgba(251,191,36,0.4);}.building-card.escuela .building-icon{background:radial-gradient(circle at 35% 30%,rgba(251,191,36,0.35),rgba(251,191,36,0.1));color:var(--color-escuela);box-shadow:0 0 16px -4px rgba(251,191,36,0.5);}
@@ -471,10 +470,9 @@
     <div class="modal" id="modalDailyReward"><div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Recompensa diaria</div></div><div style="text-align:center;font-size:48px;">🎁</div><div class="flex-row"><span>Día</span><span id="current-day">0</span></div><div class="flex-row"><span>Recompensa</span><span id="today-reward">0 💎</span></div><div id="daily-status" style="background:#1e293b;padding:12px;border-radius:16px;text-align:center;">Cargando...</div><div class="daily-calendar" id="daily-calendar"></div><button onclick="claimDailyReward()" style="background:#ff9f0a;border:none;border-radius:30px;padding:16px;width:100%;font-weight:700;color:white;">RECLAMAR</button><button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:white;padding:12px;border-radius:20px;width:100%;margin-top:10px;">CERRAR</button></div>
 
     <!-- MODAL ADS -->
-    <div class="modal" id="modalAds"><div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Parque</div></div><div id="ads-statu. Qg" style="background:#1e293b;padding:16px;border-radius:20px;text-align:center;">Cargando...</div><button onclick="showAd()" id="watch-ad-btn" style="background:#ff9f0a;border:none;border-radius:30px;padding:16px;width:100%;font-weight:700;color:white;" disabled>VER ANUNCIO</button><button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:white;padding:12px;border-radius:20px;width:100%;margin-top:10px;">CERRAR</button></div>
+    <div class="modal" id="modalAds"><div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Parque</div></div><div id="ads-status" style="background:#1e293b;padding:16px;border-radius:20px;text-align:center;">Cargando...</div><button onclick="showAd()" id="watch-ad-btn" style="background:#ff9f0a;border:none;border-radius:30px;padding:16px;width:100%;font-weight:700;color:white;" disabled>VER ANUNCIO</button><button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:white;padding:12px;border-radius:20px;width:100%;margin-top:10px;">CERRAR</button></div>
 
     <!-- MODAL EVENT -->
-    <div class="modal" id="modalEvent"><div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">Evento</div></div><div style="text-align:center;font-size:64px;" id="event-emoji">⭐</div><h3 id="event-titulo">Cargando...</h3><p id="event-description"></p><button onclick="startEventTask()" style="background:#ff9f0a;border:none;border-radius:30px;padding:16px;width:100%;font-weight:700;color:white;">JUGAR</button><button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:white;padding:12px;border-radius:20px;width:100%;margin-top:10px;">CERRAR</button></div>
 
     <!-- ASISTENTE VIRTUAL -->
     <div id="asistente-boton" class="asistente-boton" onclick="abrirAsistente()">👩‍💼</div>
@@ -495,4 +493,4 @@
 
     <script src="game.js"></script>
 </body>
-</html> 
+</html>
