@@ -926,6 +926,19 @@ function actualizarEstadoAnuncio() {
     }
 }
 
+async function refrescarDiamantesDesdeServidor() {
+    if (!userData.id) return;
+    try {
+        const resultado = await _supabase.from('game_data').select('diamonds, news_feed').eq('telegram_id', userData.id).maybeSingle();
+        if (resultado.data) {
+            userData.diamonds = Number(resultado.data.diamonds) || userData.diamonds;
+            if (resultado.data.news_feed) userData.newsFeed = resultado.data.news_feed;
+            actualizarUI();
+            renderizarFeedNoticias();
+        }
+    } catch (error) { console.error('Error refrescando diamantes:', error); }
+}
+
 function showAd() {
     if (esPremium()) {
         userData.diamonds = userData.diamonds + 20;
@@ -937,13 +950,11 @@ function showAd() {
     }
     showRewardedAd(function(completado) {
         if (completado) {
-            userData.diamonds = userData.diamonds + 20;
             userData.last_ad_watch = new Date().toISOString();
-            registrarEvento('📺', 'Anuncio patrocinador completado', '+20 💎 acreditados a la tesorería');
             saveUserData();
-            actualizarUI();
-            alert('🎁 ¡Gracias! Recibiste +20 💎');
+            alert('🎁 ¡Gracias por ver el anuncio! Tus diamantes se acreditarán en unos segundos.');
             closeAll();
+            setTimeout(refrescarDiamantesDesdeServidor, 4000);
         } else {
             alert('❌ No se pudo completar el anuncio');
         }
@@ -965,11 +976,10 @@ function rescueWithAd() {
     }
     showRewardedAd(function(completado) {
         if (completado) {
-            userData.diamonds = userData.diamonds + 50;
             userData.last_casino_rescue = new Date().toISOString();
             saveUserData();
-            actualizarUI();
-            alert('🎁 ¡Rescate exitoso! +50 💎');
+            alert('🎁 ¡Anuncio confirmado! Tu rescate se acreditará en unos segundos.');
+            setTimeout(refrescarDiamantesDesdeServidor, 4000);
         }
     });
 }
