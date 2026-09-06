@@ -440,6 +440,31 @@ function actualizarBadgeValeria() {
     else boton.classList.remove('urgente');
 }
 
+async function abrirHistorialPremios() {
+    closeAll();
+    showModal('modalHistorialPremios');
+    const cont = document.getElementById('historial-premios-lista');
+    if (!cont) return;
+    cont.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">Cargando...</div>';
+    try {
+        const resultado = await _supabase.from('payout_history').select('*').order('fecha', { ascending: false }).limit(30);
+        const filas = (resultado && resultado.data) || [];
+        if (filas.length === 0) {
+            cont.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">Todavía no se ha procesado ningún pago semanal.</div>';
+            return;
+        }
+        let html = '';
+        for (let i = 0; i < filas.length; i++) {
+            const f = filas[i];
+            const fecha = new Date(f.fecha).toLocaleDateString();
+            html += '<div class="feed-item"><div class="feed-icono">💎</div><div class="feed-texto"><div class="feed-titulo">#' + f.posicion + ' · 🏙️ ' + (f.city_name || 'Ciudad') + ' (' + (f.username || 'Alcalde') + ')</div><div class="feed-subtitulo">+' + f.premio + ' 💎 pagados</div><div class="feed-tiempo">' + fecha + '</div></div></div>';
+        }
+        cont.innerHTML = html;
+    } catch (error) {
+        cont.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">No se pudo cargar el historial.</div>';
+    }
+}
+
 function abrirAsistente() {
     closeAll();
     showModal('modalAsistente');
@@ -510,7 +535,7 @@ function closeAll() {
         'modalPerfil', 'modalFriends', 'modalRanking', 'modalBank', 'modalStore',
         'modalCasino', 'modalHighLow', 'modalRuleta', 'modalTragaperras', 'modalDados',
         'modalRuletaRusa', 'modalEscuela', 'modalFabrica', 'modalPiscina', 'modalHospital',
-        'modalDailyReward', 'modalAds', 'modalAsistente', 'modalIdioma'
+        'modalDailyReward', 'modalAds', 'modalAsistente', 'modalIdioma', 'modalHistorialPremios'
     ];
     modals.forEach(function(id) {
         const modal = document.getElementById(id);
