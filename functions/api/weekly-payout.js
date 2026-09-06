@@ -68,6 +68,17 @@ export async function onRequestPost(context) {
             body: JSON.stringify({ diamonds: nuevosDiamantes }),
           }
         );
+        // Registrar el pago en el historial PÚBLICO (prueba verificable de pagos reales)
+        await fetch(`${env.SUPABASE_URL}/rest/v1/payout_history`, {
+          method: "POST",
+          headers: supaHeaders,
+          body: JSON.stringify({
+            posicion: i + 1,
+            city_name: j.city_name,
+            username: j.username,
+            premio: premio,
+          }),
+        });
         resultados.push({
           posicion: i + 1,
           telegram_id: j.telegram_id,
