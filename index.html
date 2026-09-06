@@ -381,6 +381,15 @@
             <div class="stat-row"><span>📊 Bono semanal estimado</span><span id="projected-reward-display" style="color:var(--primary);">0 💎</span></div>
         </div>
         <div id="ranking-lista"></div>
+        <button onclick="abrirHistorialPremios()" style="background:var(--bg-elevated);border:1px solid var(--primary);color:var(--primary);padding:12px;border-radius:20px;width:100%;margin-top:10px;">🏆 Ver historial público de premios</button>
+        <button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:white;padding:12px;border-radius:20px;width:100%;margin-top:10px;">CERRAR</button>
+    </div>
+
+    <!-- MODAL HISTORIAL DE PREMIOS (público, prueba de pagos reales) -->
+    <div class="modal" id="modalHistorialPremios">
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title">🏆 Historial de Premios</div></div>
+        <div class="game-instructions"><i class="fa-solid fa-circle-info"></i> Registro público de los diamantes entregados cada semana según el ranking de producción. Cualquiera puede verificar aquí que los premios se pagan de verdad.</div>
+        <div id="historial-premios-lista"></div>
         <button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:white;padding:12px;border-radius:20px;width:100%;margin-top:10px;">CERRAR</button>
     </div>
 
