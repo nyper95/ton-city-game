@@ -16,7 +16,7 @@ const CONFIG = {
     BILLETERA_PROPIETARIO: "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw",
     BILLETERA_POOL: "UQBuoEgT5DmcoEQ_nl6YwR0Q86fZWY4baACuX80EegWG49h2",
     PRECIO_COMPRA: 0.008,
-    ADSGRAM_BLOCK_ID: '23186',
+    ADSGRAM_BLOCK_ID: '46476',
     SUPABASE_URL: 'https://xkkifqxxglcuyruwkbih.supabase.co',
     SUPABASE_KEY: 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE'
 };
