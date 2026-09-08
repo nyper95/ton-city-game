@@ -1,1 +1,1 @@
-# ton-city-game
+diamond-city-game
