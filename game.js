@@ -1,8 +1,8 @@
 // ======================================================
-// DIAMOND CITY - v3.0 FINAL
-// RichAds + Stars + Retiros + Tema + Countdown
+// DIAMOND CITY - v3.1 FINAL
+// RichAds + Stars + Retiros (USDT/GRAM TON) + Tema + Countdown + Ciudad
 // ======================================================
-console.log('🚀 DIAMOND CITY v3.0');
+console.log('🚀 DIAMOND CITY v3.1');
 
 const tg = window.Telegram.WebApp;
 tg.expand(); tg.ready();
@@ -14,13 +14,13 @@ const CONFIG = {
     BILLETERA_PROPIETARIO: "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw",
     PRECIO_COMPRA: 0.008,
     TON_A_STARS: 200,
-    MARGEN_STARS: 1.15, // +15% para cubrir comisión Telegram
+    MARGEN_STARS: 1.15,
     RICHADS_PUB_ID: '1022600',
     RICHADS_APP_ID: '8877',
     RICHADS_DEBUG: false,
     SUPABASE_URL: 'https://xkkifqxxglcuyruwkbih.supabase.co',
     SUPABASE_KEY: 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE',
-    API_BASE: '' // tu backend, ej: 'https://tu-server.com'
+    API_BASE: ''
 };
 
 const _supabase = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
@@ -34,6 +34,7 @@ let richAdsReady = false;
 let metodoPagoBanco = 'gram';
 let metodoPagoPremium = 'gram';
 let countdownInterval = null;
+let globalPoolData = { user_rankings: [] };
 
 let userData = {
     id: null, first_name: 'Usuario', username: 'Usuario',
@@ -47,13 +48,14 @@ let userData = {
     haInvertido: false, premium_expires: null,
     weekly_rank: null, rank: "Ciudadano", projectedReward: 0,
     bolsa_portfolio: {}, expediciones_activas: {}, craft_niveles: {},
+    gameStats: {},
     jugadasHoy: { timing: 0, matchmental: 0, bolsa: 0, subasta: 0, expedicion: 0, crafting: 0, fecha: new Date().toDateString() }
 };
 
 let apuestaActual = { timing: 10, matchmental: 10 };
 
 // ==========================================
-// TARIFAS (con margen Stars +15%)
+// TARIFAS (Stars con margen +15%)
 // ==========================================
 const PACKS_DIAMANTES = [
     { diamantes: 100,   ton: 0.10,  stars: Math.round(160  * 1.15) },
@@ -78,7 +80,7 @@ const ZONAS_EXPEDICION = [
 
 const RECETAS_CRAFT = [
     { id: 'c1', nombre: 'Pico de diamante',   icono: '⛏️', costoBase: 200 },
-    { id: 'c2', nombre: 'Refinería',           icono: '🏭', costoBase: 500 },
+    { id: 'c2', nombre: 'Refinería',          icono: '🏭', costoBase: 500 },
     { id: 'c3', nombre: 'Banco de inversión', icono: '🏦', costoBase: 1200 }
 ];
 
@@ -89,14 +91,14 @@ const ACCIONES_BOLSA = [
     { id: 'energia', nombre: 'Energía Solar',   icono: '☀️', precio: 320, tendencia: 0 }
 ];
 
-const SIMBOLOS_MATCH = ['💎','⚡','🏭','🏦','🏫','🏥'];
+const SIMBOLOS_MATCH = ['💎','⚡','🏭','🏦','🏫','🏥','⛏️','☀️','💠'];
 
 // ==========================================
 // TRADUCCIONES
 // ==========================================
 const TRADUCCIONES = {
     es: {
-        nav_perfil:'PERFIL',nav_amigos:'AMIGOS',nav_ranking:'RANKING',
+        nav_perfil:'PERFIL',nav_amigos:'AMIGOS',nav_ciudad:'CIUDAD',nav_ranking:'RANKING',nav_retiros:'RETIROS',
         greeting_hola:'HOLA,',genero_m:'Alcalde',genero_f:'Alcaldesa',
         section_edificios:'Edificios',section_feed:'Feed de Noticias',
         building_banco:'Banco',building_banco_sub:'Comprar GRAM/Stars',
@@ -146,17 +148,24 @@ const TRADUCCIONES = {
         daily_titulo:'Recompensa diaria',daily_subtitulo:'¡Reclama tus diamantes gratis!',
         daily_dia:'Día',daily_recompensa:'Recompensa',daily_reclamar:'RECLAMAR',
         ads_ver:'VER ANUNCIO +20 💎',
+        ads_reintentar:'🔄 Reintentar conexión',
+        ads_no_disponible:'Anuncios no disponibles.',
+        ads_cargando:'Cargando red de anuncios...',
         asistente_rol:'Asistente Ejecutiva',
         onboarding_placeholder:'Nombre de tu ciudad',onboarding_fundar:'🏙️ FUNDAR MI CIUDAD',
         feed_titulo:'Bienvenido a su ciudad',feed_sub:'Los eventos aparecerán aquí',
         retiros_titulo:'💸 Retiros',
-        retiros_info:'Convierte tus diamantes en USDT o GRAM. Próximamente.',
-        retiros_usdt_info:'USDT en la red TON. Mínimo: 1 USDT.',
-        retiros_gram_info:'GRAM en la red TON. Mínimo: 0.5 GRAM.',
-        retiros_balance:'Tu tesorería',retiros_dia:'Día de retiro',retiros_domingo:'Domingos'
+        retiros_info:'Convierte tus diamantes en USDT (red TON) o GRAM y retíralos a tu wallet. Disponible próximamente.',
+        retiros_usdt_info:'USDT en la red TON (el mismo que se cambia por GRAM). Mínimo de retiro: 1 USDT.',
+        retiros_gram_info:'GRAM en la red TON. Mínimo de retiro: 1 GRAM.',
+        retiros_balance:'Tu tesorería',retiros_dia:'Día de retiro',retiros_domingo:'Domingos',
+        retiros_minimo:'Mínimo requerido',
+        ciudad_titulo:'🏙️ Mi Ciudad',ciudad_edificios:'Edificios de la ciudad',
+        ciudad_estadisticas:'Estadísticas',ciudad_posicion:'Posición',
+        ciudad_info:'Aquí puedes ver el estado completo de tu ciudad.'
     },
     en: {
-        nav_perfil:'PROFILE',nav_amigos:'FRIENDS',nav_ranking:'RANKING',
+        nav_perfil:'PROFILE',nav_amigos:'FRIENDS',nav_ciudad:'CITY',nav_ranking:'RANKING',nav_retiros:'WITHDRAWALS',
         greeting_hola:'HI,',genero_m:'Mayor',genero_f:'Mayor',
         section_edificios:'Buildings',section_feed:'News Feed',
         building_banco:'Bank',building_banco_sub:'Buy GRAM/Stars',
@@ -196,15 +205,25 @@ const TRADUCCIONES = {
         craft_info:'Fuse without randomness.',apuesta_label:'Bet:',
         daily_titulo:'Daily Reward',daily_subtitulo:'Claim free diamonds!',
         daily_dia:'Day',daily_recompensa:'Reward',daily_reclamar:'CLAIM',
-        ads_ver:'WATCH AD +20 💎',asistente_rol:'Executive Assistant',
+        ads_ver:'WATCH AD +20 💎',
+        ads_reintentar:'🔄 Retry connection',
+        ads_no_disponible:'Ads unavailable.',
+        ads_cargando:'Loading ad network...',
+        asistente_rol:'Executive Assistant',
         onboarding_placeholder:'City name',onboarding_fundar:'🏙️ FOUND MY CITY',
         feed_titulo:'Welcome to your city',feed_sub:'Recent events here',
-        retiros_titulo:'💸 Withdrawals',retiros_info:'Convert diamonds to USDT or GRAM. Coming soon.',
-        retiros_usdt_info:'USDT on TON. Min: 1 USDT.',retiros_gram_info:'GRAM on TON. Min: 0.5 GRAM.',
-        retiros_balance:'Your treasury',retiros_dia:'Withdraw day',retiros_domingo:'Sundays'
+        retiros_titulo:'💸 Withdrawals',
+        retiros_info:'Convert diamonds to USDT (TON) or GRAM. Coming soon.',
+        retiros_usdt_info:'USDT on TON network (the same you swap for GRAM). Minimum withdrawal: 1 USDT.',
+        retiros_gram_info:'GRAM on TON network. Minimum withdrawal: 1 GRAM.',
+        retiros_balance:'Your treasury',retiros_dia:'Withdraw day',retiros_domingo:'Sundays',
+        retiros_minimo:'Minimum required',
+        ciudad_titulo:'🏙️ My City',ciudad_edificios:'City buildings',
+        ciudad_estadisticas:'Statistics',ciudad_posicion:'Position',
+        ciudad_info:'See your full city status.'
     },
     pt: {
-        nav_perfil:'PERFIL',nav_amigos:'AMIGOS',nav_ranking:'RANKING',
+        nav_perfil:'PERFIL',nav_amigos:'AMIGOS',nav_ciudad:'CIDADE',nav_ranking:'RANKING',nav_retiros:'SAQUES',
         greeting_hola:'OLÁ,',genero_m:'Prefeito',genero_f:'Prefeita',
         section_edificios:'Edifícios',section_feed:'Feed',
         building_banco:'Banco',building_banco_sub:'Comprar GRAM/Stars',
@@ -241,15 +260,25 @@ const TRADUCCIONES = {
         craft_info:'Fusão sem aleatoriedade.',apuesta_label:'Aposta:',
         daily_titulo:'Recompensa diária',daily_subtitulo:'Resgate grátis!',
         daily_dia:'Dia',daily_recompensa:'Prêmio',daily_reclamar:'RESGATAR',
-        ads_ver:'VER ANÚNCIO +20 💎',asistente_rol:'Assistente Executiva',
+        ads_ver:'VER ANÚNCIO +20 💎',
+        ads_reintentar:'🔄 Tentar novamente',
+        ads_no_disponible:'Anúncios indisponíveis.',
+        ads_cargando:'Carregando rede...',
+        asistente_rol:'Assistente Executiva',
         onboarding_placeholder:'Nome da cidade',onboarding_fundar:'🏙️ FUNDAR',
         feed_titulo:'Bem-vindo',feed_sub:'Eventos recentes',
-        retiros_titulo:'💸 Saques',retiros_info:'Converta em USDT ou GRAM. Em breve.',
-        retiros_usdt_info:'USDT na TON. Mín: 1 USDT.',retiros_gram_info:'GRAM na TON. Mín: 0.5 GRAM.',
-        retiros_balance:'Tesouraria',retiros_dia:'Dia',retiros_domingo:'Domingos'
+        retiros_titulo:'💸 Saques',
+        retiros_info:'Converta em USDT (TON) ou GRAM. Em breve.',
+        retiros_usdt_info:'USDT na rede TON (o mesmo que troca por GRAM). Mínimo de saque: 1 USDT.',
+        retiros_gram_info:'GRAM na rede TON. Mínimo de saque: 1 GRAM.',
+        retiros_balance:'Tesouraria',retiros_dia:'Dia',retiros_domingo:'Domingos',
+        retiros_minimo:'Mínimo requerido',
+        ciudad_titulo:'🏙️ Minha Cidade',ciudad_edificios:'Edifícios da cidade',
+        ciudad_estadisticas:'Estatísticas',ciudad_posicion:'Posição',
+        ciudad_info:'Veja o estado completo da sua cidade.'
     },
     ru: {
-        nav_perfil:'ПРОФИЛЬ',nav_amigos:'ДРУЗЬЯ',nav_ranking:'РЕЙТИНГ',
+        nav_perfil:'ПРОФИЛЬ',nav_amigos:'ДРУЗЬЯ',nav_ciudad:'ГОРОД',nav_ranking:'РЕЙТИНГ',nav_retiros:'ВЫВОДЫ',
         greeting_hola:'ПРИВЕТ,',genero_m:'Мэр',genero_f:'Мэр',
         section_edificios:'Здания',section_feed:'Лента',
         building_banco:'Банк',building_banco_sub:'Купить GRAM/Stars',
@@ -286,12 +315,22 @@ const TRADUCCIONES = {
         craft_info:'Без случайности.',apuesta_label:'Ставка:',
         daily_titulo:'Награда',daily_subtitulo:'Заберите!',
         daily_dia:'День',daily_recompensa:'Награда',daily_reclamar:'ЗАБРАТЬ',
-        ads_ver:'СМОТРЕТЬ +20 💎',asistente_rol:'Ассистент',
+        ads_ver:'СМОТРЕТЬ +20 💎',
+        ads_reintentar:'🔄 Повторить',
+        ads_no_disponible:'Реклама недоступна.',
+        ads_cargando:'Загрузка сети...',
+        asistente_rol:'Ассистент',
         onboarding_placeholder:'Название',onboarding_fundar:'🏙️ ОСНОВАТЬ',
         feed_titulo:'Добро пожаловать',feed_sub:'События здесь',
-        retiros_titulo:'💸 Выводы',retiros_info:'USDT или GRAM. Скоро.',
-        retiros_usdt_info:'USDT в TON. Мин: 1 USDT.',retiros_gram_info:'GRAM в TON. Мин: 0.5 GRAM.',
-        retiros_balance:'Казна',retiros_dia:'День',retiros_domingo:'Воскресенье'
+        retiros_titulo:'💸 Выводы',
+        retiros_info:'USDT (TON) или GRAM. Скоро.',
+        retiros_usdt_info:'USDT в сети TON (тот же, что меняется на GRAM). Минимум вывода: 1 USDT.',
+        retiros_gram_info:'GRAM в сети TON. Минимум вывода: 1 GRAM.',
+        retiros_balance:'Казна',retiros_dia:'День',retiros_domingo:'Воскресенье',
+        retiros_minimo:'Минимум',
+        ciudad_titulo:'🏙️ Мой Город',ciudad_edificios:'Здания города',
+        ciudad_estadisticas:'Статистика',ciudad_posicion:'Позиция',
+        ciudad_info:'Полный статус вашего города.'
     }
 };
 
@@ -328,10 +367,10 @@ function abrirSelectorIdioma() { closeAll(); showModal('modalIdioma'); }
 // TEMA CLARO / OSCURO
 // ==========================================
 function aplicarTema() {
-    const t = userData.theme || 'dark';
-    document.body.setAttribute('data-theme', t);
+    const th = userData.theme || 'dark';
+    document.body.setAttribute('data-theme', th);
     const btn = document.getElementById('theme-toggle');
-    if (btn) btn.innerHTML = t === 'dark' ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+    if (btn) btn.innerHTML = th === 'dark' ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
 }
 
 function toggleTheme() {
@@ -541,7 +580,7 @@ function showModal(id) {
 function closeAll() {
     const o = document.getElementById('overlay');
     if (o) o.style.display = 'none';
-    ['modalPerfil','modalFriends','modalRanking','modalBank','modalStore',
+    ['modalPerfil','modalFriends','modalCiudad','modalRanking','modalBank','modalStore',
      'modalRetiros','modalCasino','modalTiming','modalMatch','modalBolsa',
      'modalSubasta','modalExpedicion','modalCrafting','modalEscuela',
      'modalFabrica','modalPiscina','modalHospital','modalDailyReward',
@@ -556,7 +595,9 @@ function setActiveNav(tab) {
         i.classList.remove('active');
         if (tab === 'perfil' && idx === 0) i.classList.add('active');
         if (tab === 'amigos' && idx === 1) i.classList.add('active');
-        if (tab === 'ranking' && idx === 2) i.classList.add('active');
+        if (tab === 'ciudad' && idx === 2) i.classList.add('active');
+        if (tab === 'ranking' && idx === 3) i.classList.add('active');
+        if (tab === 'retiros' && idx === 4) i.classList.add('active');
     });
 }
 
@@ -614,7 +655,60 @@ function copyReferralCode() {
 }
 
 // ==========================================
-// RANKING (con nombre real + countdown)
+// CIUDAD
+// ==========================================
+function openCity() {
+    closeAll();
+    actualizarCiudad();
+    showModal('modalCiudad');
+    setActiveNav('ciudad');
+}
+
+function actualizarCiudad() {
+    const nombre = document.getElementById('ciudad-nombre');
+    if (nombre) nombre.textContent = userData.city_name || 'Sin nombre';
+    const alcalde = document.getElementById('ciudad-alcalde');
+    if (alcalde) alcalde.textContent = getTituloAlcalde() + ' ' + (userData.first_name || userData.username || 'Usuario');
+
+    const prom = ((userData.lvl_piscina || 0) + (userData.lvl_fabrica || 0) + (userData.lvl_escuela || 0) + (userData.lvl_hospital || 0)) / 4;
+    const pct = Math.min(100, Math.round((prom / 50) * 100));
+    const np = document.getElementById('ciudad-nivel-pct');
+    if (np) np.textContent = pct + '%';
+
+    const edifs = [
+        { id: 'piscina', ico: '🏊', nombre: 'Piscina',  color: '#38bdf8' },
+        { id: 'fabrica', ico: '🏭', nombre: 'Fábrica',  color: '#a78bfa' },
+        { id: 'escuela', ico: '🏫', nombre: 'Escuela',  color: '#fbbf24' },
+        { id: 'hospital',ico: '🏥', nombre: 'Hospital', color: '#f87171' }
+    ];
+    const cont = document.getElementById('ciudad-edificios');
+    if (cont) {
+        let h = '';
+        for (const e of edifs) {
+            const lvl = userData['lvl_' + e.id] || 0;
+            h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;border:2px solid ' + e.color + '40;text-align:center;">';
+            h += '<div style="font-size:32px;">' + e.ico + '</div>';
+            h += '<div style="font-weight:700;margin-top:6px;">' + e.nombre + '</div>';
+            h += '<div style="font-size:12px;color:' + e.color + ';font-weight:800;">Nivel ' + lvl + '</div>';
+            h += '</div>';
+        }
+        cont.innerHTML = h;
+    }
+
+    const tes = document.getElementById('ciudad-tesoreria');
+    if (tes) tes.textContent = Math.floor(userData.diamonds || 0);
+    const prod = document.getElementById('ciudad-produccion');
+    if (prod) prod.textContent = Math.floor(getTotalProduction());
+    const rango = document.getElementById('ciudad-rango');
+    if (rango) rango.textContent = userData.rank || 'Ciudadano';
+    const pos = document.getElementById('ciudad-posicion');
+    if (pos) pos.textContent = userData.weekly_rank ? '#' + userData.weekly_rank : 'Sin calcular';
+    const ami = document.getElementById('ciudad-amigos');
+    if (ami) ami.textContent = (userData.referred_users || []).length;
+}
+
+// ==========================================
+// RANKING
 // ==========================================
 function openRanking() {
     closeAll(); actualizarRankingModal(); iniciarCountdown(); showModal('modalRanking'); setActiveNav('ranking');
@@ -649,7 +743,6 @@ function iniciarCountdown() {
     if (countdownInterval) clearInterval(countdownInterval);
     function tick() {
         const ahora = new Date();
-        // Próximo domingo a las 00:00 UTC
         const proximoDomingo = new Date(ahora);
         proximoDomingo.setUTCHours(0, 0, 0, 0);
         const dia = proximoDomingo.getUTCDay();
@@ -683,6 +776,17 @@ async function abrirHistorialPremios() {
         });
         c.innerHTML = h;
     } catch (e) { c.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">Error cargando historial.</div>'; }
+}
+
+// ==========================================
+// RETIROS
+// ==========================================
+function openWithdraw() {
+    closeAll();
+    showModal('modalRetiros');
+    const b = document.getElementById('retiros-balance');
+    if (b) b.textContent = Math.floor(userData.diamonds);
+    setActiveNav('retiros');
 }
 
 // ==========================================
@@ -745,22 +849,13 @@ async function comprarConStars(diamantes) {
     const p = PACKS_DIAMANTES.find(x => x.diamantes === diamantes);
     if (!p) return alert('❌ Pack no encontrado');
     try {
-        // Llamada al backend para crear el invoice
         const resp = await fetch((CONFIG.API_BASE || '') + '/api/create-stars-invoice', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: userData.id,
-                type: 'diamonds',
-                amount: p.diamantes,
-                stars: p.stars
-            })
+            body: JSON.stringify({ userId: userData.id, type: 'diamonds', amount: p.diamantes, stars: p.stars })
         });
         const data = await resp.json();
-        if (!data.success || !data.invoiceLink) {
-            alert('⚠️ No se pudo generar el pago. Intenta de nuevo.');
-            return;
-        }
+        if (!data.success || !data.invoiceLink) { alert('⚠️ No se pudo generar el pago.'); return; }
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openInvoice) {
             window.Telegram.WebApp.openInvoice(data.invoiceLink, function(status) {
                 if (status === 'paid') {
@@ -770,11 +865,8 @@ async function comprarConStars(diamantes) {
                     saveUserData(); actualizarUI(); spawnConfetti();
                     alert('✅ +' + p.diamantes + ' 💎');
                     closeAll();
-                } else if (status === 'cancelled') {
-                    alert('❌ Pago cancelado');
-                } else if (status === 'failed') {
-                    alert('❌ Pago fallido');
-                }
+                } else if (status === 'cancelled') { alert('❌ Pago cancelado'); }
+                else if (status === 'failed') { alert('❌ Pago fallido'); }
             });
         } else {
             alert('❌ Abre la app desde Telegram para pagar.');
@@ -817,7 +909,7 @@ function renderPlanesPremium() {
         } else {
             h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:20px;margin:12px 0;">';
             h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><strong style="font-size:18px;">' + p.name + '</strong><span style="color:#facc15;font-weight:700;">' + p.stars + ' ⭐</span></div>';
-            h += '<button onclick="comprarPremiumStars(' + p.days + ')" class="btn-stars"><i class="fa-solid fa-star"></i> COMPRAR</button>';
+            h += '<button onclick="comprarPremiumStars(' + p.days + ')" class="btn-stars" style="width:100%;"><i class="fa-solid fa-star"></i> COMPRAR</button>';
             h += '</div>';
         }
     }
@@ -851,9 +943,7 @@ async function comprarPremiumStars(days) {
         const resp = await fetch((CONFIG.API_BASE || '') + '/api/create-stars-invoice', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: userData.id, type: 'premium', days: days, stars: p.stars
-            })
+            body: JSON.stringify({ userId: userData.id, type: 'premium', days: days, stars: p.stars })
         });
         const data = await resp.json();
         if (!data.success || !data.invoiceLink) return alert('⚠️ No se pudo generar el pago.');
@@ -871,15 +961,6 @@ async function comprarPremiumStars(days) {
             });
         }
     } catch (e) { alert('⚠️ Backend de Stars no configurado.'); }
-}
-
-// ==========================================
-// RETIROS
-// ==========================================
-function openWithdraw() {
-    closeAll(); showModal('modalRetiros');
-    const b = document.getElementById('retiros-balance');
-    if (b) b.textContent = Math.floor(userData.diamonds);
 }
 
 // ==========================================
@@ -918,6 +999,11 @@ async function disconnectWallet() {
 // ==========================================
 async function initAds() {
     try {
+        let intentos = 0;
+        while (typeof TelegramAdsController === 'undefined' && intentos < 10) {
+            await new Promise(r => setTimeout(r, 500));
+            intentos++;
+        }
         if (typeof TelegramAdsController !== 'undefined') {
             window.TelegramAdsController = new TelegramAdsController();
             window.TelegramAdsController.initialize({
@@ -926,25 +1012,49 @@ async function initAds() {
                 debug: CONFIG.RICHADS_DEBUG
             });
             richAdsReady = true;
-            console.log('✅ RichAds OK');
+            console.log('✅ RichAds OK (intento ' + intentos + ')');
+        } else {
+            richAdsReady = false;
+            console.warn('⚠️ TelegramAdsController no está disponible');
         }
-    } catch (e) { console.error('❌ RichAds:', e); }
+    } catch (e) {
+        richAdsReady = false;
+        console.error('❌ RichAds:', e);
+    }
 }
 
 function showAdsModal() {
-    closeAll(); showModal('modalAds'); actualizarEstadoAnuncio();
+    closeAll();
+    showModal('modalAds');
+    actualizarEstadoAnuncio();
+    if (!richAdsReady) setTimeout(() => { if (!richAdsReady) reintentarRichAds(); }, 1500);
 }
 
 function actualizarEstadoAnuncio() {
+    const b = document.getElementById('richads-btn');
+    const e = document.getElementById('ads-status');
+    const retryBtn = document.getElementById('richads-retry-btn');
+    if (!b) return;
+    if (esPremium()) {
+        b.disabled = true;
+        if (e) e.innerHTML = '⭐ Premium: sin anuncios';
+        if (retryBtn) retryBtn.style.display = 'none';
+        return;
+    }
+    if (!richAdsReady || typeof TelegramAdsController === 'undefined') {
+        b.disabled = true;
+        if (e) e.innerHTML = '⚠️ ' + t('ads_no_disponible');
+        if (retryBtn) retryBtn.style.display = 'block';
+        return;
+    }
+    if (retryBtn) retryBtn.style.display = 'none';
     let puede = false;
     if (!userData.last_ad_watch) puede = true;
     else if (new Date() - new Date(userData.last_ad_watch) > 3600000) puede = true;
-    const b = document.getElementById('richads-btn');
-    const e = document.getElementById('ads-status');
-    if (!b) return;
-    if (esPremium()) { b.disabled = true; if (e) e.innerHTML = '⭐ Premium: sin anuncios'; return; }
-    if (puede && richAdsReady) { b.disabled = false; if (e) e.innerHTML = '✅ ¡Disponible!'; }
-    else {
+    if (puede) {
+        b.disabled = false;
+        if (e) e.innerHTML = '✅ ¡Anuncio disponible!';
+    } else {
         b.disabled = true;
         let m = 60;
         if (userData.last_ad_watch) m = Math.ceil((3600000 - (new Date() - new Date(userData.last_ad_watch))) / 60000);
@@ -952,12 +1062,39 @@ function actualizarEstadoAnuncio() {
     }
 }
 
+async function reintentarRichAds() {
+    const e = document.getElementById('ads-status');
+    if (e) e.innerHTML = '🔄 ' + t('ads_cargando');
+    try {
+        if (typeof TelegramAdsController !== 'undefined') {
+            window.TelegramAdsController = new TelegramAdsController();
+            window.TelegramAdsController.initialize({
+                pubId: CONFIG.RICHADS_PUB_ID,
+                appId: CONFIG.RICHADS_APP_ID,
+                debug: CONFIG.RICHADS_DEBUG
+            });
+            richAdsReady = true;
+            console.log('✅ RichAds reinicializado');
+        } else {
+            richAdsReady = false;
+        }
+    } catch (err) {
+        richAdsReady = false;
+        console.error('❌ Reinit RichAds:', err);
+    }
+    setTimeout(actualizarEstadoAnuncio, 800);
+}
+
 function showRichAds() {
     if (esPremium()) {
         userData.diamonds += 20; saveUserData(); actualizarUI();
         alert('⭐ +20 💎'); closeAll(); return;
     }
-    if (!richAdsReady || !window.TelegramAdsController) return alert('📺 No disponible');
+    if (!richAdsReady || !window.TelegramAdsController) {
+        reintentarRichAds();
+        alert('📺 La red de anuncios se está recargando. Intenta en unos segundos.');
+        return;
+    }
     try {
         window.TelegramAdsController.triggerNativeNotification(true)
             .then(() => {
@@ -967,8 +1104,15 @@ function showRichAds() {
                 saveUserData(); actualizarUI(); spawnConfetti();
                 alert('🎁 +20 💎'); closeAll();
             })
-            .catch(() => alert('❌ No se pudo mostrar'));
-    } catch (e) { alert('❌ Error'); }
+            .catch((err) => {
+                console.warn('⚠️ RichAds error:', err);
+                alert('❌ No se pudo mostrar el anuncio.');
+                actualizarEstadoAnuncio();
+            });
+    } catch (e) {
+        console.error('❌ Error RichAds:', e);
+        alert('❌ Error al mostrar el anuncio.');
+    }
 }
 
 function rescueWithAd() {
@@ -979,7 +1123,10 @@ function rescueWithAd() {
     if (userData.diamonds > 0) return alert('Solo con 0 diamantes');
     const hoy = new Date();
     if (userData.last_casino_rescue && hoy.toDateString() === new Date(userData.last_casino_rescue).toDateString()) return alert('Ya usado hoy');
-    if (!richAdsReady || !window.TelegramAdsController) return alert('📺 No disponible');
+    if (!richAdsReady || !window.TelegramAdsController) {
+        reintentarRichAds();
+        return alert('📺 Red recargando. Intenta de nuevo.');
+    }
     window.TelegramAdsController.triggerNativeNotification(true)
         .then(() => {
             userData.last_casino_rescue = new Date().toISOString();
@@ -987,7 +1134,7 @@ function rescueWithAd() {
             saveUserData(); actualizarUI();
             alert('🎁 +50 💎'); closeAll();
         })
-        .catch(() => alert('❌ No se pudo'));
+        .catch(() => alert('❌ No se pudo mostrar'));
 }
 
 // ==========================================
@@ -1165,10 +1312,11 @@ function detenerTiming() {
 }
 
 // ==========================================
-// MATCH MENTAL
+// MATCH MENTAL — VERSIÓN DIFÍCIL
 // ==========================================
 let mSec = [], mIn = [], mRon = 0, mMos = false;
-const mMax = 5;
+const mMax = 8;
+const SIMBOLOS_POR_RONDA = 2;
 
 function prepararMatchUI() {
     mSec = []; mIn = []; mRon = 0; mMos = false;
@@ -1180,8 +1328,11 @@ function prepararMatchUI() {
 
 function renderMatchGrid(act) {
     const c = document.getElementById('match-display'); if (!c) return;
+    c.style.gridTemplateColumns = 'repeat(3, 1fr)';
     let h = '';
-    for (let i = 0; i < 6; i++) h += '<div class="sequence-card" data-idx="' + i + '" onclick="clickMatch(' + i + ')" style="cursor:' + (act ? 'pointer' : 'default') + ';">' + SIMBOLOS_MATCH[i] + '</div>';
+    for (let i = 0; i < 9; i++) {
+        h += '<div class="sequence-card" data-idx="' + i + '" onclick="clickMatch(' + i + ')" style="cursor:' + (act ? 'pointer' : 'default') + ';">' + SIMBOLOS_MATCH[i] + '</div>';
+    }
     c.innerHTML = h;
 }
 
@@ -1191,25 +1342,35 @@ async function iniciarMatch() {
     if (!puedeJugar('matchmental')) return alert('❌ Límite diario');
     userData.diamonds -= ap; registrarJugada('matchmental'); actualizarUI();
     const b = document.getElementById('match-balance'); if (b) b.textContent = Math.floor(userData.diamonds);
-    mRon = 1; mSec = [];
-    await siguienteRondaMatch();
+    mRon = 1;
+    mSec = [];
+    for (let i = 0; i < 3; i++) mSec.push(Math.floor(Math.random() * 9));
+    await mostrarSecuencia();
 }
 
 async function siguienteRondaMatch() {
+    for (let i = 0; i < SIMBOLOS_POR_RONDA; i++) {
+        mSec.push(Math.floor(Math.random() * 9));
+    }
+    await mostrarSecuencia();
+}
+
+async function mostrarSecuencia() {
     mIn = []; mMos = true;
-    const r = document.getElementById('match-result'); if (r) r.innerHTML = '<span style="color:#a78bfa;">👀 Memoriza...</span>';
-    mSec.push(Math.floor(Math.random() * 6));
+    const r = document.getElementById('match-result');
+    if (r) r.innerHTML = '<span style="color:#a78bfa;">👀 Memoriza ' + mSec.length + ' símbolos...</span>';
     renderMatchGrid(false);
+    const velBase = Math.max(180, 400 - (mRon * 25));
     for (let i = 0; i < mSec.length; i++) {
-        await new Promise(res => setTimeout(res, 300));
+        await new Promise(res => setTimeout(res, Math.floor(velBase * 0.6)));
         const c = document.querySelector('#match-display [data-idx="' + mSec[i] + '"]');
         if (c) c.classList.add('highlight');
-        await new Promise(res => setTimeout(res, 450));
+        await new Promise(res => setTimeout(res, velBase));
         if (c) c.classList.remove('highlight');
-        await new Promise(res => setTimeout(res, 150));
+        await new Promise(res => setTimeout(res, Math.floor(velBase * 0.3)));
     }
     mMos = false;
-    if (r) r.innerHTML = '<span style="color:#facc15;">✋ Tu turno (' + mRon + '/' + mMax + ')</span>';
+    if (r) r.innerHTML = '<span style="color:#facc15;">✋ Tu turno — Ronda ' + mRon + '/' + mMax + ' (' + mSec.length + ' símbolos)</span>';
     renderMatchGrid(true);
 }
 
@@ -1222,30 +1383,35 @@ function clickMatch(idx) {
     if (mIn[pos] !== mSec[pos]) {
         mMos = true;
         const r = document.getElementById('match-result');
-        if (r) r.innerHTML = '<span style="color:#ef4444;">❌ Ronda ' + mRon + '</span>';
+        if (r) r.innerHTML = '<span style="color:#ef4444;">❌ Fallaste en la ronda ' + mRon + ' (símbolo ' + (pos + 1) + ' de ' + mSec.length + ')</span>';
         destelloResultado('modalMatch', false);
         actualizarUI(); saveUserData();
-        setTimeout(prepararMatchUI, 2500); return;
+        setTimeout(prepararMatchUI, 3000); return;
     }
     if (mIn.length === mSec.length) {
         mRon++;
         if (mRon > mMax) finalizarMatch();
-        else { mMos = true; setTimeout(siguienteRondaMatch, 800); }
+        else {
+            mMos = true;
+            const r = document.getElementById('match-result');
+            if (r) r.innerHTML = '<span style="color:#4ade80;">✅ ¡Ronda superada! Preparando siguiente...</span>';
+            setTimeout(siguienteRondaMatch, 1200);
+        }
     }
 }
 
 function finalizarMatch() {
     const ap = apuestaActual.matchmental || 10;
-    const mult = 1.5 + (mRon - 2) * 0.5;
+    const mult = 1.5 + (mRon - 1) * 0.6;
     const pre = Math.floor(ap * Math.max(1.5, mult));
     userData.diamonds += pre;
     const r = document.getElementById('match-result');
-    if (r) r.innerHTML = '<span style="color:#4ade80;font-size:20px;">🧠 ¡Completado! +' + pre + ' 💎</span>';
-    spawnConfetti(); if (navigator.vibrate) navigator.vibrate(100);
+    if (r) r.innerHTML = '<span style="color:#4ade80;font-size:20px;">🧠 ¡MAESTRO! ' + (mRon - 1) + ' rondas → +' + pre + ' 💎 (x' + mult.toFixed(1) + ')</span>';
+    spawnConfetti(); if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
     destelloResultado('modalMatch', true);
     actualizarUI(); saveUserData();
     const b = document.getElementById('match-balance'); if (b) b.textContent = Math.floor(userData.diamonds);
-    setTimeout(prepararMatchUI, 2000);
+    setTimeout(prepararMatchUI, 3000);
 }
 
 // ==========================================
@@ -1490,8 +1656,6 @@ function buyUpgrade(b) {
 // ==========================================
 // RANKING Y POOL
 // ==========================================
-let globalPoolData = { user_rankings: [] };
-
 async function updateRankingAndPool() {
     try {
         const r = await _supabase.from('game_data')
@@ -1656,7 +1820,6 @@ async function initApp() {
         userData.first_name = usuario.first_name || 'Usuario';
         userData.username = usuario.username || usuario.first_name || 'Usuario';
         await loadUserFromDB(usuario.id);
-        // Sobrescribir con datos reales de Telegram (por si Supabase tiene datos viejos)
         userData.first_name = usuario.first_name || 'Usuario';
         userData.username = usuario.username || usuario.first_name || 'Usuario';
     } else {
@@ -1665,7 +1828,6 @@ async function initApp() {
         userData.username = 'test';
         userData.referral_code = 'REF' + userData.id.slice(-6);
     }
-    // Aplicar tema ANTES de mostrar
     aplicarTema();
     await initTONConnect();
     setTimeout(initAds, 3000);
@@ -1691,11 +1853,12 @@ window.addEventListener('DOMContentLoaded', initApp);
 // ==========================================
 window.openPerfil = openPerfil;
 window.openFriends = openFriends;
+window.openCity = openCity;
 window.openRanking = openRanking;
+window.openWithdraw = openWithdraw;
 window.openBank = openBank;
 window.openStore = openStore;
 window.openCasino = openCasino;
-window.openWithdraw = openWithdraw;
 window.openBuilding = openBuilding;
 window.openDailyReward = openDailyReward;
 window.showAdsModal = showAdsModal;
@@ -1704,6 +1867,7 @@ window.cerrarJuego = cerrarJuego;
 window.cambiarApuesta = cambiarApuesta;
 window.claimDailyReward = claimDailyReward;
 window.showRichAds = showRichAds;
+window.reintentarRichAds = reintentarRichAds;
 window.rescueWithAd = rescueWithAd;
 window.comprarPremiumGram = comprarPremiumGram;
 window.comprarPremiumStars = comprarPremiumStars;
