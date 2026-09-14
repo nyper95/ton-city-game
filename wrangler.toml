@@ -1,0 +1,8 @@
+name = "diamond-city-api"
+main = "worker.js"
+compatibility_date = "2026-09-14"
+
+[vars]
+# Variables no sensibles
+
+# Los secretos se configuran con wrangler secret put, no se escriben aquí
