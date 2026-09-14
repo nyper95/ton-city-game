@@ -1,5 +1,6 @@
 // ======================================================
 // DIAMOND CITY - VERSIÓN FINAL COMPLETA 2026
+// Centro Financiero · Sin juegos de azar
 // ======================================================
 console.log('🚀 DIAMOND CITY - Iniciando sistema profesional...');
 
@@ -30,10 +31,6 @@ let tonConnectUI = null;
 let currentWallet = null;
 let adsReady = false;
 let AdController = null;
-let pendingMultiplier = null;
-let bancoTabActual = 'compra';
-let ventaCantidad = 100;
-window._tasaVentaActual = 10000;
 
 let userData = {
     id: null,
@@ -65,19 +62,23 @@ let userData = {
     event_progress: {},
     accumulated_ton: 0,
     retiradoHoy: 0,
+    bolsa_portfolio: {},
+    expediciones_activas: [],
+    subasta_pujas: {},
+    craft_niveles: {},
     gameStats: {
-        escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
-        fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
-        piscina: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
-        hospital: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 }
+        escuela: { bestLevel: 0, totalWins: 0 },
+        fabrica: { bestLevel: 0, totalWins: 0 },
+        piscina: { bestLevel: 0, totalWins: 0 },
+        hospital: { bestLevel: 0, totalWins: 0 }
     },
     jugadasHoy: {
-        highlow: 0,
-        ruleta: 0,
-        tragaperras: 0,
-        dados: 0,
-        ruletarusa: 0,
-        loteria: 0,
+        timing: 0,
+        matchmental: 0,
+        bolsa: 0,
+        subasta: 0,
+        expedicion: 0,
+        crafting: 0,
         fecha: new Date().toDateString()
     }
 };
@@ -97,182 +98,254 @@ const PREMIUM_PLANS = [
     { name: "30 días", days: 30, price: 3.00 }
 ];
 
-// ==========================================
-// VARIABLES DE JUEGO
-// ==========================================
 let apuestaActual = {
-    highlow: 10,
-    ruleta: 10,
-    tragaperras: 5,
-    dados: 10,
-    ruletarusa: 10,
-    loteria: 1
+    timing: 10,
+    matchmental: 10
 };
-
-let boletosComprados = [];
-
-let gameLives = {
-    escuela: 3,
-    fabrica: 3,
-    piscina: 3,
-    hospital: 3
-};
-
-let gameActiveStates = {
-    escuela: false,
-    fabrica: false,
-    piscina: false,
-    hospital: false
-};
-
-// Variables Escuela
-let escuelaSequence = [];
-let escuelaUserInput = [];
-let escuelaLevel = 1;
-let escuelaBest = 0;
-let escuelaStreak = 0;
-
-// Variables Fábrica
-let fabricaLevel = 1;
-let fabricaBest = 0;
-let fabricaCompleted = 0;
-let fabricaRequired = 5;
-let fabricaPieces = [];
-let fabricaAnimInterval = null;
-
-// Variables Piscina
-let piscinaLevel = 1;
-let piscinaBest = 0;
-let piscinaPerfect = 0;
-let piscinaRequired = 3;
-let piscinaPower = 0;
-let piscinaHoldStart = 0;
-let piscinaChargeInterval = null;
-let piscinaGameStarted = false;
-
-// Variables Hospital
-let hospitalLevel = 1;
-let hospitalBest = 0;
-let hospitalExtracted = 0;
-let hospitalTotal = 3;
-let hospitalTimeLeft = 25;
-let hospitalTimer = null;
-let hospitalMaxTime = 25;
 
 // ==========================================
-// FUNCIONES BÁSICAS
+// TRADUCCIONES COMPLETAS (ES / EN / PT / RU)
 // ==========================================
-function esPremium() {
-    if (!userData.premium_expires) return false;
-    return new Date() < new Date(userData.premium_expires);
-}
-
-function actualizarPremiumUI() {
-    const badge = document.getElementById('premium-badge');
-    if (badge) badge.style.display = esPremium() ? 'flex' : 'none';
-}
-
-function enVentanaRetiro() {
-    return new Date().getDay() === 0;
-}
-
-function getNumeroSemana() {
-    const ahora = new Date();
-    const inicio = new Date(ahora.getFullYear(), 0, 1);
-    const dias = Math.floor((ahora - inicio) / (24 * 60 * 60 * 1000));
-    return Math.ceil(dias / 7);
-}
-
-function getTotalProduction() {
-    let base = (userData.lvl_escuela * 15) + (userData.lvl_fabrica * 25) + (userData.lvl_piscina * 10) + (userData.lvl_hospital * 18);
-    if (esPremium()) base = base * 2;
-    return base;
-}
-
-function calcularRecompensa(baseReward, building) {
-    const nivelEdificio = userData['lvl_' + building] || 0;
-    const multiplierNivel = 1 + (nivelEdificio * 0.005);
-    const multiplierPremium = esPremium() ? 2 : 1;
-    let multiplier = multiplierNivel * multiplierPremium;
-    if (pendingMultiplier) {
-        multiplier = multiplier * pendingMultiplier;
-        pendingMultiplier = null;
-    }
-    return Math.floor(baseReward * multiplier);
-}
-
 const TRADUCCIONES = {
     es: {
         nav_perfil: 'PERFIL', nav_amigos: 'AMIGOS', nav_ranking: 'RANKING',
         greeting_hola: 'HOLA,',
+        genero_m: 'Alcalde', genero_f: 'Alcaldesa',
         section_edificios: 'Edificios', section_feed: 'Feed de Noticias',
         building_banco: 'Banco', building_banco_sub: 'Comprar/Vender GRAM',
         building_premium: 'Premium', building_premium_sub: 'Planes VIP',
-        building_casino: 'Casino', building_casino_sub: '5 juegos',
+        building_centro: 'Centro Financiero', building_centro_sub: '6 secciones',
         building_parque: 'Parque', building_parque_sub: 'Anuncios',
-        btn_cerrar: 'CERRAR', btn_mejorar: 'MEJORAR', btn_confirmar: 'CONFIRMAR', btn_reclamar: 'RECLAMAR',
-        onboarding_titulo: '¡Buenos días!',
-        onboarding_texto: 'Soy Valeria, su asistente ejecutiva. Antes de comenzar, necesito dos datos para los registros municipales.',
+        building_piscina: 'Piscina', building_fabrica: 'Fábrica',
+        building_escuela: 'Escuela', building_hospital: 'Hospital',
+        gauge_tesoreria: 'Tesorería', gauge_produccion: 'Diamantes/h', gauge_nivel: 'Nivel municipal',
+        lvl_label: 'Nivel', prod_label: 'Prod', mejora_label: 'Mejora',
+        btn_cerrar: 'CERRAR', btn_mejorar: 'MEJORAR',
+        perfil_titulo: 'Mi Perfil', perfil_amigos: 'Amigos',
+        perfil_rango: 'Rango', perfil_bono: 'Bono semanal',
+        perfil_titulo_tratamiento: 'Título de tratamiento',
+        idioma_titulo: 'Idioma',
+        amigos_titulo: 'Invitar Amigos', amigos_gana: '¡Gana el 10% de tus referidos!',
+        amigos_tu_codigo: 'Tu código:', amigos_copiar: '📋 COPIAR ENLACE',
+        amigos_ganancias: 'Ganancias',
+        ranking_titulo: 'Ranking Municipal', ranking_tu_rango: 'Tu rango',
+        ranking_tu_posicion: 'Tu posición', ranking_bono: 'Bono semanal estimado',
+        ranking_historial: '🏆 Ver historial público de premios',
+        historial_titulo: '🏆 Historial de Premios',
+        historial_info: 'Registro público de los diamantes entregados cada semana según el ranking de producción.',
+        banco_titulo: 'Banco GRAM',
+        banco_info: 'Conecta tu wallet y compra diamantes con GRAM.',
+        banco_conectada: 'Wallet conectada', banco_desconectar: 'Desconectar',
+        premium_titulo: 'Tienda Premium',
+        premium_beneficios: '🎁 Beneficios:',
+        premium_beneficios_txt: 'x2 producción · Sin anuncios · Eventos x4 · Insignia exclusiva',
+        centro_titulo: '🏛️ Centro Financiero',
+        centro_info: 'Todos los módulos se basan en habilidad, estrategia o gestión. No hay apuestas ni juegos de azar.',
+        centro_sin_diamantes: 'Sin diamantes',
+        juego_timing: 'Timing Tap', juego_timing_sub: 'Habilidad',
+        juego_match: 'Match Mental', juego_match_sub: 'Memoria',
+        juego_bolsa: 'Bolsa', juego_bolsa_sub: 'Inversión',
+        juego_subasta: 'Subasta', juego_subasta_sub: 'P2P',
+        juego_expedicion: 'Expedición', juego_expedicion_sub: 'Gestión',
+        juego_crafting: 'Crafting', juego_crafting_sub: 'Fusión',
+        timing_info: 'Detén la aguja dentro de la zona verde. Entre más cerca del centro, mayor el multiplicador (2x a 5x).',
+        timing_iniciar: '▶ INICIAR', timing_detener: '¡DETENER!',
+        match_info: 'Memoriza la secuencia de símbolos y reprodúcela. Cada ronda correcta multiplica tu premio.',
+        match_comenzar: '▶ COMENZAR',
+        bolsa_info: 'Compra acciones cuando estén bajas y véndelas cuando suban. Los precios se actualizan cada 30 segundos.',
+        bolsa_portfolio: '💼 Tu portafolio', bolsa_sin: 'Sin inversiones todavía',
+        subasta_info: 'Ítems raros subastados entre alcaldes. Comisión de la casa: 5% (se quema).',
+        exp_info: 'Envía mineros a zonas de riesgo. Siempre obtienes recurso, pero el desgaste puede reducir la ganancia neta.',
+        exp_activas: '🚛 Expediciones activas', exp_ninguna: 'Ninguna en curso',
+        craft_info: 'Combina dos ítems iguales + diamantes para obtener uno de nivel superior. Sin aleatoriedad.',
+        apuesta_label: 'Apuesta:',
+        daily_titulo: 'Recompensa diaria', daily_subtitulo: '¡Reclama tus diamantes gratis!',
+        daily_dia: 'Día', daily_recompensa: 'Recompensa', daily_reclamar: 'RECLAMAR',
+        ads_ver: 'VER ANUNCIO',
+        asistente_rol: 'Asistente Ejecutiva de la Alcaldía',
         onboarding_placeholder: 'Nombre de tu ciudad',
         onboarding_fundar: '🏙️ FUNDAR MI CIUDAD',
-        feed_titulo: 'Bienvenido a su ciudad', feed_sub: 'Los eventos recientes aparecerán aquí',
-        ranking_titulo: 'Ranking Municipal', ranking_tu_rango: 'Tu rango', ranking_tu_posicion: 'Tu posición', ranking_bono: 'Bono semanal estimado',
-        amigos_titulo: 'Amigos',
-        idioma_titulo: 'Idioma'
+        feed_titulo: 'Bienvenido a su ciudad', feed_sub: 'Los eventos recientes aparecerán aquí'
     },
     en: {
         nav_perfil: 'PROFILE', nav_amigos: 'FRIENDS', nav_ranking: 'RANKING',
         greeting_hola: 'HI,',
+        genero_m: 'Mayor', genero_f: 'Mayor',
         section_edificios: 'Buildings', section_feed: 'News Feed',
         building_banco: 'Bank', building_banco_sub: 'Buy/Sell GRAM',
         building_premium: 'Premium', building_premium_sub: 'VIP Plans',
-        building_casino: 'Casino', building_casino_sub: '5 games',
+        building_centro: 'Financial Center', building_centro_sub: '6 sections',
         building_parque: 'Park', building_parque_sub: 'Watch ads',
-        btn_cerrar: 'CLOSE', btn_mejorar: 'UPGRADE', btn_confirmar: 'CONFIRM', btn_reclamar: 'CLAIM',
-        onboarding_titulo: 'Good morning!',
-        onboarding_texto: "I'm Valeria, your executive assistant. Before we begin, I need two details for the municipal records.",
+        building_piscina: 'Pool', building_fabrica: 'Factory',
+        building_escuela: 'School', building_hospital: 'Hospital',
+        gauge_tesoreria: 'Treasury', gauge_produccion: 'Diamonds/h', gauge_nivel: 'Municipal level',
+        lvl_label: 'Level', prod_label: 'Prod', mejora_label: 'Upgrade',
+        btn_cerrar: 'CLOSE', btn_mejorar: 'UPGRADE',
+        perfil_titulo: 'My Profile', perfil_amigos: 'Friends',
+        perfil_rango: 'Rank', perfil_bono: 'Weekly bonus',
+        perfil_titulo_tratamiento: 'Title',
+        idioma_titulo: 'Language',
+        amigos_titulo: 'Invite Friends', amigos_gana: 'Earn 10% of your referrals!',
+        amigos_tu_codigo: 'Your code:', amigos_copiar: '📋 COPY LINK',
+        amigos_ganancias: 'Earnings',
+        ranking_titulo: 'Municipal Ranking', ranking_tu_rango: 'Your rank',
+        ranking_tu_posicion: 'Your position', ranking_bono: 'Estimated weekly bonus',
+        ranking_historial: '🏆 View public prize history',
+        historial_titulo: '🏆 Prize History',
+        historial_info: 'Public record of diamonds paid each week according to production ranking.',
+        banco_titulo: 'GRAM Bank',
+        banco_info: 'Connect your wallet and buy diamonds with GRAM.',
+        banco_conectada: 'Wallet connected', banco_desconectar: 'Disconnect',
+        premium_titulo: 'Premium Store',
+        premium_beneficios: '🎁 Benefits:',
+        premium_beneficios_txt: 'x2 production · No ads · x4 events · Exclusive badge',
+        centro_titulo: '🏛️ Financial Center',
+        centro_info: 'All modules are based on skill, strategy or management. No betting or gambling.',
+        centro_sin_diamantes: 'No diamonds',
+        juego_timing: 'Timing Tap', juego_timing_sub: 'Skill',
+        juego_match: 'Match Mental', juego_match_sub: 'Memory',
+        juego_bolsa: 'Stock Market', juego_bolsa_sub: 'Investment',
+        juego_subasta: 'Auction', juego_subasta_sub: 'P2P',
+        juego_expedicion: 'Expedition', juego_expedicion_sub: 'Management',
+        juego_crafting: 'Crafting', juego_crafting_sub: 'Fusion',
+        timing_info: 'Stop the needle inside the green zone. The closer to the center, the higher the multiplier (2x to 5x).',
+        timing_iniciar: '▶ START', timing_detener: 'STOP!',
+        match_info: 'Memorize the sequence and reproduce it. Each correct round multiplies your prize.',
+        match_comenzar: '▶ START',
+        bolsa_info: 'Buy stocks when low and sell when high. Prices update every 30 seconds.',
+        bolsa_portfolio: '💼 Your portfolio', bolsa_sin: 'No investments yet',
+        subasta_info: 'Rare items auctioned between mayors. House fee: 5% (burned).',
+        exp_info: 'Send miners to risky areas. You always get resources, but wear can reduce net profit.',
+        exp_activas: '🚛 Active expeditions', exp_ninguna: 'None in progress',
+        craft_info: 'Combine two equal items + diamonds to get a higher-tier one. No randomness.',
+        apuesta_label: 'Bet:',
+        daily_titulo: 'Daily Reward', daily_subtitulo: 'Claim your free diamonds!',
+        daily_dia: 'Day', daily_recompensa: 'Reward', daily_reclamar: 'CLAIM',
+        ads_ver: 'WATCH AD',
+        asistente_rol: 'Executive Assistant of the Mayor',
         onboarding_placeholder: 'Name your city',
         onboarding_fundar: '🏙️ FOUND MY CITY',
-        feed_titulo: 'Welcome to your city', feed_sub: 'Recent events will appear here',
-        ranking_titulo: 'Municipal Ranking', ranking_tu_rango: 'Your rank', ranking_tu_posicion: 'Your position', ranking_bono: 'Estimated weekly bonus',
-        amigos_titulo: 'Friends',
-        idioma_titulo: 'Language'
+        feed_titulo: 'Welcome to your city', feed_sub: 'Recent events will appear here'
     },
     pt: {
         nav_perfil: 'PERFIL', nav_amigos: 'AMIGOS', nav_ranking: 'RANKING',
         greeting_hola: 'OLÁ,',
+        genero_m: 'Prefeito', genero_f: 'Prefeita',
         section_edificios: 'Edifícios', section_feed: 'Feed de Notícias',
         building_banco: 'Banco', building_banco_sub: 'Comprar/Vender GRAM',
         building_premium: 'Premium', building_premium_sub: 'Planos VIP',
-        building_casino: 'Cassino', building_casino_sub: '5 jogos',
+        building_centro: 'Centro Financeiro', building_centro_sub: '6 seções',
         building_parque: 'Parque', building_parque_sub: 'Ver anúncios',
-        btn_cerrar: 'FECHAR', btn_mejorar: 'MELHORAR', btn_confirmar: 'CONFIRMAR', btn_reclamar: 'RESGATAR',
-        onboarding_titulo: 'Bom dia!',
-        onboarding_texto: 'Sou Valeria, sua assistente executiva. Antes de começar, preciso de dois dados para os registros municipais.',
+        building_piscina: 'Piscina', building_fabrica: 'Fábrica',
+        building_escuela: 'Escola', building_hospital: 'Hospital',
+        gauge_tesoreria: 'Tesouraria', gauge_produccion: 'Diamantes/h', gauge_nivel: 'Nível municipal',
+        lvl_label: 'Nível', prod_label: 'Prod', mejora_label: 'Melhoria',
+        btn_cerrar: 'FECHAR', btn_mejorar: 'MELHORAR',
+        perfil_titulo: 'Meu Perfil', perfil_amigos: 'Amigos',
+        perfil_rango: 'Rank', perfil_bono: 'Bônus semanal',
+        perfil_titulo_tratamiento: 'Título',
+        idioma_titulo: 'Idioma',
+        amigos_titulo: 'Convidar Amigos', amigos_gana: 'Ganhe 10% dos seus referidos!',
+        amigos_tu_codigo: 'Seu código:', amigos_copiar: '📋 COPIAR LINK',
+        amigos_ganancias: 'Ganhos',
+        ranking_titulo: 'Ranking Municipal', ranking_tu_rango: 'Seu rank',
+        ranking_tu_posicion: 'Sua posição', ranking_bono: 'Bônus semanal estimado',
+        ranking_historial: '🏆 Ver histórico público de prêmios',
+        historial_titulo: '🏆 Histórico de Prêmios',
+        historial_info: 'Registro público dos diamantes pagos semanalmente conforme o ranking.',
+        banco_titulo: 'Banco GRAM',
+        banco_info: 'Conecte sua carteira e compre diamantes com GRAM.',
+        banco_conectada: 'Carteira conectada', banco_desconectar: 'Desconectar',
+        premium_titulo: 'Loja Premium',
+        premium_beneficios: '🎁 Benefícios:',
+        premium_beneficios_txt: 'x2 produção · Sem anúncios · Eventos x4 · Insígnia exclusiva',
+        centro_titulo: '🏛️ Centro Financeiro',
+        centro_info: 'Todos os módulos se baseiam em habilidade, estratégia ou gestão. Sem apostas.',
+        centro_sin_diamantes: 'Sem diamantes',
+        juego_timing: 'Timing Tap', juego_timing_sub: 'Habilidade',
+        juego_match: 'Match Mental', juego_match_sub: 'Memória',
+        juego_bolsa: 'Bolsa', juego_bolsa_sub: 'Investimento',
+        juego_subasta: 'Leilão', juego_subasta_sub: 'P2P',
+        juego_expedicion: 'Expedição', juego_expedicion_sub: 'Gestão',
+        juego_crafting: 'Crafting', juego_crafting_sub: 'Fusão',
+        timing_info: 'Pare a agulha na zona verde. Quanto mais perto do centro, maior o multiplicador (2x a 5x).',
+        timing_iniciar: '▶ INICIAR', timing_detener: 'PARAR!',
+        match_info: 'Memorize a sequência e reproduza. Cada rodada correta multiplica o prêmio.',
+        match_comenzar: '▶ COMEÇAR',
+        bolsa_info: 'Compre ações quando estiverem baixas e venda quando subirem. Preços atualizam a cada 30s.',
+        bolsa_portfolio: '💼 Seu portfólio', bolsa_sin: 'Sem investimentos ainda',
+        subasta_info: 'Itens raros leiloados entre prefeitos. Comissão da casa: 5% (queimada).',
+        exp_info: 'Envie mineradores para áreas de risco. Você sempre ganha recursos, mas o desgaste reduz o lucro.',
+        exp_activas: '🚛 Expedições ativas', exp_ninguna: 'Nenhuma em andamento',
+        craft_info: 'Combine dois itens iguais + diamantes para obter um de nível superior. Sem aleatoriedade.',
+        apuesta_label: 'Aposta:',
+        daily_titulo: 'Recompensa diária', daily_subtitulo: 'Resgate seus diamantes grátis!',
+        daily_dia: 'Dia', daily_recompensa: 'Recompensa', daily_reclamar: 'RESGATAR',
+        ads_ver: 'VER ANÚNCIO',
+        asistente_rol: 'Assistente Executiva da Prefeitura',
         onboarding_placeholder: 'Nome da sua cidade',
         onboarding_fundar: '🏙️ FUNDAR MINHA CIDADE',
-        feed_titulo: 'Bem-vindo à sua cidade', feed_sub: 'Os eventos recentes aparecerão aqui',
-        ranking_titulo: 'Ranking Municipal', ranking_tu_rango: 'Seu rank', ranking_tu_posicion: 'Sua posição', ranking_bono: 'Bônus semanal estimado',
-        amigos_titulo: 'Amigos',
-        idioma_titulo: 'Idioma'
+        feed_titulo: 'Bem-vindo à sua cidade', feed_sub: 'Eventos recentes aparecerão aqui'
     },
     ru: {
         nav_perfil: 'ПРОФИЛЬ', nav_amigos: 'ДРУЗЬЯ', nav_ranking: 'РЕЙТИНГ',
         greeting_hola: 'ПРИВЕТ,',
+        genero_m: 'Мэр', genero_f: 'Мэр',
         section_edificios: 'Здания', section_feed: 'Лента новостей',
         building_banco: 'Банк', building_banco_sub: 'Купить/продать GRAM',
         building_premium: 'Премиум', building_premium_sub: 'VIP-планы',
-        building_casino: 'Казино', building_casino_sub: '5 игр',
+        building_centro: 'Финансовый центр', building_centro_sub: '6 разделов',
         building_parque: 'Парк', building_parque_sub: 'Смотреть рекламу',
-        btn_cerrar: 'ЗАКРЫТЬ', btn_mejorar: 'УЛУЧШИТЬ', btn_confirmar: 'ПОДТВЕРДИТЬ', btn_reclamar: 'ПОЛУЧИТЬ',
-        onboarding_titulo: 'Доброе утро!',
-        onboarding_texto: 'Я Валерия, ваш исполнительный ассистент. Прежде чем начать, мне нужны два реквизита для муниципальных записей.',
+        building_piscina: 'Бассейн', building_fabrica: 'Фабрика',
+        building_escuela: 'Школа', building_hospital: 'Больница',
+        gauge_tesoreria: 'Казна', gauge_produccion: 'Алмазов/ч', gauge_nivel: 'Уровень города',
+        lvl_label: 'Уровень', prod_label: 'Произв', mejora_label: 'Улучшение',
+        btn_cerrar: 'ЗАКРЫТЬ', btn_mejorar: 'УЛУЧШИТЬ',
+        perfil_titulo: 'Мой профиль', perfil_amigos: 'Друзья',
+        perfil_rango: 'Ранг', perfil_bono: 'Недельный бонус',
+        perfil_titulo_tratamiento: 'Обращение',
+        idioma_titulo: 'Язык',
+        amigos_titulo: 'Пригласить друзей', amigos_gana: 'Получайте 10% от рефералов!',
+        amigos_tu_codigo: 'Ваш код:', amigos_copiar: '📋 КОПИРОВАТЬ',
+        amigos_ganancias: 'Доход',
+        ranking_titulo: 'Городской рейтинг', ranking_tu_rango: 'Ваш ранг',
+        ranking_tu_posicion: 'Ваша позиция', ranking_bono: 'Ожидаемый недельный бонус',
+        ranking_historial: '🏆 Публичная история наград',
+        historial_titulo: '🏆 История наград',
+        historial_info: 'Публичный реестр алмазов, выплаченных согласно рейтингу.',
+        banco_titulo: 'Банк GRAM',
+        banco_info: 'Подключите кошелёк и купите алмазы за GRAM.',
+        banco_conectada: 'Кошелёк подключён', banco_desconectar: 'Отключить',
+        premium_titulo: 'Премиум-магазин',
+        premium_beneficios: '🎁 Преимущества:',
+        premium_beneficios_txt: 'x2 производство · Без рекламы · x4 события · Эксклюзивный значок',
+        centro_titulo: '🏛️ Финансовый центр',
+        centro_info: 'Все модули основаны на навыке, стратегии или управлении. Никаких азартных игр.',
+        centro_sin_diamantes: 'Нет алмазов',
+        juego_timing: 'Timing Tap', juego_timing_sub: 'Навык',
+        juego_match: 'Match Mental', juego_match_sub: 'Память',
+        juego_bolsa: 'Биржа', juego_bolsa_sub: 'Инвестиции',
+        juego_subasta: 'Аукцион', juego_subasta_sub: 'P2P',
+        juego_expedicion: 'Экспедиция', juego_expedicion_sub: 'Управление',
+        juego_crafting: 'Крафт', juego_crafting_sub: 'Слияние',
+        timing_info: 'Остановите стрелку в зелёной зоне. Чем ближе к центру, тем выше множитель (2x–5x).',
+        timing_iniciar: '▶ СТАРТ', timing_detener: 'СТОП!',
+        match_info: 'Запомните последовательность и воспроизведите её. Каждый раунд увеличивает приз.',
+        match_comenzar: '▶ НАЧАТЬ',
+        bolsa_info: 'Покупайте акции дешевле и продавайте дороже. Цены обновляются каждые 30 секунд.',
+        bolsa_portfolio: '💼 Ваш портфель', bolsa_sin: 'Пока нет инвестиций',
+        subasta_info: 'Редкие предметы на аукционе между мэрами. Комиссия дома: 5% (сжигается).',
+        exp_info: 'Отправляйте шахтёров в опасные зоны. Ресурсы всегда будут, но износ снижает прибыль.',
+        exp_activas: '🚛 Активные экспедиции', exp_ninguna: 'Нет активных',
+        craft_info: 'Соедините два одинаковых предмета + алмазы, чтобы получить уровень выше. Без случайности.',
+        apuesta_label: 'Ставка:',
+        daily_titulo: 'Ежедневная награда', daily_subtitulo: 'Заберите бесплатные алмазы!',
+        daily_dia: 'День', daily_recompensa: 'Награда', daily_reclamar: 'ЗАБРАТЬ',
+        ads_ver: 'СМОТРЕТЬ',
+        asistente_rol: 'Исполнительный ассистент мэрии',
         onboarding_placeholder: 'Название вашего города',
         onboarding_fundar: '🏙️ ОСНОВАТЬ ГОРОД',
-        feed_titulo: 'Добро пожаловать в ваш город', feed_sub: 'Здесь будут появляться последние события',
-        ranking_titulo: 'Городской рейтинг', ranking_tu_rango: 'Ваш ранг', ranking_tu_posicion: 'Ваша позиция', ranking_bono: 'Ожидаемый недельный бонус',
-        amigos_titulo: 'Друзья',
-        idioma_titulo: 'Язык'
+        feed_titulo: 'Добро пожаловать в ваш город', feed_sub: 'Здесь будут появляться события'
     }
 };
 
@@ -283,10 +356,14 @@ function t(key) {
 
 function aplicarIdioma() {
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
-        el.textContent = t(el.getAttribute('data-i18n'));
+        const key = el.getAttribute('data-i18n');
+        const traduccion = t(key);
+        if (traduccion) el.textContent = traduccion;
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
-        el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+        const key = el.getAttribute('data-i18n-placeholder');
+        const traduccion = t(key);
+        if (traduccion) el.placeholder = traduccion;
     });
 }
 
@@ -304,6 +381,25 @@ function seleccionarIdioma(codigo) {
 function abrirSelectorIdioma() {
     closeAll();
     showModal('modalIdioma');
+}
+
+// ==========================================
+// UTILIDADES BÁSICAS
+// ==========================================
+function esPremium() {
+    if (!userData.premium_expires) return false;
+    return new Date() < new Date(userData.premium_expires);
+}
+
+function actualizarPremiumUI() {
+    const badge = document.getElementById('premium-badge');
+    if (badge) badge.style.display = esPremium() ? 'flex' : 'none';
+}
+
+function getTotalProduction() {
+    let base = (userData.lvl_escuela * 15) + (userData.lvl_fabrica * 25) + (userData.lvl_piscina * 10) + (userData.lvl_hospital * 18);
+    if (esPremium()) base = base * 2;
+    return base;
 }
 
 function getTituloAlcalde() {
@@ -348,7 +444,7 @@ function renderizarFeedNoticias() {
     if (!cont) return;
     const eventos = userData.newsFeed || [];
     if (eventos.length === 0) {
-        cont.innerHTML = '<div class="feed-item"><div class="feed-icono">👋</div><div class="feed-texto"><div class="feed-titulo">Bienvenido a su ciudad</div><div class="feed-subtitulo">Los eventos recientes aparecerán aquí</div></div></div>';
+        cont.innerHTML = '<div class="feed-item"><div class="feed-icono">👋</div><div class="feed-texto"><div class="feed-titulo">' + t('feed_titulo') + '</div><div class="feed-subtitulo">' + t('feed_sub') + '</div></div></div>';
         return;
     }
     let html = '';
@@ -378,6 +474,28 @@ async function confirmarNombreCiudad() {
     await saveUserData();
 }
 
+function destelloResultado(modalId, gano) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.classList.remove('ganaste', 'perdiste');
+    void modal.offsetWidth;
+    modal.classList.add(gano ? 'ganaste' : 'perdiste');
+    setTimeout(function() { modal.classList.remove('ganaste', 'perdiste'); }, 900);
+}
+
+function spawnConfetti() {
+    const colores = ['#facc15', '#4ade80', '#38bdf8', '#f472b6', '#a78bfa', '#f97316', '#ef4444', '#34d399'];
+    for (let i = 0; i < 40; i++) {
+        const pieza = document.createElement('div');
+        pieza.style.cssText = 'position:fixed;width:' + (6 + Math.random() * 10) + 'px;height:' + (6 + Math.random() * 10) + 'px;z-index:9999;pointer-events:none;left:' + Math.random() * 100 + '%;top:' + (Math.random() * 50 + 20) + '%;background:' + colores[Math.floor(Math.random() * colores.length)] + ';border-radius:' + (Math.random() > 0.5 ? '50%' : '2px') + ';animation:confetti ' + (1 + Math.random() * 2) + 's ease forwards;animation-delay:' + Math.random() * 0.5 + 's;';
+        document.body.appendChild(pieza);
+        setTimeout(function() { if (pieza.parentNode) pieza.parentNode.removeChild(pieza); }, 3000);
+    }
+}
+
+// ==========================================
+// ASISTENTE VIRTUAL (VALERIA)
+// ==========================================
 function getSaludoValeria() {
     const hora = new Date().getHours();
     if (hora < 12) return '🏛️ Buenos días, ' + getTituloAlcalde() + '.';
@@ -392,34 +510,25 @@ function getConsejosAsistente() {
     const consejos = [];
 
     if (ultimoReclamo !== hoy) {
-        consejos.push('🔔 Informe pendiente: la recaudación diaria de ' + ciudad + ' todavía no ha sido reclamada. Le recomiendo autorizarla desde el aviso amarillo.');
+        consejos.push('🔔 Informe pendiente: la recaudación diaria de ' + ciudad + ' todavía no ha sido reclamada.');
     }
     if ((userData.diamonds || 0) < 200) {
-        consejos.push('💎 Las arcas municipales están por debajo de lo recomendable. Sugiero ver un anuncio en el Parque (+20 💎 sin costo) o autorizar una compra en el Banco.');
+        consejos.push('💎 Las arcas municipales están por debajo de lo recomendable. Sugiero ver un anuncio en el Parque (+20 💎 sin costo).');
     }
     const nivelesBajos = ['lvl_piscina', 'lvl_fabrica', 'lvl_escuela', 'lvl_hospital'].filter(function(k) { return (userData[k] || 0) < 5; });
     if (nivelesBajos.length > 0) {
-        consejos.push('📊 Varios edificios aún operan muy por debajo de su capacidad. Cada mejora incrementa la producción por hora de forma permanente.');
+        consejos.push('📊 Varios edificios aún operan muy por debajo de su capacidad. Cada mejora incrementa la producción por hora.');
     }
     if (!esPremium()) {
-        consejos.push('⚡ El estatus Premium duplica la producción de toda la ciudad y elimina los anuncios obligatorios. Puede revisarlo en el edificio Premium.');
+        consejos.push('⚡ El estatus Premium duplica la producción de toda la ciudad y elimina los anuncios.');
     }
     if ((userData.referred_users || []).length === 0) {
-        consejos.push('👥 ' + ciudad + ' todavía no tiene ciudadanos referidos. Cada persona que invite le genera diamantes adicionales. Encontrará su código en la pestaña Amigos.');
+        consejos.push('👥 ' + ciudad + ' todavía no tiene ciudadanos referidos. Cada invitación genera diamantes adicionales.');
     }
     if (consejos.length === 0) {
         consejos.push('✅ Todo está en orden en ' + ciudad + '. Excelente gestión hasta el momento.');
     }
     return consejos.slice(0, 3);
-}
-
-function destelloResultado(modalId, gano) {
-    const modal = document.getElementById(modalId);
-    if (!modal) return;
-    modal.classList.remove('ganaste', 'perdiste');
-    void modal.offsetWidth;
-    modal.classList.add(gano ? 'ganaste' : 'perdiste');
-    setTimeout(function() { modal.classList.remove('ganaste', 'perdiste'); }, 900);
 }
 
 function hayAlgoUrgenteParaValeria() {
@@ -429,7 +538,6 @@ function hayAlgoUrgenteParaValeria() {
     if ((userData.diamonds || 0) < 200) return true;
     const nivelesBajos = ['lvl_piscina', 'lvl_fabrica', 'lvl_escuela', 'lvl_hospital'].filter(function(k) { return (userData[k] || 0) < 3; });
     if (nivelesBajos.length >= 3) return true;
-    if (!esPremium() && (userData.diamonds || 0) > 3000) return true;
     return false;
 }
 
@@ -438,31 +546,6 @@ function actualizarBadgeValeria() {
     if (!boton) return;
     if (hayAlgoUrgenteParaValeria()) boton.classList.add('urgente');
     else boton.classList.remove('urgente');
-}
-
-async function abrirHistorialPremios() {
-    closeAll();
-    showModal('modalHistorialPremios');
-    const cont = document.getElementById('historial-premios-lista');
-    if (!cont) return;
-    cont.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">Cargando...</div>';
-    try {
-        const resultado = await _supabase.from('payout_history').select('*').order('fecha', { ascending: false }).limit(30);
-        const filas = (resultado && resultado.data) || [];
-        if (filas.length === 0) {
-            cont.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">Todavía no se ha procesado ningún pago semanal.</div>';
-            return;
-        }
-        let html = '';
-        for (let i = 0; i < filas.length; i++) {
-            const f = filas[i];
-            const fecha = new Date(f.fecha).toLocaleDateString();
-            html += '<div class="feed-item"><div class="feed-icono">💎</div><div class="feed-texto"><div class="feed-titulo">#' + f.posicion + ' · 🏙️ ' + (f.city_name || 'Ciudad') + ' (' + (f.username || 'Alcalde') + ')</div><div class="feed-subtitulo">+' + f.premio + ' 💎 pagados</div><div class="feed-tiempo">' + fecha + '</div></div></div>';
-        }
-        cont.innerHTML = html;
-    } catch (error) {
-        cont.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">No se pudo cargar el historial.</div>';
-    }
 }
 
 function abrirAsistente() {
@@ -480,6 +563,9 @@ function abrirAsistente() {
     actualizarBadgeValeria();
 }
 
+// ==========================================
+// UI GENERAL
+// ==========================================
 function actualizarUI() {
     const diamElem = document.getElementById('diamonds');
     if (diamElem) {
@@ -501,14 +587,11 @@ function actualizarUI() {
     const gaugeNivel = document.getElementById('gauge-nivel');
     if (gaugeNivel) gaugeNivel.style.background = 'conic-gradient(#a78bfa ' + (pctNivel * 3.6) + 'deg, rgba(255,255,255,0.08) ' + (pctNivel * 3.6) + 'deg)';
     actualizarBadgeValeria();
-    const lvlPiscina = document.getElementById('lvl_piscina');
-    if (lvlPiscina) lvlPiscina.textContent = userData.lvl_piscina;
-    const lvlFabrica = document.getElementById('lvl_fabrica');
-    if (lvlFabrica) lvlFabrica.textContent = userData.lvl_fabrica;
-    const lvlEscuela = document.getElementById('lvl_escuela');
-    if (lvlEscuela) lvlEscuela.textContent = userData.lvl_escuela;
-    const lvlHospital = document.getElementById('lvl_hospital');
-    if (lvlHospital) lvlHospital.textContent = userData.lvl_hospital;
+    const ids = ['piscina', 'fabrica', 'escuela', 'hospital'];
+    for (let i = 0; i < ids.length; i++) {
+        const el = document.getElementById('lvl_' + ids[i]);
+        if (el) el.textContent = userData['lvl_' + ids[i]];
+    }
     const userDisplay = document.getElementById('user-display');
     if (userDisplay) userDisplay.textContent = userData.username || 'Usuario';
     const tituloElem = document.getElementById('titulo-tratamiento');
@@ -533,21 +616,16 @@ function closeAll() {
     if (overlay) overlay.style.display = 'none';
     const modals = [
         'modalPerfil', 'modalFriends', 'modalRanking', 'modalBank', 'modalStore',
-        'modalCasino', 'modalHighLow', 'modalRuleta', 'modalTragaperras', 'modalDados',
-        'modalRuletaRusa', 'modalEscuela', 'modalFabrica', 'modalPiscina', 'modalHospital',
-        'modalDailyReward', 'modalAds', 'modalAsistente', 'modalIdioma', 'modalHistorialPremios'
+        'modalCasino', 'modalTiming', 'modalMatch', 'modalBolsa', 'modalSubasta',
+        'modalExpedicion', 'modalCrafting', 'modalEscuela', 'modalFabrica',
+        'modalPiscina', 'modalHospital', 'modalDailyReward', 'modalAds',
+        'modalAsistente', 'modalIdioma', 'modalHistorialPremios'
     ];
     modals.forEach(function(id) {
         const modal = document.getElementById(id);
         if (modal) modal.style.display = 'none';
     });
-    if (fabricaAnimInterval) clearInterval(fabricaAnimInterval);
-    if (piscinaChargeInterval) clearInterval(piscinaChargeInterval);
-    if (hospitalTimer) clearInterval(hospitalTimer);
-    gameActiveStates.escuela = false;
-    gameActiveStates.fabrica = false;
-    gameActiveStates.piscina = false;
-    gameActiveStates.hospital = false;
+    if (timingInterval) clearInterval(timingInterval);
     setActiveNav('perfil');
 }
 
@@ -559,16 +637,6 @@ function setActiveNav(tab) {
         if (tab === 'amigos' && index === 1) item.classList.add('active');
         if (tab === 'ranking' && index === 2) item.classList.add('active');
     });
-}
-
-function spawnConfetti() {
-    const colores = ['#facc15', '#4ade80', '#38bdf8', '#f472b6', '#a78bfa', '#f97316', '#ef4444', '#34d399'];
-    for (let i = 0; i < 40; i++) {
-        const pieza = document.createElement('div');
-        pieza.style.cssText = 'position:fixed;width:' + (6 + Math.random() * 10) + 'px;height:' + (6 + Math.random() * 10) + 'px;z-index:9999;pointer-events:none;left:' + Math.random() * 100 + '%;top:' + (Math.random() * 50 + 20) + '%;background:' + colores[Math.floor(Math.random() * colores.length)] + ';border-radius:' + (Math.random() > 0.5 ? '50%' : '2px') + ';animation:confetti ' + (1 + Math.random() * 2) + 's ease forwards;animation-delay:' + Math.random() * 0.5 + 's;';
-        document.body.appendChild(pieza);
-        setTimeout(function() { if (pieza.parentNode) pieza.parentNode.removeChild(pieza); }, 3000);
-    }
 }
 
 // ==========================================
@@ -594,28 +662,23 @@ function actualizarPerfil() {
         if (usuario && usuario.photo_url) avatarElem.innerHTML = '<img src="' + usuario.photo_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
         else avatarElem.innerHTML = nombre.charAt(0).toUpperCase();
     }
-    const diamantesElem = document.getElementById('perfil-diamonds');
-    if (diamantesElem) diamantesElem.textContent = Math.floor(userData.diamonds || 0);
-    const rateElem = document.getElementById('perfil-rate');
-    if (rateElem) rateElem.textContent = Math.floor(getTotalProduction());
-    const piscinaElem = document.getElementById('perfil-piscina');
-    if (piscinaElem) piscinaElem.textContent = 'Nivel ' + (userData.lvl_piscina || 0);
-    const fabricaElem = document.getElementById('perfil-fabrica');
-    if (fabricaElem) fabricaElem.textContent = 'Nivel ' + (userData.lvl_fabrica || 0);
-    const escuelaElem = document.getElementById('perfil-escuela');
-    if (escuelaElem) escuelaElem.textContent = 'Nivel ' + (userData.lvl_escuela || 0);
-    const hospitalElem = document.getElementById('perfil-hospital');
-    if (hospitalElem) hospitalElem.textContent = 'Nivel ' + (userData.lvl_hospital || 0);
-    const amigosElem = document.getElementById('perfil-amigos');
-    if (amigosElem) amigosElem.textContent = (userData.referred_users || []).length;
-    const rangoElem = document.getElementById('perfil-rango-display');
-    if (rangoElem) rangoElem.textContent = userData.rank || 'Ciudadano';
-    const proyeccionElem = document.getElementById('perfil-proyeccion');
-    if (proyeccionElem) proyeccionElem.textContent = Math.floor(userData.projectedReward || 0) + ' 💎';
-    const premiumElem = document.getElementById('perfil-premium');
-    if (premiumElem) premiumElem.textContent = esPremium() ? 'Sí ⭐' : 'No';
-    const rankBadgeElem = document.getElementById('perfil-rank-badge');
-    if (rankBadgeElem) rankBadgeElem.textContent = userData.rank || 'Ciudadano';
+    const stats = {
+        'perfil-diamonds': Math.floor(userData.diamonds || 0),
+        'perfil-rate': Math.floor(getTotalProduction()),
+        'perfil-piscina': 'Nivel ' + (userData.lvl_piscina || 0),
+        'perfil-fabrica': 'Nivel ' + (userData.lvl_fabrica || 0),
+        'perfil-escuela': 'Nivel ' + (userData.lvl_escuela || 0),
+        'perfil-hospital': 'Nivel ' + (userData.lvl_hospital || 0),
+        'perfil-amigos': (userData.referred_users || []).length,
+        'perfil-rango-display': userData.rank || 'Ciudadano',
+        'perfil-proyeccion': Math.floor(userData.projectedReward || 0) + ' 💎',
+        'perfil-premium': esPremium() ? 'Sí ⭐' : 'No',
+        'perfil-rank-badge': userData.rank || 'Ciudadano'
+    };
+    for (const id in stats) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = stats[id];
+    }
     const btnGeneroM = document.getElementById('perfil-genero-M');
     const btnGeneroF = document.getElementById('perfil-genero-F');
     if (btnGeneroM) btnGeneroM.classList.toggle('active', (userData.genero || 'M') === 'M');
@@ -639,16 +702,16 @@ function openFriends() {
 
 function copyReferralCode() {
     if (!userData.referral_code) return alert('❌ Código de referencia no disponible');
-    const enlaceCompleto = 'https://t.me/City_Diamond_Bot?start=' + userData.referral_code;
+    const enlaceCompleto = 'https://t.me/DiamondCityBot?start=' + userData.referral_code;
     const mensaje = '🏙️💎 ¡Únete a Diamond City!\n\n' +
         '🏢 Construye tu propia metrópolis\n' +
         '💎 Genera diamantes con tus edificios\n' +
-        '🎰 Juega en el casino y gana premios\n' +
+        '📈 Invierte, subasta y craftea\n' +
         '🏆 Compite por ser el mejor alcalde\n\n' +
         '¡Entra con mi enlace y arrancamos juntos! 👇\n' + enlaceCompleto;
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(mensaje).then(function() {
-            alert('✅ ¡Mensaje de invitación copiado! Pégalo donde quieras compartirlo.');
+            alert('✅ ¡Mensaje de invitación copiado!');
         }).catch(function() {
             prompt('Copia este mensaje:', mensaje);
         });
@@ -671,7 +734,7 @@ function actualizarRankingModal() {
     const rangoElem = document.getElementById('user-rank-display');
     if (rangoElem) rangoElem.textContent = userData.rank || 'Ciudadano';
     const posicionElem = document.getElementById('user-position-display');
-    if (posicionElem) posicionElem.textContent = userData.weekly_rank ? '#' + userData.weekly_rank : 'Sin calcular todavía';
+    if (posicionElem) posicionElem.textContent = userData.weekly_rank ? '#' + userData.weekly_rank : 'Sin calcular';
     const proyeccionElem = document.getElementById('projected-reward-display');
     if (proyeccionElem) proyeccionElem.textContent = Math.floor(userData.projectedReward || 0) + ' 💎';
 
@@ -695,6 +758,31 @@ function actualizarRankingModal() {
         html += '</div>';
     }
     lista.innerHTML = html;
+}
+
+async function abrirHistorialPremios() {
+    closeAll();
+    showModal('modalHistorialPremios');
+    const cont = document.getElementById('historial-premios-lista');
+    if (!cont) return;
+    cont.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">Cargando...</div>';
+    try {
+        const resultado = await _supabase.from('payout_history').select('*').order('fecha', { ascending: false }).limit(30);
+        const filas = (resultado && resultado.data) || [];
+        if (filas.length === 0) {
+            cont.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">Todavía no se ha procesado ningún pago semanal.</div>';
+            return;
+        }
+        let html = '';
+        for (let i = 0; i < filas.length; i++) {
+            const f = filas[i];
+            const fecha = new Date(f.fecha).toLocaleDateString();
+            html += '<div class="feed-item"><div class="feed-icono">💎</div><div class="feed-texto"><div class="feed-titulo">#' + f.posicion + ' · 🏙️ ' + (f.city_name || 'Ciudad') + ' (' + (f.username || 'Alcalde') + ')</div><div class="feed-subtitulo">+' + f.premio + ' 💎 pagados</div><div class="feed-tiempo">' + fecha + '</div></div></div>';
+        }
+        cont.innerHTML = html;
+    } catch (error) {
+        cont.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">No se pudo cargar el historial.</div>';
+    }
 }
 
 // ==========================================
@@ -737,33 +825,19 @@ async function comprarTON(tonAmount) {
     if (!tonConnectUI || !tonConnectUI.connected) return alert('❌ Conecta tu wallet primero');
     const diamantesAComprar = Math.max(100, Math.floor(tonAmount / CONFIG.PRECIO_COMPRA));
     if (!confirm('¿Confirmas la compra?\n\nPagarás: ' + tonAmount.toFixed(2) + ' GRAM\nRecibirás: ' + diamantesAComprar + ' 💎')) return;
-
     try {
         const transaccion = {
             validUntil: Math.floor(Date.now() / 1000) + 300,
-            messages: [
-                {
-                    address: CONFIG.BILLETERA_PROPIETARIO,
-                    amount: Math.floor(tonAmount * 1000000000).toString()
-                }
-            ]
+            messages: [{
+                address: CONFIG.BILLETERA_PROPIETARIO,
+                amount: Math.floor(tonAmount * 1000000000).toString()
+            }]
         };
         await tonConnectUI.sendTransaction(transaccion);
-
-        const resp = await fetch('/api/confirm-purchase', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userData.id, tonAmount: tonAmount })
-        });
-        const data = await resp.json();
-
-        if (!data.success) {
-            alert('⚠️ Pagaste, pero aún no lo confirmamos: ' + (data.error || 'intenta abrir el banco de nuevo en unos segundos'));
-            return;
-        }
-
-        userData.diamonds = data.diamonds;
+        userData.diamonds += diamantesAComprar;
+        userData.haInvertido = true;
         registrarEvento('💎', 'Compra de diamantes confirmada', '+' + diamantesAComprar + ' 💎 acreditados');
+        await saveUserData();
         actualizarUI();
         spawnConfetti();
         alert('✅ ¡Compra exitosa!\n\nRecibiste ' + diamantesAComprar + ' 💎');
@@ -847,13 +921,10 @@ async function comprarPremium(days) {
     if (!tonConnectUI || !tonConnectUI.connected) return alert('❌ Conecta tu wallet primero');
     let planSeleccionado = null;
     for (let i = 0; i < PREMIUM_PLANS.length; i++) {
-        if (PREMIUM_PLANS[i].days === days) {
-            planSeleccionado = PREMIUM_PLANS[i];
-            break;
-        }
+        if (PREMIUM_PLANS[i].days === days) { planSeleccionado = PREMIUM_PLANS[i]; break; }
     }
     if (!planSeleccionado) return alert('❌ Plan no encontrado');
-    if (!confirm('¿Activar Premium ' + planSeleccionado.name + ' por ' + planSeleccionado.price + ' GRAM?\n\nDisfrutarás de todos los beneficios Premium.')) return;
+    if (!confirm('¿Activar Premium ' + planSeleccionado.name + ' por ' + planSeleccionado.price + ' GRAM?')) return;
     try {
         const transaccion = {
             validUntil: Math.floor(Date.now() / 1000) + 300,
@@ -866,6 +937,7 @@ async function comprarPremium(days) {
         const fechaExpiracion = new Date();
         fechaExpiracion.setDate(fechaExpiracion.getDate() + days);
         userData.premium_expires = fechaExpiracion.toISOString();
+        userData.haInvertido = true;
         registrarEvento('⭐', 'Estatus Premium activado', planSeleccionado.name + ' · Producción x2 habilitada');
         await saveUserData();
         actualizarPremiumUI();
@@ -894,10 +966,7 @@ async function initAds() {
 }
 
 function showRewardedAd(callback) {
-    if (esPremium()) {
-        callback(true);
-        return;
-    }
+    if (esPremium()) { callback(true); return; }
     if (!adsReady || !AdController) {
         alert('📺 El sistema de anuncios no está disponible');
         callback(false);
@@ -916,12 +985,10 @@ function showAdsModal() {
 
 function actualizarEstadoAnuncio() {
     let puedeVerAnuncio = false;
-    if (!userData.last_ad_watch) {
-        puedeVerAnuncio = true;
-    } else {
+    if (!userData.last_ad_watch) puedeVerAnuncio = true;
+    else {
         const ultimoAnuncio = new Date(userData.last_ad_watch);
-        const ahora = new Date();
-        const diferenciaMs = ahora - ultimoAnuncio;
+        const diferenciaMs = new Date() - ultimoAnuncio;
         if (diferenciaMs > 3600000) puedeVerAnuncio = true;
     }
     const boton = document.getElementById('watch-ad-btn');
@@ -942,8 +1009,7 @@ function actualizarEstadoAnuncio() {
         let minutosRestantes = 60;
         if (userData.last_ad_watch) {
             const ultimo = new Date(userData.last_ad_watch);
-            const ahora = new Date();
-            const msRestantes = 3600000 - (ahora - ultimo);
+            const msRestantes = 3600000 - (new Date() - ultimo);
             minutosRestantes = Math.ceil(msRestantes / 60000);
         }
         boton.textContent = '⏳ ESPERAR ' + minutosRestantes + ' MIN';
@@ -966,7 +1032,7 @@ async function refrescarDiamantesDesdeServidor() {
 
 function showAd() {
     if (esPremium()) {
-        userData.diamonds = userData.diamonds + 20;
+        userData.diamonds += 20;
         saveUserData();
         actualizarUI();
         alert('⭐ Como usuario Premium, recibes +20 💎');
@@ -976,10 +1042,11 @@ function showAd() {
     showRewardedAd(function(completado) {
         if (completado) {
             userData.last_ad_watch = new Date().toISOString();
+            userData.diamonds += 20;
             saveUserData();
-            alert('🎁 ¡Gracias por ver el anuncio! Tus diamantes se acreditarán en unos segundos.');
+            actualizarUI();
+            alert('🎁 ¡Gracias por ver el anuncio! +20 💎');
             closeAll();
-            setTimeout(refrescarDiamantesDesdeServidor, 4000);
         } else {
             alert('❌ No se pudo completar el anuncio');
         }
@@ -988,7 +1055,7 @@ function showAd() {
 
 function rescueWithAd() {
     if (esPremium()) {
-        userData.diamonds = userData.diamonds + 50;
+        userData.diamonds += 50;
         actualizarUI();
         alert('⭐ Rescate Premium: +50 💎');
         return;
@@ -1002,9 +1069,11 @@ function rescueWithAd() {
     showRewardedAd(function(completado) {
         if (completado) {
             userData.last_casino_rescue = new Date().toISOString();
+            userData.diamonds += 50;
             saveUserData();
-            alert('🎁 ¡Anuncio confirmado! Tu rescate se acreditará en unos segundos.');
-            setTimeout(refrescarDiamantesDesdeServidor, 4000);
+            actualizarUI();
+            alert('🎁 +50 💎 de rescate');
+            closeAll();
         }
     });
 }
@@ -1061,13 +1130,12 @@ async function claimDailyReward() {
     let nuevoDia = 1;
     if (userData.last_daily_claim && userData.daily_streak > 0) {
         const ultimoReclamo = new Date(userData.last_daily_claim);
-        const ahora = new Date();
-        const horasTranscurridas = (ahora - ultimoReclamo) / (1000 * 3600);
+        const horasTranscurridas = (new Date() - ultimoReclamo) / (1000 * 3600);
         if (horasTranscurridas < 48) nuevoDia = userData.daily_streak + 1;
     }
     if (nuevoDia > 30) nuevoDia = 30;
     const recompensa = getDailyRewardAmount(nuevoDia);
-    userData.diamonds = userData.diamonds + recompensa;
+    userData.diamonds += recompensa;
     userData.daily_streak = nuevoDia;
     userData.last_daily_claim = new Date().toISOString();
     registrarEvento('🎁', 'Recompensa diaria reclamada', 'Día ' + nuevoDia + ' de 30 · +' + recompensa + ' 💎');
@@ -1079,8 +1147,7 @@ async function claimDailyReward() {
 }
 
 // ==========================================
-// ==========================================
-// CASINO
+// CENTRO FINANCIERO (sustituye al Casino)
 // ==========================================
 function openCasino() {
     closeAll();
@@ -1093,50 +1160,26 @@ function openCasino() {
 
 function abrirJuego(juego) {
     closeAll();
-    let modalId = '';
-    switch (juego) {
-        case 'highlow': modalId = 'modalHighLow'; break;
-        case 'ruleta': modalId = 'modalRuleta'; break;
-        case 'tragaperras': modalId = 'modalTragaperras'; break;
-        case 'dados': modalId = 'modalDados'; break;
-        case 'ruletarusa': modalId = 'modalRuletaRusa'; break;
-    }
+    const map = {
+        timing: 'modalTiming',
+        matchmental: 'modalMatch',
+        bolsa: 'modalBolsa',
+        subasta: 'modalSubasta',
+        expedicion: 'modalExpedicion',
+        crafting: 'modalCrafting'
+    };
+    const modalId = map[juego];
     if (!modalId) return;
     showModal(modalId);
-    const idBalance = juego === 'highlow' ? 'hl-balance' : (juego + '-balance');
-    const balanceElem = document.getElementById(idBalance);
-    if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
-    if (juego === 'highlow') {
-        document.getElementById('hl-number').textContent = '0000';
-        document.getElementById('hl-result').innerHTML = '';
-        document.getElementById('hl-bet-display').textContent = apuestaActual.highlow;
-        document.getElementById('hl-bet').textContent = apuestaActual.highlow + ' 💎';
-    } else if (juego === 'ruleta') {
-        document.getElementById('ruleta-number').textContent = '0';
-        document.getElementById('ruleta-result').innerHTML = '';
-        document.getElementById('ruleta-bet-display').textContent = apuestaActual.ruleta;
-        document.getElementById('ruleta-bet').textContent = apuestaActual.ruleta + ' 💎';
-    } else if (juego === 'tragaperras') {
-        document.getElementById('slot1').textContent = '💎';
-        document.getElementById('slot2').textContent = '💰';
-        document.getElementById('slot3').textContent = '🌟';
-        document.getElementById('tragaperras-result').innerHTML = '';
-        document.getElementById('tragaperras-bet-display').textContent = apuestaActual.tragaperras;
-        document.getElementById('tragaperras-bet').textContent = apuestaActual.tragaperras + ' 💎';
-    } else if (juego === 'dados') {
-        document.getElementById('dado1').textContent = '⚀';
-        document.getElementById('dado2').textContent = '⚀';
-        document.getElementById('dados-suma').textContent = 'Suma: 2';
-        document.getElementById('dados-result').innerHTML = '';
-        document.getElementById('dados-bet-display').textContent = apuestaActual.dados;
-        document.getElementById('dados-bet').textContent = apuestaActual.dados + ' 💎';
-    } else if (juego === 'ruletarusa') {
-        crearCamarasRuletaRusa();
-        document.getElementById('ruletarusa-result').innerHTML = '';
-        document.getElementById('ruletarusa-emoji').textContent = '🔫';
-        document.getElementById('ruletarusa-bet-display').textContent = apuestaActual.ruletarusa;
-        document.getElementById('ruletarusa-bet').textContent = apuestaActual.ruletarusa + ' 💎';
-    }
+    const prefijo = juego === 'matchmental' ? 'match' : juego;
+    const bal = document.getElementById(prefijo + '-balance');
+    if (bal) bal.textContent = Math.floor(userData.diamonds);
+    if (juego === 'timing') prepararTimingUI();
+    if (juego === 'matchmental') prepararMatchUI();
+    if (juego === 'bolsa') renderBolsa();
+    if (juego === 'subasta') renderSubasta();
+    if (juego === 'expedicion') renderExpedicion();
+    if (juego === 'crafting') renderCrafting();
 }
 
 function cerrarJuego() {
@@ -1145,17 +1188,17 @@ function cerrarJuego() {
 }
 
 function cambiarApuesta(juego, delta) {
-    const prefijos = { highlow: 'hl' };
+    const prefijos = { timing: 'timing', matchmental: 'match' };
     const prefijo = prefijos[juego] || juego;
-    const valorActual = apuestaActual[juego] || 10;
-    let nuevoValor = valorActual + delta;
-    if (nuevoValor < 1) nuevoValor = 1;
-    if (nuevoValor > 1000) nuevoValor = 1000;
-    apuestaActual[juego] = nuevoValor;
+    let actual = apuestaActual[juego] || 10;
+    actual += delta;
+    if (actual < 1) actual = 1;
+    if (actual > 1000) actual = 1000;
+    apuestaActual[juego] = actual;
     const displayElem = document.getElementById(prefijo + '-bet-display');
-    if (displayElem) displayElem.textContent = nuevoValor;
+    if (displayElem) displayElem.textContent = actual;
     const betElem = document.getElementById(prefijo + '-bet');
-    if (betElem) betElem.textContent = nuevoValor + ' 💎';
+    if (betElem) betElem.textContent = actual + ' 💎';
 }
 
 function puedeJugar(juego, cantidad) {
@@ -1163,305 +1206,540 @@ function puedeJugar(juego, cantidad) {
     if (userData.haInvertido) return true;
     const hoy = new Date().toDateString();
     if (userData.jugadasHoy.fecha !== hoy) {
-        userData.jugadasHoy = {
-            highlow: 0,
-            ruleta: 0,
-            tragaperras: 0,
-            dados: 0,
-            ruletarusa: 0,
-            loteria: 0,
-            fecha: hoy
-        };
+        userData.jugadasHoy = { timing: 0, matchmental: 0, bolsa: 0, subasta: 0, expedicion: 0, crafting: 0, fecha: hoy };
     }
-    const limites = { highlow: 20, ruleta: 15, tragaperras: 30, dados: 20, ruletarusa: 10, loteria: 5 };
+    const limites = { timing: 20, matchmental: 15, bolsa: 30, subasta: 20, expedicion: 10, crafting: 30 };
     const jugadasActuales = userData.jugadasHoy[juego] || 0;
-    const limite = limites[juego] || 10;
-    return (jugadasActuales + cantidad) <= limite;
+    return (jugadasActuales + cantidad) <= (limites[juego] || 10);
 }
 
 function registrarJugada(juego, cantidad) {
     if (!cantidad) cantidad = 1;
     if (!userData.haInvertido) {
         if (!userData.jugadasHoy[juego]) userData.jugadasHoy[juego] = 0;
-        userData.jugadasHoy[juego] = userData.jugadasHoy[juego] + cantidad;
+        userData.jugadasHoy[juego] += cantidad;
     }
 }
 
-function jugarHighLow(eleccion) {
-    const apuesta = apuestaActual.highlow;
-    if (userData.diamonds < apuesta) return alert('❌ Diamantes insuficientes');
-    if (!puedeJugar('highlow')) return alert('❌ Límite diario alcanzado');
-    userData.diamonds = userData.diamonds - apuesta;
-    registrarJugada('highlow');
-    const numero = Math.floor(Math.random() * 10000);
-    let gana = false;
-    if (eleccion === 'low' && numero < 5000) gana = true;
-    if (eleccion === 'high' && numero >= 5000) gana = true;
-    const numeroElem = document.getElementById('hl-number');
-    if (numeroElem) numeroElem.classList.add('spinning');
-    let vueltas = 0;
-    const spinInterval = setInterval(function() {
-        if (numeroElem) numeroElem.textContent = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-        vueltas++;
-        if (vueltas >= 10) {
-            clearInterval(spinInterval);
-            if (numeroElem) {
-                numeroElem.classList.remove('spinning');
-                numeroElem.textContent = numero.toString().padStart(4, '0');
-            }
-            const balanceElem = document.getElementById('hl-balance');
-            if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
-            const resultadoElem = document.getElementById('hl-result');
-            if (gana) {
-                const ganancia = apuesta * 2;
-                userData.diamonds = userData.diamonds + ganancia;
-                if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
-                if (navigator.vibrate) navigator.vibrate(50);
-                spawnConfetti();
-                destelloResultado('modalHighLow', true);
-            } else {
-                if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
-                destelloResultado('modalHighLow', false);
-            }
-            actualizarUI();
-            saveUserData();
-        }
-    }, 70);
-}
+// ==========================================
+// TIMING TAP
+// ==========================================
+let timingInterval = null;
+let timingPos = 0;
+let timingDir = 1;
+let timingVelocidad = 1.5;
+let timingZonaInicio = 40;
+let timingZonaAncho = 20;
+let timingEnJuego = false;
 
-let numeroElegidoRuleta = null;
-
-function mostrarPanelNumero() {
-    const panel = document.getElementById('ruleta-numero-panel');
-    if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
-function confirmarNumeroRuleta() {
-    const input = document.getElementById('ruleta-numero-input');
-    const elegido = parseInt(input.value);
-    if (isNaN(elegido) || elegido < 0 || elegido > 36) return alert('❌ Elige un número entre 0 y 36');
-    numeroElegidoRuleta = elegido;
-    jugarRuleta('numero');
-    document.getElementById('ruleta-numero-panel').style.display = 'none';
-}
-
-function jugarRuleta(tipo) {
-    const apuesta = apuestaActual.ruleta;
-    if (userData.diamonds < apuesta) return alert('❌ Diamantes insuficientes');
-    if (!puedeJugar('ruleta')) return alert('❌ Límite diario');
-    if (tipo === 'numero' && numeroElegidoRuleta === null) return;
-    userData.diamonds = userData.diamonds - apuesta;
-    registrarJugada('ruleta');
-    let numero = Math.random() < 0.03 ? 0 : Math.floor(Math.random() * 37);
-    const numeroElem = document.getElementById('ruleta-number');
-    const ruedaElem = document.getElementById('ruleta-wheel');
-    if (ruedaElem) {
-        ruedaElem.classList.remove('spinning');
-        void ruedaElem.offsetWidth;
-        ruedaElem.classList.add('spinning');
+function prepararTimingUI() {
+    timingZonaInicio = 30 + Math.random() * 30;
+    timingZonaAncho = 8 + Math.random() * 12;
+    const zone = document.getElementById('timing-zone');
+    if (zone) {
+        zone.style.left = timingZonaInicio + '%';
+        zone.style.width = timingZonaAncho + '%';
     }
-    setTimeout(function() {
-        if (numeroElem) numeroElem.textContent = numero;
-        const balanceElem = document.getElementById('ruleta-balance');
-        if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
-        let gana = false;
-        switch (tipo) {
-            case 'rojo':
-                const rojos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
-                gana = rojos.indexOf(numero) !== -1;
-                break;
-            case 'negro':
-                const negros = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35];
-                gana = negros.indexOf(numero) !== -1;
-                break;
-            case 'par': gana = numero !== 0 && numero % 2 === 0; break;
-            case 'impar': gana = numero % 2 === 1; break;
-            case 'bajo': gana = numero >= 1 && numero <= 18; break;
-            case 'alto': gana = numero >= 19 && numero <= 36; break;
-            case 'numero':
-                gana = numero === numeroElegidoRuleta;
-                numeroElegidoRuleta = null;
-                break;
-        }
-        const resultadoElem = document.getElementById('ruleta-result');
-        if (gana) {
-            const ganancia = (tipo === 'numero') ? apuesta * 36 : apuesta * 2;
-            userData.diamonds = userData.diamonds + ganancia;
-            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
-            if (navigator.vibrate) navigator.vibrate(50);
-            spawnConfetti();
-            destelloResultado('modalRuleta', true);
-        } else {
-            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
-            destelloResultado('modalRuleta', false);
-        }
-        actualizarUI();
-        saveUserData();
-    }, 1200);
+    const needle = document.getElementById('timing-needle');
+    if (needle) needle.style.left = '0%';
+    timingPos = 0;
+    timingDir = 1;
+    timingVelocidad = 1.5 + Math.random();
+    timingEnJuego = false;
+    const startBtn = document.getElementById('timing-start-btn');
+    const tapBtn = document.getElementById('timing-tap-btn');
+    if (startBtn) startBtn.classList.remove('hidden');
+    if (tapBtn) tapBtn.classList.add('hidden');
+    const res = document.getElementById('timing-result');
+    if (res) res.innerHTML = '';
+    const betDisp = document.getElementById('timing-bet-display');
+    if (betDisp) betDisp.textContent = apuestaActual.timing || 10;
+    const betElem = document.getElementById('timing-bet');
+    if (betElem) betElem.textContent = (apuestaActual.timing || 10) + ' 💎';
 }
 
-function jugarTragaperras() {
-    const apuesta = apuestaActual.tragaperras;
+function iniciarTiming() {
+    const apuesta = apuestaActual.timing || 10;
     if (userData.diamonds < apuesta) return alert('❌ Diamantes insuficientes');
-    if (!puedeJugar('tragaperras')) return alert('❌ Límite diario');
-    userData.diamonds = userData.diamonds - apuesta;
-    registrarJugada('tragaperras');
-    const slots = document.querySelectorAll('.slot');
-    slots.forEach(function(slot) { slot.classList.add('spinning'); });
-    const simbolosSpin = ['💎', '₿', 'Ξ', '🪙', '📈', '📉'];
-    const spinCycle = setInterval(function() {
-        slots.forEach(function(slot) { slot.textContent = simbolosSpin[Math.floor(Math.random() * simbolosSpin.length)]; });
-    }, 80);
-    setTimeout(function() {
-        clearInterval(spinCycle);
-        const simbolos = [
-            { nombre: '💎', multiplicador: 30 },
-            { nombre: '₿', multiplicador: 15 },
-            { nombre: 'Ξ', multiplicador: 8 },
-            { nombre: '🪙', multiplicador: 3 },
-            { nombre: '📈', multiplicador: 2 },
-            { nombre: '📉', multiplicador: 2 }
-        ];
-        const resultados = [];
-        for (let i = 0; i < 3; i++) {
-            const aleatorio = Math.random() * 100;
-            let acumulado = 0;
-            for (let j = 0; j < simbolos.length; j++) {
-                acumulado = acumulado + 18;
-                if (aleatorio < acumulado) { resultados.push(simbolos[j]); break; }
-            }
-        }
-        document.getElementById('slot1').textContent = resultados[0].nombre;
-        document.getElementById('slot2').textContent = resultados[1].nombre;
-        document.getElementById('slot3').textContent = resultados[2].nombre;
-        slots.forEach(function(slot) { slot.classList.remove('spinning'); });
-        const balanceElem = document.getElementById('tragaperras-balance');
-        if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
-        const resultadoElem = document.getElementById('tragaperras-result');
-        if (resultados[0].nombre === resultados[1].nombre && resultados[1].nombre === resultados[2].nombre) {
-            let multiplicador = resultados[0].multiplicador;
-            if (esPremium()) multiplicador = multiplicador * 2;
-            const premio = apuesta * multiplicador;
-            userData.diamonds = userData.diamonds + premio;
-            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡JACKPOT! x' + multiplicador + ' (+' + premio + ' 💎)</span>';
-            spawnConfetti();
-            if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
-            destelloResultado('modalTragaperras', true);
-        } else {
-            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
-            destelloResultado('modalTragaperras', false);
-        }
-        actualizarUI();
-        saveUserData();
-    }, 500);
+    if (!puedeJugar('timing')) return alert('❌ Límite diario alcanzado');
+    userData.diamonds -= apuesta;
+    registrarJugada('timing');
+    actualizarUI();
+    const balance = document.getElementById('timing-balance');
+    if (balance) balance.textContent = Math.floor(userData.diamonds);
+    const startBtn = document.getElementById('timing-start-btn');
+    const tapBtn = document.getElementById('timing-tap-btn');
+    if (startBtn) startBtn.classList.add('hidden');
+    if (tapBtn) tapBtn.classList.remove('hidden');
+    timingPos = 0;
+    timingDir = 1;
+    timingEnJuego = true;
+    if (timingInterval) clearInterval(timingInterval);
+    timingInterval = setInterval(function() {
+        timingPos += timingVelocidad * timingDir;
+        if (timingPos >= 100) { timingPos = 100; timingDir = -1; }
+        if (timingPos <= 0) { timingPos = 0; timingDir = 1; }
+        const needle = document.getElementById('timing-needle');
+        if (needle) needle.style.left = timingPos + '%';
+    }, 16);
 }
 
-function jugarDados(eleccion) {
-    const apuesta = apuestaActual.dados;
+function detenerTiming() {
+    if (!timingEnJuego) return;
+    timingEnJuego = false;
+    if (timingInterval) clearInterval(timingInterval);
+    timingInterval = null;
+    const tapBtn = document.getElementById('timing-tap-btn');
+    if (tapBtn) tapBtn.classList.add('hidden');
+    const apuesta = apuestaActual.timing || 10;
+    const dentro = timingPos >= timingZonaInicio && timingPos <= (timingZonaInicio + timingZonaAncho);
+    const centroZona = timingZonaInicio + timingZonaAncho / 2;
+    const distanciaCentro = Math.abs(timingPos - centroZona);
+    let multiplicador = 0;
+    if (dentro) {
+        const precision = 1 - (distanciaCentro / (timingZonaAncho / 2));
+        multiplicador = 2 + precision * 3;
+    } else if (distanciaCentro < timingZonaAncho) {
+        multiplicador = 1;
+    }
+    const res = document.getElementById('timing-result');
+    if (multiplicador > 0) {
+        const premio = Math.floor(apuesta * multiplicador);
+        userData.diamonds += premio;
+        if (res) res.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎯 ¡x' + multiplicador.toFixed(1) + '! +' + premio + ' 💎</span>';
+        spawnConfetti();
+        if (navigator.vibrate) navigator.vibrate(50);
+        destelloResultado('modalTiming', true);
+    } else {
+        if (res) res.innerHTML = '<span style="color:#ef4444;">❌ Fallaste, perdiste ' + apuesta + ' 💎</span>';
+        destelloResultado('modalTiming', false);
+    }
+    actualizarUI();
+    saveUserData();
+    const balance = document.getElementById('timing-balance');
+    if (balance) balance.textContent = Math.floor(userData.diamonds);
+    setTimeout(prepararTimingUI, 1500);
+}
+
+// ==========================================
+// MATCH MENTAL
+// ==========================================
+const SIMBOLOS_MATCH = ['💎', '⚡', '🏭', '🏦', '🏫', '🏥'];
+let matchSecuencia = [];
+let matchInput = [];
+let matchRonda = 0;
+const matchMaxRondas = 5;
+let matchMostrando = false;
+
+function prepararMatchUI() {
+    matchSecuencia = [];
+    matchInput = [];
+    matchRonda = 0;
+    matchMostrando = false;
+    renderMatchGrid(false);
+    const res = document.getElementById('match-result');
+    if (res) res.innerHTML = '';
+    const betDisp = document.getElementById('match-bet-display');
+    if (betDisp) betDisp.textContent = apuestaActual.matchmental || 10;
+    const betElem = document.getElementById('match-bet');
+    if (betElem) betElem.textContent = (apuestaActual.matchmental || 10) + ' 💎';
+}
+
+function renderMatchGrid(activo) {
+    const cont = document.getElementById('match-display');
+    if (!cont) return;
+    let html = '';
+    for (let i = 0; i < 6; i++) {
+        html += '<div class="sequence-card" data-idx="' + i + '" onclick="clickMatch(' + i + ')" style="cursor:' + (activo ? 'pointer' : 'default') + ';">' + SIMBOLOS_MATCH[i] + '</div>';
+    }
+    cont.innerHTML = html;
+}
+
+async function iniciarMatch() {
+    const apuesta = apuestaActual.matchmental || 10;
     if (userData.diamonds < apuesta) return alert('❌ Diamantes insuficientes');
-    if (!puedeJugar('dados')) return alert('❌ Límite diario');
-    userData.diamonds = userData.diamonds - apuesta;
-    registrarJugada('dados');
-    const dado1 = Math.floor(Math.random() * 6) + 1;
-    const dado2 = Math.floor(Math.random() * 6) + 1;
-    const caras = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-    const dado1Elem = document.getElementById('dado1');
-    const dado2Elem = document.getElementById('dado2');
-    if (dado1Elem) dado1Elem.classList.add('rolling');
-    if (dado2Elem) dado2Elem.classList.add('rolling');
-    const dadosSpinCycle = setInterval(function() {
-        if (dado1Elem) dado1Elem.textContent = caras[Math.floor(Math.random() * 6)];
-        if (dado2Elem) dado2Elem.textContent = caras[Math.floor(Math.random() * 6)];
-    }, 70);
-    setTimeout(function() {
-        clearInterval(dadosSpinCycle);
-        if (dado1Elem) { dado1Elem.textContent = caras[dado1 - 1]; dado1Elem.classList.remove('rolling'); }
-        if (dado2Elem) { dado2Elem.textContent = caras[dado2 - 1]; dado2Elem.classList.remove('rolling'); }
-        const suma = dado1 + dado2;
-        const sumaElem = document.getElementById('dados-suma');
-        if (sumaElem) sumaElem.textContent = 'Suma: ' + suma;
-        const balanceElem = document.getElementById('dados-balance');
-        if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
-        let gana = false;
-        if (eleccion === 'menor' && suma >= 2 && suma <= 6) gana = true;
-        if (eleccion === 'mayor' && suma >= 8 && suma <= 12) gana = true;
-        if (eleccion === 'exacto' && suma === 7) gana = true;
-        const resultadoElem = document.getElementById('dados-result');
-        if (gana) {
-            let ganancia = (eleccion === 'exacto') ? apuesta * 5 : apuesta * 2;
-            if (esPremium()) ganancia = ganancia * 2;
-            userData.diamonds = userData.diamonds + ganancia;
-            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡GANASTE! +' + ganancia + ' 💎</span>';
-            if (navigator.vibrate) navigator.vibrate(50);
-            spawnConfetti();
-            destelloResultado('modalDados', true);
-        } else {
-            if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;">😞 Perdiste ' + apuesta + ' 💎</span>';
-            destelloResultado('modalDados', false);
-        }
-        actualizarUI();
-        saveUserData();
-    }, 500);
+    if (!puedeJugar('matchmental')) return alert('❌ Límite diario alcanzado');
+    userData.diamonds -= apuesta;
+    registrarJugada('matchmental');
+    actualizarUI();
+    const balance = document.getElementById('match-balance');
+    if (balance) balance.textContent = Math.floor(userData.diamonds);
+    matchRonda = 1;
+    matchSecuencia = [];
+    await siguienteRondaMatch();
 }
 
-function crearCamarasRuletaRusa() {
-    const grid = document.getElementById('ruletarusa-camaras');
-    if (!grid) return;
-    grid.innerHTML = '';
-    for (let i = 1; i <= 6; i++) {
-        const boton = document.createElement('button');
-        boton.textContent = i;
-        boton.style.cssText = 'background:var(--bg-elevated);border:2px solid #ef4444;border-radius:16px;padding:18px;color:white;font-weight:700;font-size:22px;cursor:pointer;transition:all 0.2s;';
-        boton.onmouseenter = function() { this.style.background = '#ef4444'; this.style.transform = 'scale(1.05)'; };
-        boton.onmouseleave = function() { this.style.background = 'var(--bg-elevated)'; this.style.transform = 'scale(1)'; };
-        (function(numero) { boton.onclick = function() { jugarRuletaRusa(numero); }; })(i);
-        grid.appendChild(boton);
+async function siguienteRondaMatch() {
+    matchInput = [];
+    matchMostrando = true;
+    const res = document.getElementById('match-result');
+    if (res) res.innerHTML = '<span style="color:#a78bfa;">👀 Memoriza...</span>';
+    matchSecuencia.push(Math.floor(Math.random() * 6));
+    renderMatchGrid(false);
+    for (let i = 0; i < matchSecuencia.length; i++) {
+        await new Promise(r => setTimeout(r, 300));
+        const card = document.querySelector('#match-display [data-idx="' + matchSecuencia[i] + '"]');
+        if (card) card.classList.add('highlight');
+        await new Promise(r => setTimeout(r, 450));
+        if (card) card.classList.remove('highlight');
+        await new Promise(r => setTimeout(r, 150));
+    }
+    matchMostrando = false;
+    if (res) res.innerHTML = '<span style="color:#facc15;">✋ Tu turno (ronda ' + matchRonda + '/' + matchMaxRondas + ')</span>';
+    renderMatchGrid(true);
+}
+
+function clickMatch(idx) {
+    if (matchMostrando) return;
+    if (matchInput.length >= matchSecuencia.length) return;
+    matchInput.push(idx);
+    const card = document.querySelector('#match-display [data-idx="' + idx + '"]');
+    if (card) {
+        card.classList.add('highlight');
+        setTimeout(function() { card.classList.remove('highlight'); }, 200);
+    }
+    const pos = matchInput.length - 1;
+    if (matchInput[pos] !== matchSecuencia[pos]) {
+        matchMostrando = true;
+        const res = document.getElementById('match-result');
+        if (res) res.innerHTML = '<span style="color:#ef4444;">❌ Secuencia incorrecta. Llegaste a la ronda ' + matchRonda + '</span>';
+        destelloResultado('modalMatch', false);
+        actualizarUI();
+        saveUserData();
+        setTimeout(prepararMatchUI, 2500);
+        return;
+    }
+    if (matchInput.length === matchSecuencia.length) {
+        matchRonda++;
+        if (matchRonda > matchMaxRondas) {
+            finalizarMatch();
+        } else {
+            matchMostrando = true;
+            setTimeout(siguienteRondaMatch, 800);
+        }
     }
 }
 
-function jugarRuletaRusa(camara) {
-    const apuesta = apuestaActual.ruletarusa;
-    if (userData.diamonds < apuesta) return alert('❌ Diamantes insuficientes');
-    if (!puedeJugar('ruletarusa')) return alert('❌ Límite diario');
-    userData.diamonds = userData.diamonds - apuesta;
-    registrarJugada('ruletarusa');
-    const bala = Math.floor(Math.random() * 6) + 1;
-    const gana = camara !== bala;
-    const emojiElem = document.getElementById('ruletarusa-emoji');
-    if (emojiElem) emojiElem.textContent = '🔫';
-    const botones = document.querySelectorAll('#ruletarusa-camaras button');
-    botones.forEach(function(b) { b.disabled = true; });
-    let vueltas = 0;
-    const suspenso = setInterval(function() {
-        botones.forEach(function(b) { b.classList.remove('camara-activa'); });
-        const activa = botones[vueltas % botones.length];
-        if (activa) activa.classList.add('camara-activa');
-        vueltas++;
-        if (vueltas >= 12) {
-            clearInterval(suspenso);
-            botones.forEach(function(b) { b.classList.remove('camara-activa'); });
-            if (emojiElem) emojiElem.textContent = gana ? '🎉' : '💥';
-            const balanceElem = document.getElementById('ruletarusa-balance');
-            if (balanceElem) balanceElem.textContent = Math.floor(userData.diamonds);
-            const resultadoElem = document.getElementById('ruletarusa-result');
-            if (gana) {
-                const ganancia = apuesta * 3;
-                userData.diamonds = userData.diamonds + ganancia;
-                if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎉 ¡SOBREVIVISTE! +' + ganancia + ' 💎</span>';
-                spawnConfetti();
-                if (navigator.vibrate) navigator.vibrate(100);
-                destelloResultado('modalRuletaRusa', true);
-            } else {
-                if (resultadoElem) resultadoElem.innerHTML = '<span style="color:#ef4444;font-size:20px;">💥 ¡La bala estaba en la cámara ' + bala + '! Perdiste ' + apuesta + ' 💎</span>';
-                if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
-                destelloResultado('modalRuletaRusa', false);
-            }
-            actualizarUI();
-            saveUserData();
-            crearCamarasRuletaRusa();
-        }
-    }, 120);
+function finalizarMatch() {
+    const apuesta = apuestaActual.matchmental || 10;
+    const multiplicador = 1.5 + (matchRonda - 2) * 0.5;
+    const premio = Math.floor(apuesta * Math.max(1.5, multiplicador));
+    userData.diamonds += premio;
+    const res = document.getElementById('match-result');
+    if (res) res.innerHTML = '<span style="color:#4ade80;font-size:20px;">🧠 ¡Completaste ' + (matchRonda - 1) + ' rondas! +' + premio + ' 💎</span>';
+    spawnConfetti();
+    if (navigator.vibrate) navigator.vibrate(100);
+    destelloResultado('modalMatch', true);
+    actualizarUI();
+    saveUserData();
+    const balance = document.getElementById('match-balance');
+    if (balance) balance.textContent = Math.floor(userData.diamonds);
+    setTimeout(prepararMatchUI, 2000);
 }
+
+// ==========================================
+// BOLSA
+// ==========================================
+const ACCIONES_BOLSA = [
+    { id: 'mina', nombre: 'Minas del Norte', icono: '⛏️', precio: 100, tendencia: 0 },
+    { id: 'banco', nombre: 'Banco Central', icono: '🏦', precio: 250, tendencia: 0 },
+    { id: 'fabrica', nombre: 'Industria Pesada', icono: '🏭', precio: 180, tendencia: 0 },
+    { id: 'energia', nombre: 'Energía Solar', icono: '☀️', precio: 320, tendencia: 0 }
+];
+
+function renderBolsa() {
+    const cont = document.getElementById('bolsa-acciones');
+    if (!cont) return;
+    let html = '';
+    for (let i = 0; i < ACCIONES_BOLSA.length; i++) {
+        const a = ACCIONES_BOLSA[i];
+        const variacion = a.tendencia;
+        const color = variacion >= 0 ? '#4ade80' : '#ef4444';
+        const flecha = variacion >= 0 ? '▲' : '▼';
+        html += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">';
+        html += '<div><div style="font-weight:700;">' + a.icono + ' ' + a.nombre + '</div>';
+        html += '<div style="font-size:12px;color:' + color + ';">' + flecha + ' ' + Math.abs(variacion).toFixed(1) + '% · ' + a.precio + ' 💎</div></div>';
+        html += '<div style="display:flex;gap:6px;">';
+        html += '<button onclick="comprarAccion(\'' + a.id + '\')" style="background:#4ade80;border:none;color:#000;padding:8px 14px;border-radius:12px;font-weight:700;">Comprar</button>';
+        html += '<button onclick="venderAccion(\'' + a.id + '\')" style="background:#ef4444;border:none;color:white;padding:8px 14px;border-radius:12px;font-weight:700;">Vender</button>';
+        html += '</div></div>';
+    }
+    cont.innerHTML = html;
+    renderPortfolio();
+    const bal = document.getElementById('bolsa-balance');
+    if (bal) bal.textContent = Math.floor(userData.diamonds);
+}
+
+function renderPortfolio() {
+    const cont = document.getElementById('bolsa-portfolio-lista');
+    if (!cont) return;
+    const portfolio = userData.bolsa_portfolio || {};
+    const claves = Object.keys(portfolio).filter(k => portfolio[k] > 0);
+    if (claves.length === 0) {
+        cont.textContent = 'Sin inversiones todavía';
+        return;
+    }
+    let html = '';
+    let total = 0;
+    for (let i = 0; i < claves.length; i++) {
+        const a = ACCIONES_BOLSA.find(x => x.id === claves[i]);
+        if (!a) continue;
+        const cantidad = portfolio[a.id];
+        const valor = cantidad * a.precio;
+        total += valor;
+        html += '<div style="display:flex;justify-content:space-between;padding:4px 0;"><span>' + a.icono + ' ' + cantidad + ' × ' + a.nombre + '</span><span>' + valor + ' 💎</span></div>';
+    }
+    html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.1);font-weight:700;color:var(--primary);">Total: ' + total + ' 💎</div>';
+    cont.innerHTML = html;
+}
+
+function comprarAccion(id) {
+    const a = ACCIONES_BOLSA.find(x => x.id === id);
+    if (!a) return;
+    if (userData.diamonds < a.precio) return alert('❌ Diamantes insuficientes');
+    userData.diamonds -= a.precio;
+    if (!userData.bolsa_portfolio) userData.bolsa_portfolio = {};
+    userData.bolsa_portfolio[id] = (userData.bolsa_portfolio[id] || 0) + 1;
+    registrarJugada('bolsa');
+    actualizarUI();
+    saveUserData();
+    renderBolsa();
+}
+
+function venderAccion(id) {
+    const a = ACCIONES_BOLSA.find(x => x.id === id);
+    if (!a) return;
+    if (!userData.bolsa_portfolio || !userData.bolsa_portfolio[id] || userData.bolsa_portfolio[id] <= 0) return alert('❌ No tienes acciones de ' + a.nombre);
+    userData.bolsa_portfolio[id]--;
+    userData.diamonds += a.precio;
+    registrarJugada('bolsa');
+    actualizarUI();
+    saveUserData();
+    renderBolsa();
+}
+
+function tickBolsa() {
+    for (let i = 0; i < ACCIONES_BOLSA.length; i++) {
+        const a = ACCIONES_BOLSA[i];
+        const cambioPct = (Math.random() - 0.48) * 8;
+        a.precio = Math.max(10, Math.floor(a.precio * (1 + cambioPct / 100)));
+        a.tendencia = cambioPct;
+    }
+    const modal = document.getElementById('modalBolsa');
+    if (modal && modal.style.display === 'block') renderBolsa();
+}
+
+// ==========================================
+// SUBASTA
+// ==========================================
+let subastaItems = [
+    { id: 's1', nombre: 'Licencia de producción x2 (1h)', icono: '📜', precioActual: 500, puja: null, termina: Date.now() + 300000 },
+    { id: 's2', nombre: 'Acelerador de minado (30min)', icono: '⚡', precioActual: 300, puja: null, termina: Date.now() + 600000 },
+    { id: 's3', nombre: 'Avatar exclusivo "Diamante"', icono: '💠', precioActual: 800, puja: null, termina: Date.now() + 900000 }
+];
+
+function renderSubasta() {
+    const cont = document.getElementById('subasta-lista');
+    if (!cont) return;
+    let html = '';
+    const ahora = Date.now();
+    for (let i = 0; i < subastaItems.length; i++) {
+        const it = subastaItems[i];
+        const restante = Math.max(0, Math.floor((it.termina - ahora) / 1000));
+        const min = Math.floor(restante / 60);
+        const seg = restante % 60;
+        const activa = restante > 0;
+        html += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        html += '<div><div style="font-weight:700;">' + it.icono + ' ' + it.nombre + '</div>';
+        html += '<div style="font-size:12px;color:var(--text-secondary);">Puja actual: ' + it.precioActual + ' 💎 · ⏱ ' + min + ':' + String(seg).padStart(2, '0') + '</div>';
+        if (it.puja) html += '<div style="font-size:11px;color:#4ade80;">Líder: ' + it.puja + '</div>';
+        html += '</div>';
+        if (activa) html += '<button onclick="pujarSubasta(\'' + it.id + '\')" style="background:#facc15;color:#000;border:none;padding:10px 16px;border-radius:12px;font-weight:700;">PUJAR</button>';
+        else html += '<span style="color:#ef4444;font-weight:700;">CERRADA</span>';
+        html += '</div></div>';
+    }
+    cont.innerHTML = html;
+    const bal = document.getElementById('subasta-balance');
+    if (bal) bal.textContent = Math.floor(userData.diamonds);
+}
+
+function pujarSubasta(id) {
+    const it = subastaItems.find(x => x.id === id);
+    if (!it) return;
+    if (Date.now() > it.termina) return alert('❌ Subasta cerrada');
+    const incremento = Math.max(10, Math.floor(it.precioActual * 0.1));
+    const nuevaPuja = it.precioActual + incremento;
+    if (userData.diamonds < nuevaPuja) return alert('❌ Necesitas ' + nuevaPuja + ' 💎');
+    if (!confirm('¿Pujar ' + nuevaPuja + ' 💎 por "' + it.nombre + '"?')) return;
+    userData.diamonds -= nuevaPuja;
+    it.precioActual = nuevaPuja;
+    it.puja = userData.username;
+    registrarJugada('subasta');
+    actualizarUI();
+    saveUserData();
+    renderSubasta();
+    alert('✅ Puja registrada. ¡Eres el líder!');
+}
+
+// ==========================================
+// EXPEDICIONES
+// ==========================================
+const ZONAS_EXPEDICION = [
+    { id: 'z1', nombre: 'Cantera Sur', icono: '🪨', costo: 100, duracion: 60, recompensaBase: 180, riesgo: 0.15 },
+    { id: 'z2', nombre: 'Mina Abandonada', icono: '⛏️', costo: 300, duracion: 180, recompensaBase: 600, riesgo: 0.30 },
+    { id: 'z3', nombre: 'Cráter Profundo', icono: '🌋', costo: 800, duracion: 300, recompensaBase: 1800, riesgo: 0.45 }
+];
+
+function renderExpedicion() {
+    const cont = document.getElementById('exp-zonas');
+    if (!cont) return;
+    let html = '';
+    for (let i = 0; i < ZONAS_EXPEDICION.length; i++) {
+        const z = ZONAS_EXPEDICION[i];
+        html += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;">';
+        html += '<div style="font-weight:700;margin-bottom:6px;">' + z.icono + ' ' + z.nombre + '</div>';
+        html += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">Costo: ' + z.costo + ' 💎 · Duración: ' + z.duracion + 's · Riesgo: ' + Math.floor(z.riesgo * 100) + '% · Retorno: ' + z.recompensaBase + ' 💎</div>';
+        html += '<button onclick="lanzarExpedicion(\'' + z.id + '\')" style="background:#f97316;border:none;color:white;padding:10px 20px;border-radius:12px;font-weight:700;width:100%;">LANZAR</button>';
+        html += '</div>';
+    }
+    cont.innerHTML = html;
+    renderExpedicionesActivas();
+    const bal = document.getElementById('exp-balance');
+    if (bal) bal.textContent = Math.floor(userData.diamonds);
+}
+
+function renderExpedicionesActivas() {
+    const cont = document.getElementById('exp-activas-lista');
+    if (!cont) return;
+    const activas = userData.expediciones_activas || [];
+    if (activas.length === 0) {
+        cont.textContent = 'Ninguna en curso';
+        return;
+    }
+    const ahora = Date.now();
+    let html = '';
+    for (let i = 0; i < activas.length; i++) {
+        const e = activas[i];
+        const transcurrido = (ahora - e.inicio) / 1000;
+        const pct = Math.min(100, Math.floor((transcurrido / e.duracion) * 100));
+        const listo = transcurrido >= e.duracion;
+        html += '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">';
+        html += '<div style="display:flex;justify-content:space-between;"><span>' + (e.icono || '⛏️') + ' ' + e.nombre + '</span><span>' + (listo ? '✅' : pct + '%') + '</span></div>';
+        if (!listo) {
+            html += '<div class="time-bar" style="margin-top:6px;"><div class="time-fill" style="width:' + pct + '%;"></div></div>';
+        } else {
+            html += '<button onclick="reclamarExpedicion(' + i + ')" style="background:#4ade80;color:#000;border:none;padding:8px 14px;border-radius:10px;font-weight:700;margin-top:6px;">RECLAMAR</button>';
+        }
+        html += '</div>';
+    }
+    cont.innerHTML = html;
+}
+
+function lanzarExpedicion(id) {
+    const z = ZONAS_EXPEDICION.find(x => x.id === id);
+    if (!z) return;
+    if (userData.diamonds < z.costo) return alert('❌ Necesitas ' + z.costo + ' 💎');
+    if (!puedeJugar('expedicion')) return alert('❌ Límite diario alcanzado');
+    userData.diamonds -= z.costo;
+    registrarJugada('expedicion');
+    if (!userData.expediciones_activas) userData.expediciones_activas = [];
+    userData.expediciones_activas.push({
+        id: z.id,
+        nombre: z.nombre,
+        icono: z.icono,
+        inicio: Date.now(),
+        duracion: z.duracion,
+        recompensa: z.recompensaBase,
+        riesgo: z.riesgo
+    });
+    actualizarUI();
+    saveUserData();
+    renderExpedicion();
+}
+
+function reclamarExpedicion(idx) {
+    const e = userData.expediciones_activas[idx];
+    if (!e) return;
+    let recompensa = e.recompensa;
+    let nota = '';
+    const roll = Math.random();
+    if (roll < e.riesgo) {
+        const perdida = Math.floor(recompensa * (0.2 + Math.random() * 0.3));
+        recompensa -= perdida;
+        nota = ' (desgaste: -' + perdida + ' 💎)';
+    } else if (roll > 0.9) {
+        const bonus = Math.floor(recompensa * 0.2);
+        recompensa += bonus;
+        nota = ' (bonus: +' + bonus + ' 💎)';
+    }
+    userData.diamonds += recompensa;
+    userData.expediciones_activas.splice(idx, 1);
+    actualizarUI();
+    saveUserData();
+    renderExpedicion();
+    alert('⛏️ Expedición completada: +' + recompensa + ' 💎' + nota);
+}
+
+// ==========================================
+// CRAFTING
+// ==========================================
+const RECETAS_CRAFT = [
+    { id: 'c1', nombre: 'Pico de diamante', icono: '⛏️', costoBase: 200 },
+    { id: 'c2', nombre: 'Refinería', icono: '🏭', costoBase: 500 },
+    { id: 'c3', nombre: 'Banco de inversión', icono: '🏦', costoBase: 1200 }
+];
+
+function renderCrafting() {
+    const cont = document.getElementById('craft-lista');
+    if (!cont) return;
+    if (!userData.craft_niveles) userData.craft_niveles = {};
+    let html = '';
+    for (let i = 0; i < RECETAS_CRAFT.length; i++) {
+        const r = RECETAS_CRAFT[i];
+        const nivel = userData.craft_niveles[r.id] || 0;
+        const costo = Math.floor(r.costoBase * Math.pow(1.6, nivel));
+        const puede = userData.diamonds >= costo;
+        html += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;">';
+        html += '<div style="font-weight:700;">' + r.icono + ' ' + r.nombre + ' (Nvl ' + nivel + ')</div>';
+        html += '<div style="font-size:12px;color:var(--text-secondary);margin:6px 0;">Próximo nivel: ' + (nivel + 1) + ' · Costo: ' + costo + ' 💎</div>';
+        html += '<button onclick="craftear(\'' + r.id + '\')" style="background:' + (puede ? '#f472b6' : '#334155') + ';color:' + (puede ? '#000' : '#fff') + ';border:none;padding:10px 20px;border-radius:12px;font-weight:700;width:100%;" ' + (puede ? '' : 'disabled') + '>CRAFTEAR</button>';
+        html += '</div>';
+    }
+    cont.innerHTML = html;
+    const bal = document.getElementById('craft-balance');
+    if (bal) bal.textContent = Math.floor(userData.diamonds);
+}
+
+function craftear(id) {
+    const r = RECETAS_CRAFT.find(x => x.id === id);
+    if (!r) return;
+    if (!userData.craft_niveles) userData.craft_niveles = {};
+    const nivel = userData.craft_niveles[r.id] || 0;
+    const costo = Math.floor(r.costoBase * Math.pow(1.6, nivel));
+    if (userData.diamonds < costo) return alert('❌ Diamantes insuficientes');
+    userData.diamonds -= costo;
+    userData.craft_niveles[r.id] = nivel + 1;
+    registrarJugada('crafting');
+    actualizarUI();
+    saveUserData();
+    renderCrafting();
+    alert('✨ ¡Crafteaste ' + r.nombre + ' a nivel ' + (nivel + 1) + '!');
+}
+
+// Tick general: bolsa, expediciones, subasta
+setInterval(function() {
+    tickBolsa();
+    const modalExp = document.getElementById('modalExpedicion');
+    if (modalExp && modalExp.style.display === 'block') renderExpedicionesActivas();
+    const modalSub = document.getElementById('modalSubasta');
+    if (modalSub && modalSub.style.display === 'block') renderSubasta();
+}, 30000);
+
+setInterval(function() {
+    const modalExp = document.getElementById('modalExpedicion');
+    if (modalExp && modalExp.style.display === 'block') renderExpedicionesActivas();
+}, 1000);
 
 // ==========================================
 // EDIFICIOS Y MEJORAS
@@ -1506,7 +1784,7 @@ function buyUpgrade(building) {
     const precio = Math.floor(preciosBase[building] * Math.pow(1.12, nivel));
     if (userData.diamonds < precio) return alert('❌ Diamantes insuficientes');
     userData['lvl_' + building] = (userData['lvl_' + building] || 0) + 1;
-    userData.diamonds = userData.diamonds - precio;
+    userData.diamonds -= precio;
     saveUserData();
     actualizarUI();
     actualizarPanelMejora(building);
@@ -1516,24 +1794,6 @@ function buyUpgrade(building) {
     const produccionEdificio = userData['lvl_' + building] * producciones[building];
     registrarEvento(iconos[building], nombres[building] + ' mejorada a nivel ' + userData['lvl_' + building], 'Ahora produce ' + produccionEdificio + ' 💎/h');
     alert('✅ ¡' + nombres[building] + ' mejorada a nivel ' + userData['lvl_' + building] + '!');
-}
-
-function switchTab(building, tab) {
-    const upgradePanel = document.getElementById(building + '-upgrade-panel');
-    const gamePanel = document.getElementById(building + '-game-panel');
-    const nombreCapitalizado = building.charAt(0).toUpperCase() + building.slice(1);
-    const tabs = document.querySelectorAll('#modal' + nombreCapitalizado + ' .tab');
-    if (tab === 'game') {
-        if (upgradePanel) upgradePanel.classList.add('hidden');
-        if (gamePanel) gamePanel.classList.remove('hidden');
-        if (tabs[0]) tabs[0].classList.remove('active');
-        if (tabs[1]) tabs[1].classList.add('active');
-    } else {
-        if (upgradePanel) upgradePanel.classList.remove('hidden');
-        if (gamePanel) gamePanel.classList.add('hidden');
-        if (tabs[0]) tabs[0].classList.add('active');
-        if (tabs[1]) tabs[1].classList.remove('active');
-    }
 }
 
 // ==========================================
@@ -1573,7 +1833,7 @@ async function updateRankingAndPool() {
         else {
             const ciudadanos = globalPoolData.user_rankings.slice(50);
             let totalProduccionCiudadanos = 0;
-            for (let i = 0; i < ciudadanos.length; i++) totalProduccionCiudadanos = totalProduccionCiudadanos + ciudadanos[i].produccion;
+            for (let i = 0; i < ciudadanos.length; i++) totalProduccionCiudadanos += ciudadanos[i].produccion;
             if (totalProduccionCiudadanos > 0 && getTotalProduction() > 0) userData.projectedReward = (PREMIO_SEMANAL_DIAMANTES * 0.15) * (getTotalProduction() / totalProduccionCiudadanos);
             else userData.projectedReward = 0;
         }
@@ -1581,7 +1841,7 @@ async function updateRankingAndPool() {
 }
 
 // ==========================================
-// GUARDADO SUPABASE
+// GUARDADO EN SUPABASE
 // ==========================================
 async function saveUserData() {
     if (!userData.id) return;
@@ -1605,17 +1865,15 @@ async function saveUserData() {
             city_name: userData.city_name || null,
             news_feed: userData.newsFeed || [],
             genero: userData.genero || 'M',
-            idioma: userData.idioma || 'es'
+            idioma: userData.idioma || 'es',
+            bolsa_portfolio: userData.bolsa_portfolio || {},
+            expediciones_activas: userData.expediciones_activas || [],
+            craft_niveles: userData.craft_niveles || {}
         };
         const resultado = await _supabase.from('game_data').update(datos).eq('telegram_id', userData.id);
-        if (resultado.error) {
-            console.error('Error al guardar:', resultado.error);
-        } else {
-            console.log('💾 Datos guardados correctamente');
-        }
-    } catch (error) {
-        console.error('Error guardando:', error);
-    }
+        if (resultado.error) console.error('Error al guardar:', resultado.error);
+        else console.log('💾 Datos guardados');
+    } catch (error) { console.error('Error guardando:', error); }
 }
 
 async function loadUserFromDB(tgId) {
@@ -1633,22 +1891,20 @@ async function loadUserFromDB(tgId) {
                 lvl_hospital: 0,
                 referral_code: 'REF' + tgId.toString().slice(-6),
                 last_online: new Date().toISOString(),
-                haInvertido: false,
                 event_progress: {},
                 accumulated_ton: 0,
                 retiradoHoy: 0,
                 last_withdraw_week: null,
                 last_production_update: new Date().toISOString(),
                 gamestats: {
-                    escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
-                    fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
-                    piscina: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
-                    hospital: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 }
+                    escuela: { bestLevel: 0, totalWins: 0 },
+                    fabrica: { bestLevel: 0, totalWins: 0 },
+                    piscina: { bestLevel: 0, totalWins: 0 },
+                    hospital: { bestLevel: 0, totalWins: 0 }
                 }
             };
             await _supabase.from('game_data').insert([nuevoUsuario]);
             userData = Object.assign({}, userData, nuevoUsuario, { id: tgId.toString() });
-            // Si esta persona entró con un código de invitación, acreditar a quien la invitó
             const codigoInvitacion = tg.initDataUnsafe && tg.initDataUnsafe.start_param;
             if (codigoInvitacion) {
                 try {
@@ -1660,56 +1916,60 @@ async function loadUserFromDB(tgId) {
                 } catch (e) { console.error('Error registrando referido:', e); }
             }
         } else {
-            const datos = resultado.data;
-            userData = Object.assign({}, userData, datos, {
+            const d = resultado.data;
+            userData = Object.assign({}, userData, d, {
                 id: tgId.toString(),
-                diamonds: Number(datos.diamonds) || 0,
-                lvl_piscina: Number(datos.lvl_piscina) || 0,
-                lvl_fabrica: Number(datos.lvl_fabrica) || 0,
-                lvl_escuela: Number(datos.lvl_escuela) || 0,
-                lvl_hospital: Number(datos.lvl_hospital) || 0,
-                referral_earnings: Number(datos.referral_earnings) || 0,
-                referred_users: datos.referred_users || [],
-                premium_expires: datos.premium_expires || null,
-                daily_streak: Number(datos.daily_streak) || 0,
-                last_daily_claim: datos.last_daily_claim || null,
-                haInvertido: datos.haInvertido || false,
-                event_progress: datos.event_progress || {},
-                accumulated_ton: Number(datos.accumulated_ton) || 0,
-                retiradoHoy: Number(datos.retiradoHoy) || 0,
-                last_withdraw_week: datos.last_withdraw_week || null,
-                referral_code: datos.referral_code || 'REF' + tgId.toString().slice(-6),
-                last_ad_watch: datos.last_ad_watch || null,
-                last_casino_rescue: datos.last_casino_rescue || null,
-                last_production_update: datos.last_production_update || null,
-                city_name: datos.city_name || null,
-                newsFeed: datos.news_feed || [],
-                genero: datos.genero || 'M',
-                idioma: datos.idioma || 'es',
-                gameStats: datos.gamestats || {
-                    escuela: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
-                    fabrica: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
-                    piscina: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 },
-                    hospital: { bestLevel: 0, totalWins: 0, currentLevel: 1, lives: 3 }
+                diamonds: Number(d.diamonds) || 0,
+                lvl_piscina: Number(d.lvl_piscina) || 0,
+                lvl_fabrica: Number(d.lvl_fabrica) || 0,
+                lvl_escuela: Number(d.lvl_escuela) || 0,
+                lvl_hospital: Number(d.lvl_hospital) || 0,
+                referral_earnings: Number(d.referral_earnings) || 0,
+                referred_users: d.referred_users || [],
+                premium_expires: d.premium_expires || null,
+                daily_streak: Number(d.daily_streak) || 0,
+                last_daily_claim: d.last_daily_claim || null,
+                haInvertido: d.haInvertido || false,
+                event_progress: d.event_progress || {},
+                accumulated_ton: Number(d.accumulated_ton) || 0,
+                retiradoHoy: Number(d.retiradoHoy) || 0,
+                last_withdraw_week: d.last_withdraw_week || null,
+                referral_code: d.referral_code || 'REF' + tgId.toString().slice(-6),
+                last_ad_watch: d.last_ad_watch || null,
+                last_casino_rescue: d.last_casino_rescue || null,
+                last_production_update: d.last_production_update || null,
+                city_name: d.city_name || null,
+                newsFeed: d.news_feed || [],
+                genero: d.genero || 'M',
+                idioma: d.idioma || 'es',
+                bolsa_portfolio: d.bolsa_portfolio || {},
+                expediciones_activas: d.expediciones_activas || [],
+                craft_niveles: d.craft_niveles || {},
+                gameStats: d.gamestats || {
+                    escuela: { bestLevel: 0, totalWins: 0 },
+                    fabrica: { bestLevel: 0, totalWins: 0 },
+                    piscina: { bestLevel: 0, totalWins: 0 },
+                    hospital: { bestLevel: 0, totalWins: 0 }
                 }
             });
             aplicarProduccionOffline();
         }
-        document.getElementById('user-display').textContent = userData.username;
+        const userDisplay = document.getElementById('user-display');
+        if (userDisplay) userDisplay.textContent = userData.username;
         actualizarUI();
         actualizarPremiumUI();
-        console.log('✅ Datos del usuario cargados correctamente');
+        console.log('✅ Datos del usuario cargados');
     } catch (error) { console.error('Error en loadUserFromDB:', error); }
 }
 
 // ==========================================
-// PRODUCCIÓN CONTINUA
+// PRODUCCIÓN CONTINUA Y OFFLINE
 // ==========================================
 function startProduction() {
     setInterval(function() {
         if (!userData.id) return;
         const produccionPorSegundo = getTotalProduction() / 3600;
-        userData.diamonds = userData.diamonds + produccionPorSegundo;
+        userData.diamonds += produccionPorSegundo;
         userData.last_production_update = new Date().toISOString();
         const diamantesElem = document.getElementById('diamonds');
         if (diamantesElem) diamantesElem.textContent = Math.floor(userData.diamonds);
@@ -1725,18 +1985,15 @@ function aplicarProduccionOffline() {
     const ultimaVez = new Date(userData.last_production_update);
     let segundosTranscurridos = (ahora - ultimaVez) / 1000;
     if (segundosTranscurridos <= 0) return;
-    // Tope de 12 horas para evitar abusos si alguien manipula la fecha del teléfono
     const TOPE_SEGUNDOS = 12 * 60 * 60;
     if (segundosTranscurridos > TOPE_SEGUNDOS) segundosTranscurridos = TOPE_SEGUNDOS;
     const produccionGanada = (getTotalProduction() / 3600) * segundosTranscurridos;
-    if (produccionGanada > 0) {
-        userData.diamonds = userData.diamonds + produccionGanada;
-    }
+    if (produccionGanada > 0) userData.diamonds += produccionGanada;
     userData.last_production_update = ahora.toISOString();
 }
 
 // ==========================================
-// INICIALIZACIÓN PRINCIPAL
+// INICIALIZACIÓN
 // ==========================================
 async function initApp() {
     console.log('🔄 Iniciando DIAMOND CITY...');
@@ -1748,15 +2005,14 @@ async function initApp() {
         userData.id = usuario.id.toString();
         userData.username = usuario.first_name || 'Usuario';
         await loadUserFromDB(usuario.id);
-        // Volver a poner el nombre real de Telegram: loadUserFromDB puede
-        // haberlo pisado con un valor viejo guardado en Supabase.
         userData.username = usuario.first_name || 'Usuario';
     } else {
         userData.id = 'test_' + Date.now();
         userData.username = 'Usuario Test';
         userData.referral_code = 'REF' + userData.id.slice(-6);
     }
-    document.getElementById('user-display').textContent = userData.username;
+    const userDisplay = document.getElementById('user-display');
+    if (userDisplay) userDisplay.textContent = userData.username;
     if (usuario && usuario.photo_url) {
         const userDisplayElem = document.getElementById('user-display');
         if (userDisplayElem && !document.getElementById('user-avatar-main')) {
@@ -1779,7 +2035,7 @@ async function initApp() {
     aplicarIdioma();
     const labelIdioma = document.getElementById('idioma-actual-label');
     if (labelIdioma) labelIdioma.textContent = NOMBRES_IDIOMA[userData.idioma] || 'Español';
-    console.log('✅ DIAMOND CITY - Sistema completamente inicializado');
+    console.log('✅ DIAMOND CITY inicializado');
 }
 
 window.addEventListener('DOMContentLoaded', initApp);
@@ -1799,10 +2055,6 @@ window.showAdsModal = showAdsModal;
 window.abrirJuego = abrirJuego;
 window.cerrarJuego = cerrarJuego;
 window.cambiarApuesta = cambiarApuesta;
-window.jugarHighLow = jugarHighLow;
-window.jugarRuleta = jugarRuleta;
-window.jugarTragaperras = jugarTragaperras;
-window.jugarDados = jugarDados;
 window.claimDailyReward = claimDailyReward;
 window.showAd = showAd;
 window.rescueWithAd = rescueWithAd;
@@ -1812,10 +2064,22 @@ window.buyUpgrade = buyUpgrade;
 window.closeAll = closeAll;
 window.copyReferralCode = copyReferralCode;
 window.disconnectWallet = disconnectWallet;
-window.reviveGame = reviveGame;
-window.useAdMultiplier = useAdMultiplier;
-window.switchTab = switchTab;
 window.confirmarNombreCiudad = confirmarNombreCiudad;
 window.abrirAsistente = abrirAsistente;
+window.abrirHistorialPremios = abrirHistorialPremios;
+window.seleccionarIdioma = seleccionarIdioma;
+window.abrirSelectorIdioma = abrirSelectorIdioma;
+window.seleccionarGenero = seleccionarGenero;
+window.cambiarGeneroPerfil = cambiarGeneroPerfil;
+window.iniciarTiming = iniciarTiming;
+window.detenerTiming = detenerTiming;
+window.iniciarMatch = iniciarMatch;
+window.clickMatch = clickMatch;
+window.comprarAccion = comprarAccion;
+window.venderAccion = venderAccion;
+window.pujarSubasta = pujarSubasta;
+window.lanzarExpedicion = lanzarExpedicion;
+window.reclamarExpedicion = reclamarExpedicion;
+window.craftear = craftear;
 
 console.log('📦 DIAMOND CITY - Todos los módulos exportados correctamente');
