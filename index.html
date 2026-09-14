@@ -22,7 +22,6 @@
             --radius-xl: 28px; --radius-lg: 20px; --radius-md: 14px;
         }
 
-        /* ========== MODO OSCURO (por defecto) ========== */
         body[data-theme="dark"] {
             --bg-dark: #0a0c14; --bg-card: #141824; --bg-elevated: #1e2332;
             --text-primary: #ffffff; --text-secondary: #8e9ab5;
@@ -30,7 +29,6 @@
             --shadow-card: 0 8px 24px -10px rgba(0,0,0,0.55);
             --body-bg: radial-gradient(circle at 20% 30%,#1a1f2e,#0a0c14);
         }
-        /* ========== MODO CLARO ========== */
         body[data-theme="light"] {
             --bg-dark: #f4f6fb; --bg-card: #ffffff; --bg-elevated: #eef1f8;
             --text-primary: #0f172a; --text-secondary: #64748b;
@@ -39,18 +37,14 @@
             --body-bg: radial-gradient(circle at 20% 30%,#ffffff,#e8edf7);
         }
 
-        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
         @keyframes pulse-glow{0%,100%{box-shadow:0 0 5px var(--primary-glow)}50%{box-shadow:0 0 30px var(--primary-glow)}}
         @keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
         @keyframes confetti{0%{transform:translateY(0)rotate(0)}100%{transform:translateY(-200px)rotate(720deg);opacity:0}}
         @keyframes destelloVictoria{0%{box-shadow:0 0 0px rgba(74,222,128,0);}30%{box-shadow:0 0 40px rgba(74,222,128,0.8);}100%{box-shadow:0 0 0px rgba(74,222,128,0);}}
         @keyframes destelloDerrota{0%,100%{transform:translateX(0);}20%{transform:translateX(-6px);}40%{transform:translateX(6px);}60%{transform:translateX(-4px);}80%{transform:translateX(4px);}}
         @keyframes pulse-glow-fuerte{0%,100%{box-shadow:0 4px 18px -4px rgba(236,72,153,0.6);}50%{box-shadow:0 0 0 10px rgba(236,72,153,0.35),0 4px 25px -2px rgba(236,72,153,0.9);}}
         @keyframes rebotarSuave{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
         @keyframes parpadeoRojo{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.55;transform:scale(1.15);}}
-        @keyframes shimmerSweep{0%{left:-60%}50%{left:130%}100%{left:130%}}
-        @keyframes slotSpin{0%{transform:translateY(0)}100%{transform:translateY(-20px)}}
         @keyframes countPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.04);opacity:0.85}}
 
         .power-zone-verde{position:absolute;top:0;height:100%;background:rgba(74,222,128,0.45);border-left:2px solid #4ade80;border-right:2px solid #4ade80;transition:left 0.3s,width 0.3s;}
@@ -170,9 +164,11 @@
         .perfil-stat{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--glass-border);color:var(--text-primary);}
         .perfil-stat:last-child{border-bottom:none;}
 
-        .navbar{position:fixed;bottom:0;left:0;width:100%;background:var(--glass-bg);backdrop-filter:blur(14px);border-top:1px solid var(--glass-border);display:flex;justify-content:space-around;padding:12px 20px 22px;z-index:50;}
-        .nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--text-secondary);font-size:11px;cursor:pointer;transition:all 0.2s;}
-        .nav-item i{font-size:22px;}.nav-item.active{color:var(--primary);}
+        .navbar{position:fixed;bottom:0;left:0;width:100%;background:var(--glass-bg);backdrop-filter:blur(14px);border-top:1px solid var(--glass-border);display:flex;justify-content:space-around;padding:10px 6px 20px;z-index:50;}
+        .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text-secondary);font-size:9px;cursor:pointer;transition:all 0.2s;flex:1;min-width:0;}
+        .nav-item i{font-size:20px;}
+        .nav-item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-weight:600;letter-spacing:0.2px;}
+        .nav-item.active{color:var(--primary);}
 
         .referral-code{background:var(--bg-elevated);padding:16px;border-radius:var(--radius-lg);text-align:center;margin:16px 0;}
         .referral-code code{font-size:16px;background:var(--bg-card);padding:10px;border-radius:12px;display:block;margin:10px 0;word-break:break-all;color:var(--primary);border:1px solid var(--glass-border);}
@@ -181,8 +177,8 @@
         .badge{background:var(--primary);color:#000;padding:4px 14px;border-radius:30px;font-weight:700;font-size:12px;}
         .flex-row{display:flex;justify-content:space-between;align-items:center;margin:12px 0;color:var(--text-primary);}
 
-        .sequence-card{width:65px;height:65px;background:var(--bg-elevated);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;border:2px solid var(--color-escuela);margin:3px;transition:all 0.2s;cursor:pointer;}
-        .sequence-card.highlight{background:linear-gradient(145deg,var(--color-escuela),#d97706);color:white;transform:scale(1.15);box-shadow:0 0 20px var(--color-escuela);}
+        .sequence-card{width:auto;aspect-ratio:1;background:var(--bg-elevated);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;border:2px solid var(--color-escuela);margin:0;transition:all 0.2s;cursor:pointer;}
+        .sequence-card.highlight{background:linear-gradient(145deg,var(--color-escuela),#d97706);color:white;transform:scale(1.08);box-shadow:0 0 20px var(--color-escuela);}
 
         .power-needle{position:absolute;top:-15px;width:4px;height:90px;background:white;border-radius:2px;left:0%;transition:left 0.03s;box-shadow:0 0 10px white;z-index:5;}
 
@@ -198,13 +194,11 @@
         .input-diamante:focus{border-color:var(--accent-green);box-shadow:0 0 15px rgba(74,222,128,0.3);}
 
         button{cursor:pointer;font-family:inherit;}
-        .confetti-piece{position:fixed;z-index:200;pointer-events:none;animation:confetti 1.5s ease forwards;}
 
         .btn-stars{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;border:none;padding:10px 18px;border-radius:30px;font-weight:800;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;}
         .btn-stars:active{transform:scale(0.95);}
         .btn-stars i{font-size:16px;}
 
-        /* ====== COUNTDOWN RANKING ====== */
         .countdown-card{background:linear-gradient(135deg,rgba(250,204,21,0.1),var(--bg-elevated));border:2px solid var(--primary);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px;text-align:center;}
         .countdown-title{font-size:13px;color:var(--text-secondary);margin-bottom:10px;}
         .countdown-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
@@ -212,11 +206,10 @@
         .countdown-num{font-size:22px;font-weight:800;color:var(--primary);animation:countPulse 2s ease-in-out infinite;letter-spacing:0.5px;}
         .countdown-label{font-size:10px;color:var(--text-secondary);margin-top:2px;text-transform:uppercase;}
 
-        /* ====== RETIROS ====== */
         .retiro-card{background:var(--bg-elevated);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;border:1px solid var(--glass-border);}
         .retiro-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-        .retiro-titulo{font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px;}
-        .retiro-min{font-size:11px;color:var(--text-secondary);}
+        .retiro-titulo{font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px;color:var(--text-primary);}
+        .retiro-min{font-size:12px;color:var(--text-secondary);line-height:1.5;}
     </style>
 </head>
 <body data-theme="dark">
@@ -280,7 +273,6 @@
         <div class="building-card premium" onclick="openStore()"><div class="building-icon"><i class="fa-solid fa-crown"></i></div><div class="building-name" data-i18n="building_premium">Premium</div><div class="building-level" data-i18n="building_premium_sub">Planes VIP</div></div>
         <div class="building-card casino" onclick="openCasino()"><div class="building-icon"><i class="fa-solid fa-chart-line"></i></div><div class="building-name" data-i18n="building_centro">Centro Financiero</div><div class="building-level" data-i18n="building_centro_sub">6 secciones</div></div>
         <div class="building-card parque" onclick="showAdsModal()"><div class="building-icon"><i class="fa-solid fa-tree"></i></div><div class="building-name" data-i18n="building_parque">Parque</div><div class="building-level" data-i18n="building_parque_sub">Anuncios</div></div>
-        <div class="building-card retiros" onclick="openWithdraw()"><div class="building-icon"><i class="fa-solid fa-money-bill-transfer"></i></div><div class="building-name" data-i18n="building_retiros">Retiros</div><div class="building-level" data-i18n="building_retiros_sub">USDT · GRAM</div></div>
         <div class="building-card piscina" onclick="openBuilding('piscina')"><div class="building-icon"><i class="fa-solid fa-water-ladder"></i></div><div class="building-name" data-i18n="building_piscina">Piscina</div><div class="building-level"><span data-i18n="lvl_label">Nivel</span> <span id="lvl_piscina">0</span></div></div>
         <div class="building-card fabrica" onclick="openBuilding('fabrica')"><div class="building-icon"><i class="fa-solid fa-industry"></i></div><div class="building-name" data-i18n="building_fabrica">Fábrica</div><div class="building-level"><span data-i18n="lvl_label">Nivel</span> <span id="lvl_fabrica">0</span></div></div>
         <div class="building-card escuela" onclick="openBuilding('escuela')"><div class="building-icon"><i class="fa-solid fa-school"></i></div><div class="building-name" data-i18n="building_escuela">Escuela</div><div class="building-level"><span data-i18n="lvl_label">Nivel</span> <span id="lvl_escuela">0</span></div></div>
@@ -335,6 +327,29 @@
         <button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:var(--text-primary);padding:12px;border-radius:20px;width:100%;margin-top:10px;" data-i18n="btn_cerrar">CERRAR</button>
     </div>
 
+    <!-- CIUDAD -->
+    <div class="modal modal-full" id="modalCiudad">
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title" data-i18n="ciudad_titulo">🏙️ Mi Ciudad</div></div>
+        <div id="ciudad-banner" style="background:linear-gradient(135deg,rgba(250,204,21,0.15),var(--bg-elevated));border-radius:24px;padding:24px;text-align:center;margin-bottom:16px;border:2px solid var(--primary);">
+            <div style="font-size:56px;margin-bottom:8px;">🏙️</div>
+            <div id="ciudad-nombre" style="font-size:24px;font-weight:800;color:var(--primary);">Cargando...</div>
+            <div id="ciudad-alcalde" style="font-size:13px;color:var(--text-secondary);margin-top:4px;"></div>
+            <div id="ciudad-nivel" style="margin-top:12px;font-size:12px;color:var(--text-secondary);">Nivel municipal: <b id="ciudad-nivel-pct" style="color:var(--accent-green);">0%</b></div>
+        </div>
+        <div class="section-title" style="margin:16px 0 12px;"><i class="fa-solid fa-building"></i> <span data-i18n="ciudad_edificios">Edificios de la ciudad</span></div>
+        <div id="ciudad-edificios" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;"></div>
+        <div class="section-title" style="margin:20px 0 12px;"><i class="fa-solid fa-chart-simple"></i> <span data-i18n="ciudad_estadisticas">Estadísticas</span></div>
+        <div class="building-stats">
+            <div class="stat-row"><span>💎 <span data-i18n="gauge_tesoreria">Tesorería</span></span><span id="ciudad-tesoreria" style="color:var(--primary);">0</span></div>
+            <div class="stat-row"><span>⚡ <span data-i18n="gauge_produccion">Diamantes/h</span></span><span id="ciudad-produccion" style="color:var(--accent-green);">0</span></div>
+            <div class="stat-row"><span>🏆 <span data-i18n="perfil_rango">Rango</span></span><span id="ciudad-rango">Ciudadano</span></div>
+            <div class="stat-row"><span>📍 <span data-i18n="ciudad_posicion">Posición</span></span><span id="ciudad-posicion" style="color:var(--primary);">-</span></div>
+            <div class="stat-row"><span>👥 <span data-i18n="perfil_amigos">Amigos</span></span><span id="ciudad-amigos">0</span></div>
+        </div>
+        <div class="game-instructions" style="margin-top:16px;"><i class="fa-solid fa-circle-info"></i> <span data-i18n="ciudad_info">Aquí puedes ver el estado completo de tu ciudad.</span></div>
+        <button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:var(--text-primary);padding:12px;border-radius:20px;width:100%;margin-top:10px;" data-i18n="btn_cerrar">CERRAR</button>
+    </div>
+
     <!-- RANKING -->
     <div class="modal" id="modalRanking">
         <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title" data-i18n="ranking_titulo">Ranking Municipal</div></div>
@@ -365,6 +380,36 @@
         <button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:var(--text-primary);padding:12px;border-radius:20px;width:100%;margin-top:10px;" data-i18n="btn_cerrar">CERRAR</button>
     </div>
 
+    <!-- RETIROS -->
+    <div class="modal" id="modalRetiros">
+        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title" data-i18n="retiros_titulo">💸 Retiros</div></div>
+        <div class="game-instructions"><i class="fa-solid fa-circle-info"></i> <span data-i18n="retiros_info">Convierte tus diamantes en USDT (red TON) o GRAM y retíralos a tu wallet. Disponible próximamente.</span></div>
+
+        <div class="retiro-card">
+            <div class="retiro-header">
+                <div class="retiro-titulo">💵 USDT <span style="font-size:11px;color:var(--text-secondary);">(TON)</span></div>
+                <span class="badge" style="background:var(--accent-green);">Pronto</span>
+            </div>
+            <div class="retiro-min" data-i18n="retiros_usdt_info">USDT en la red TON (el mismo que se cambia por GRAM). Mínimo de retiro: 1 USDT.</div>
+        </div>
+
+        <div class="retiro-card">
+            <div class="retiro-header">
+                <div class="retiro-titulo">💎 GRAM</div>
+                <span class="badge" style="background:var(--accent-green);">Pronto</span>
+            </div>
+            <div class="retiro-min" data-i18n="retiros_gram_info">GRAM en la red TON. Mínimo de retiro: 1 GRAM.</div>
+        </div>
+
+        <div class="building-stats">
+            <div class="stat-row"><span>💎 <span data-i18n="retiros_balance">Tu tesorería</span></span><span id="retiros-balance" style="color:var(--primary);font-weight:800;">0</span></div>
+            <div class="stat-row"><span>📅 <span data-i18n="retiros_dia">Día de retiro</span></span><span style="color:var(--primary);" data-i18n="retiros_domingo">Domingos</span></div>
+            <div class="stat-row"><span>🚫 <span data-i18n="retiros_minimo">Mínimo requerido</span></span><span style="color:var(--primary);">1 USDT / 1 GRAM</span></div>
+        </div>
+
+        <button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:var(--text-primary);padding:12px;border-radius:20px;width:100%;margin-top:10px;" data-i18n="btn_cerrar">CERRAR</button>
+    </div>
+
     <!-- BANCO -->
     <div class="modal" id="modalBank">
         <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title" data-i18n="banco_titulo">Banco</div></div>
@@ -389,31 +434,6 @@
             <div id="premium-tab-stars" class="banco-tab" onclick="cambiarMetodoPagoPremium('stars')" style="flex:1;text-align:center;padding:12px;border-radius:16px;font-weight:700;cursor:pointer;background:var(--bg-elevated);color:var(--text-secondary);">⭐ Stars</div>
         </div>
         <div id="premium-plans" style="margin-top:16px;"></div>
-        <button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:var(--text-primary);padding:12px;border-radius:20px;width:100%;margin-top:10px;" data-i18n="btn_cerrar">CERRAR</button>
-    </div>
-
-    <!-- RETIROS -->
-    <div class="modal" id="modalRetiros">
-        <div class="modal-header"><div class="modal-back" onclick="closeAll()"><i class="fa-solid fa-arrow-left"></i></div><div class="modal-title" data-i18n="retiros_titulo">💸 Retiros</div></div>
-        <div class="game-instructions"><i class="fa-solid fa-circle-info"></i> <span data-i18n="retiros_info">Convierte tus diamantes en USDT o GRAM y retíralos a tu wallet. Disponible próximamente.</span></div>
-        <div class="retiro-card">
-            <div class="retiro-header">
-                <div class="retiro-titulo">💵 USDT <span style="font-size:11px;color:var(--text-secondary);">(TON)</span></div>
-                <span class="badge" style="background:var(--accent-green);">Pronto</span>
-            </div>
-            <div class="retiro-min" data-i18n="retiros_usdt_info">Convierte tus diamantes a USDT en la red TON. Mínimo de retiro: 1 USDT.</div>
-        </div>
-        <div class="retiro-card">
-            <div class="retiro-header">
-                <div class="retiro-titulo">💎 GRAM</div>
-                <span class="badge" style="background:var(--accent-green);">Pronto</span>
-            </div>
-            <div class="retiro-min" data-i18n="retiros_gram_info">Convierte tus diamantes a GRAM. Mínimo de retiro: 0.5 GRAM.</div>
-        </div>
-        <div class="building-stats">
-            <div class="stat-row"><span>💎 <span data-i18n="retiros_balance">Tu tesorería</span></span><span id="retiros-balance" style="color:var(--primary);font-weight:800;">0</span></div>
-            <div class="stat-row"><span>📅 <span data-i18n="retiros_dia">Día de retiro</span></span><span style="color:var(--primary);" data-i18n="retiros_domingo">Domingos</span></div>
-        </div>
         <button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:var(--text-primary);padding:12px;border-radius:20px;width:100%;margin-top:10px;" data-i18n="btn_cerrar">CERRAR</button>
     </div>
 
@@ -538,6 +558,7 @@
             <i class="fa-solid fa-play-circle" style="font-size:22px;"></i>
             <span data-i18n="ads_ver">VER ANUNCIO +20 💎</span>
         </button>
+        <button onclick="reintentarRichAds()" id="richads-retry-btn" style="background:var(--bg-elevated);border:1px solid var(--primary);color:var(--primary);padding:12px;border-radius:20px;width:100%;margin-top:10px;font-weight:700;display:none;" data-i18n="ads_reintentar">🔄 Reintentar conexión</button>
         <button onclick="closeAll()" style="background:var(--bg-elevated);border:none;color:var(--text-primary);padding:12px;border-radius:20px;width:100%;margin-top:10px;" data-i18n="btn_cerrar">CERRAR</button>
     </div>
 
@@ -554,7 +575,9 @@
     <div class="navbar">
         <div class="nav-item active" onclick="openPerfil()"><i class="fa-solid fa-user"></i><span data-i18n="nav_perfil">PERFIL</span></div>
         <div class="nav-item" onclick="openFriends()"><i class="fa-solid fa-user-group"></i><span data-i18n="nav_amigos">AMIGOS</span></div>
+        <div class="nav-item" onclick="openCity()"><i class="fa-solid fa-city"></i><span data-i18n="nav_ciudad">CIUDAD</span></div>
         <div class="nav-item" onclick="openRanking()"><i class="fa-solid fa-trophy"></i><span data-i18n="nav_ranking">RANKING</span></div>
+        <div class="nav-item" onclick="openWithdraw()"><i class="fa-solid fa-money-bill-transfer"></i><span data-i18n="nav_retiros">RETIROS</span></div>
     </div>
 
     <script src="game.js"></script>
