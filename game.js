@@ -1,8 +1,9 @@
 // ======================================================
-// DIAMOND CITY - v3.1 FINAL
-// RichAds + Stars + Retiros (USDT/GRAM TON) + Tema + Countdown + Ciudad
+// DIAMOND CITY - v3.2 FINAL
+// Navbar persistente · Ciudad sin duplicados · Banco limpio
+// Retiros USDT TON (min 10) · Centro con instrucciones · RichAds
 // ======================================================
-console.log('🚀 DIAMOND CITY v3.1');
+console.log('🚀 DIAMOND CITY v3.2');
 
 const tg = window.Telegram.WebApp;
 tg.expand(); tg.ready();
@@ -55,7 +56,7 @@ let userData = {
 let apuestaActual = { timing: 10, matchmental: 10 };
 
 // ==========================================
-// TARIFAS (Stars con margen +15%)
+// TARIFAS
 // ==========================================
 const PACKS_DIAMANTES = [
     { diamantes: 100,   ton: 0.10,  stars: Math.round(160  * 1.15) },
@@ -112,7 +113,7 @@ const TRADUCCIONES = {
         lvl_label:'Nivel',prod_label:'Prod',mejora_label:'Mejora',
         btn_cerrar:'CERRAR',btn_mejorar:'MEJORAR',
         perfil_titulo:'Mi Perfil',perfil_amigos:'Amigos',perfil_rango:'Rango',perfil_bono:'Bono semanal',
-        perfil_titulo_tratamiento:'Título de tratamiento',idioma_titulo:'Idioma',
+        perfil_titulo_tratamiento:'Título de tratamiento',idioma_titulo:'Idioma',idioma_titulo_btn:'🌐 Idioma',
         amigos_titulo:'Invitar Amigos',amigos_gana:'¡Gana el 10% de tus referidos!',
         amigos_tu_codigo:'Tu código:',amigos_copiar:'📋 COPIAR ENLACE',amigos_ganancias:'Ganancias',
         ranking_titulo:'Ranking Municipal',ranking_tu_rango:'Tu rango',
@@ -123,13 +124,13 @@ const TRADUCCIONES = {
         historial_titulo:'🏆 Historial de Premios',
         historial_info:'Registro público de premios semanales.',
         banco_titulo:'Banco',
-        banco_info:'Compra con GRAM o Estrellas de Telegram.',
+        banco_info:'Compra diamantes con GRAM o paga con Estrellas de Telegram.',
         banco_conectada:'Wallet conectada',banco_desconectar:'Desconectar',
         banco_metodo:'Método de pago:',
         premium_titulo:'Tienda Premium',premium_beneficios:'🎁 Beneficios:',
         premium_beneficios_txt:'x2 producción · Sin anuncios · Insignia exclusiva',
         centro_titulo:'🏛️ Centro Financiero',
-        centro_info:'Basado en habilidad, estrategia y gestión. Sin azar.',
+        centro_info:'El Centro Financiero es el motor económico de tu ciudad: aquí puedes invertir, gestionar recursos, competir por ítems exclusivos y progresar mediante tu habilidad y estrategia.',
         centro_sin_diamantes:'Sin diamantes',
         juego_timing:'Timing Tap',juego_timing_sub:'Habilidad',
         juego_match:'Match Mental',juego_match_sub:'Memoria',
@@ -137,13 +138,16 @@ const TRADUCCIONES = {
         juego_subasta:'Subasta',juego_subasta_sub:'P2P',
         juego_expedicion:'Expedición',juego_expedicion_sub:'Gestión',
         juego_crafting:'Crafting',juego_crafting_sub:'Fusión',
-        timing_info:'Detén la aguja en la zona verde.',
+        timing_info_title:'Cómo jugar:',timing_info:'Una aguja se moverá de un lado a otro sobre una barra. Pulsa "DETENER" cuando esté dentro de la zona verde. Cuanto más cerca del centro, mayor será el multiplicador (2x a 5x). Si queda fuera, pierdes tu entrada.',
         timing_iniciar:'INICIAR',timing_detener:'¡DETENER!',
-        match_info:'Memoriza y reproduce la secuencia.',match_comenzar:'COMENZAR',
-        bolsa_info:'Compra bajo, vende alto.',bolsa_portfolio:'💼 Tu portafolio',bolsa_sin:'Sin inversiones',
-        subasta_info:'Ítems raros. Comisión 5%.',
-        exp_info:'Envía mineros. Hay desgaste.',exp_activas:'🚛 Activas',exp_ninguna:'Ninguna',
-        craft_info:'Fusiona sin aleatoriedad.',
+        match_info_title:'Cómo jugar:',match_info:'Aparecerá una secuencia de símbolos que se iluminan uno a uno. Memorízalos y reprodúcelos tocando los mismos símbolos en orden. Cada ronda añade 2 símbolos más. Llega hasta 8 rondas para multiplicar tu premio.',
+        match_comenzar:'COMENZAR',
+        bolsa_info_title:'Cómo funciona:',bolsa_info:'Es la bolsa de valores de tu ciudad. Compra acciones de minas, bancos, industrias y energéticas cuando estén bajas, y véndelas cuando suban. Los precios se actualizan cada 30 segundos según el mercado interno.',
+        bolsa_portfolio:'💼 Tu portafolio',bolsa_sin:'Sin inversiones todavía',
+        subasta_info_title:'Cómo funciona:',subasta_info:'Los alcaldes compiten por ítems raros que aparecen periódicamente: licencias de producción, aceleradores y avatares exclusivos. Puja antes de que termine el temporizador. La casa se queda con un 5% de comisión.',
+        exp_info_title:'Cómo funciona:',exp_info:'Envía a tus mineros a zonas de riesgo pagando un costo inicial. Cuando regresen (tras el tiempo indicado) siempre obtendrás recurso, pero el desgaste operativo puede reducir la ganancia neta entre un 20% y 50%. Hay bonus ocasionales.',
+        exp_activas:'🚛 Activas',exp_ninguna:'Ninguna',
+        craft_info_title:'Cómo funciona:',craft_info:'Combina diamantes para subir de nivel tus herramientas e instalaciones. No hay aleatoriedad: cada inversión te garantiza la mejora. El costo crece progresivamente con cada nivel.',
         apuesta_label:'Apuesta:',
         daily_titulo:'Recompensa diaria',daily_subtitulo:'¡Reclama tus diamantes gratis!',
         daily_dia:'Día',daily_recompensa:'Recompensa',daily_reclamar:'RECLAMAR',
@@ -155,13 +159,12 @@ const TRADUCCIONES = {
         onboarding_placeholder:'Nombre de tu ciudad',onboarding_fundar:'🏙️ FUNDAR MI CIUDAD',
         feed_titulo:'Bienvenido a su ciudad',feed_sub:'Los eventos aparecerán aquí',
         retiros_titulo:'💸 Retiros',
-        retiros_info:'Convierte tus diamantes en USDT (red TON) o GRAM y retíralos a tu wallet. Disponible próximamente.',
-        retiros_usdt_info:'USDT en la red TON (el mismo que se cambia por GRAM). Mínimo de retiro: 1 USDT.',
-        retiros_gram_info:'GRAM en la red TON. Mínimo de retiro: 1 GRAM.',
+        retiros_info:'Convierte tus diamantes en USDT (red TON) y retíralos a tu wallet. Disponible próximamente.',
+        retiros_usdt_info:'USDT en la red TON (el mismo que se cambia por GRAM). Mínimo de retiro: 10 USDT.',
         retiros_balance:'Tu tesorería',retiros_dia:'Día de retiro',retiros_domingo:'Domingos',
         retiros_minimo:'Mínimo requerido',
         ciudad_titulo:'🏙️ Mi Ciudad',ciudad_edificios:'Edificios de la ciudad',
-        ciudad_estadisticas:'Estadísticas',ciudad_posicion:'Posición',
+        ciudad_estadisticas:'Estadísticas',ciudad_posicion:'Posición',ciudad_nivel_label:'Nivel municipal:',
         ciudad_info:'Aquí puedes ver el estado completo de tu ciudad.'
     },
     en: {
@@ -179,7 +182,7 @@ const TRADUCCIONES = {
         lvl_label:'Level',prod_label:'Prod',mejora_label:'Upgrade',
         btn_cerrar:'CLOSE',btn_mejorar:'UPGRADE',
         perfil_titulo:'My Profile',perfil_amigos:'Friends',perfil_rango:'Rank',perfil_bono:'Weekly bonus',
-        perfil_titulo_tratamiento:'Title',idioma_titulo:'Language',
+        perfil_titulo_tratamiento:'Title',idioma_titulo:'Language',idioma_titulo_btn:'🌐 Language',
         amigos_titulo:'Invite Friends',amigos_gana:'Earn 10% of your referrals!',
         amigos_tu_codigo:'Your code:',amigos_copiar:'📋 COPY',amigos_ganancias:'Earnings',
         ranking_titulo:'Municipal Ranking',ranking_tu_rango:'Your rank',
@@ -193,16 +196,23 @@ const TRADUCCIONES = {
         banco_metodo:'Payment method:',
         premium_titulo:'Premium Store',premium_beneficios:'🎁 Benefits:',
         premium_beneficios_txt:'x2 production · No ads · Exclusive badge',
-        centro_titulo:'🏛️ Financial Center',centro_info:'Skill, strategy and management. No gambling.',
+        centro_titulo:'🏛️ Financial Center',
+        centro_info:'The Financial Center is the economic engine of your city: invest, manage resources, compete for exclusive items and progress through skill and strategy.',
         centro_sin_diamantes:'No diamonds',
         juego_timing:'Timing Tap',juego_timing_sub:'Skill',juego_match:'Match Mental',juego_match_sub:'Memory',
         juego_bolsa:'Market',juego_bolsa_sub:'Investment',juego_subasta:'Auction',juego_subasta_sub:'P2P',
         juego_expedicion:'Expedition',juego_expedicion_sub:'Management',juego_crafting:'Crafting',juego_crafting_sub:'Fusion',
-        timing_info:'Stop the needle in the green zone.',timing_iniciar:'START',timing_detener:'STOP!',
-        match_info:'Memorize and reproduce.',match_comenzar:'START',
-        bolsa_info:'Buy low, sell high.',bolsa_portfolio:'💼 Portfolio',bolsa_sin:'No investments yet',
-        subasta_info:'Rare items. 5% fee.',exp_info:'Send miners. Wear applies.',exp_activas:'🚛 Active',exp_ninguna:'None',
-        craft_info:'Fuse without randomness.',apuesta_label:'Bet:',
+        timing_info_title:'How to play:',timing_info:'A needle will move back and forth across a bar. Press "STOP" when it is inside the green zone. The closer to the center, the higher the multiplier (2x to 5x). If it falls outside, you lose your entry.',
+        timing_iniciar:'START',timing_detener:'STOP!',
+        match_info_title:'How to play:',match_info:'A sequence of symbols will flash one by one. Memorize them and reproduce them by tapping the same symbols in order. Each round adds 2 more symbols. Reach up to 8 rounds to multiply your prize.',
+        match_comenzar:'START',
+        bolsa_info_title:'How it works:',bolsa_info:'It is your city\'s stock market. Buy shares in mines, banks, industries and energy companies when low, sell when high. Prices update every 30 seconds.',
+        bolsa_portfolio:'💼 Portfolio',bolsa_sin:'No investments yet',
+        subasta_info_title:'How it works:',subasta_info:'Mayors compete for rare items that appear periodically: production licenses, accelerators and exclusive avatars. Bid before the timer ends. The house keeps 5%.',
+        exp_info_title:'How it works:',exp_info:'Send your miners to risky areas paying an initial cost. When they return (after the indicated time) you always get resources, but operational wear can reduce net profit by 20% to 50%. Occasional bonuses apply.',
+        exp_activas:'🚛 Active',exp_ninguna:'None',
+        craft_info_title:'How it works:',craft_info:'Combine diamonds to level up your tools and facilities. No randomness: every investment guarantees the upgrade. Cost grows progressively with each level.',
+        apuesta_label:'Bet:',
         daily_titulo:'Daily Reward',daily_subtitulo:'Claim free diamonds!',
         daily_dia:'Day',daily_recompensa:'Reward',daily_reclamar:'CLAIM',
         ads_ver:'WATCH AD +20 💎',
@@ -213,13 +223,12 @@ const TRADUCCIONES = {
         onboarding_placeholder:'City name',onboarding_fundar:'🏙️ FOUND MY CITY',
         feed_titulo:'Welcome to your city',feed_sub:'Recent events here',
         retiros_titulo:'💸 Withdrawals',
-        retiros_info:'Convert diamonds to USDT (TON) or GRAM. Coming soon.',
-        retiros_usdt_info:'USDT on TON network (the same you swap for GRAM). Minimum withdrawal: 1 USDT.',
-        retiros_gram_info:'GRAM on TON network. Minimum withdrawal: 1 GRAM.',
+        retiros_info:'Convert diamonds to USDT (TON network) and withdraw to your wallet. Coming soon.',
+        retiros_usdt_info:'USDT on TON network (the same you swap for GRAM). Minimum withdrawal: 10 USDT.',
         retiros_balance:'Your treasury',retiros_dia:'Withdraw day',retiros_domingo:'Sundays',
         retiros_minimo:'Minimum required',
         ciudad_titulo:'🏙️ My City',ciudad_edificios:'City buildings',
-        ciudad_estadisticas:'Statistics',ciudad_posicion:'Position',
+        ciudad_estadisticas:'Statistics',ciudad_posicion:'Position',ciudad_nivel_label:'Municipal level:',
         ciudad_info:'See your full city status.'
     },
     pt: {
@@ -236,7 +245,7 @@ const TRADUCCIONES = {
         lvl_label:'Nível',prod_label:'Prod',mejora_label:'Melhoria',
         btn_cerrar:'FECHAR',btn_mejorar:'MELHORAR',
         perfil_titulo:'Meu Perfil',perfil_amigos:'Amigos',perfil_rango:'Rank',perfil_bono:'Bônus',
-        perfil_titulo_tratamiento:'Título',idioma_titulo:'Idioma',
+        perfil_titulo_tratamiento:'Título',idioma_titulo:'Idioma',idioma_titulo_btn:'🌐 Idioma',
         amigos_titulo:'Convidar',amigos_gana:'Ganhe 10%!',amigos_tu_codigo:'Código:',
         amigos_copiar:'📋 COPIAR',amigos_ganancias:'Ganhos',
         ranking_titulo:'Ranking',ranking_tu_rango:'Seu rank',ranking_tu_posicion:'Posição',
@@ -248,16 +257,23 @@ const TRADUCCIONES = {
         banco_conectada:'Carteira conectada',banco_desconectar:'Desconectar',banco_metodo:'Método:',
         premium_titulo:'Premium',premium_beneficios:'🎁 Benefícios:',
         premium_beneficios_txt:'x2 produção · Sem anúncios · Insígnia',
-        centro_titulo:'🏛️ Centro Financeiro',centro_info:'Habilidade e estratégia. Sem azar.',
+        centro_titulo:'🏛️ Centro Financeiro',
+        centro_info:'O Centro Financeiro é o motor econômico da sua cidade: invista, gerencie recursos, dispute itens exclusivos e progrida com habilidade e estratégia.',
         centro_sin_diamantes:'Sem diamantes',
         juego_timing:'Timing',juego_timing_sub:'Habilidade',juego_match:'Match',juego_match_sub:'Memória',
         juego_bolsa:'Bolsa',juego_bolsa_sub:'Investimento',juego_subasta:'Leilão',juego_subasta_sub:'P2P',
         juego_expedicion:'Expedição',juego_expedicion_sub:'Gestão',juego_crafting:'Craft',juego_crafting_sub:'Fusão',
-        timing_info:'Pare na zona verde.',timing_iniciar:'INICIAR',timing_detener:'PARAR!',
-        match_info:'Memorize e reproduza.',match_comenzar:'COMEÇAR',
-        bolsa_info:'Compre baixo, venda alto.',bolsa_portfolio:'💼 Portfólio',bolsa_sin:'Sem investimentos',
-        subasta_info:'Itens raros. Taxa 5%.',exp_info:'Envie mineradores.',exp_activas:'🚛 Ativas',exp_ninguna:'Nenhuma',
-        craft_info:'Fusão sem aleatoriedade.',apuesta_label:'Aposta:',
+        timing_info_title:'Como jogar:',timing_info:'Uma agulha se moverá de um lado para o outro. Aperte "PARAR" quando estiver na zona verde. Mais perto do centro, maior o multiplicador (2x a 5x). Se ficar fora, perde sua entrada.',
+        timing_iniciar:'INICIAR',timing_detener:'PARAR!',
+        match_info_title:'Como jogar:',match_info:'Uma sequência de símbolos vai piscar um a um. Memorize e reproduza tocando os mesmos símbolos na ordem. Cada rodada adiciona 2 símbolos. Chegue a 8 rodadas para multiplicar seu prêmio.',
+        match_comenzar:'COMEÇAR',
+        bolsa_info_title:'Como funciona:',bolsa_info:'É a bolsa da sua cidade. Compre ações de minas, bancos, indústrias e energéticas quando estiverem baixas, venda quando subirem. Preços atualizam a cada 30s.',
+        bolsa_portfolio:'💼 Portfólio',bolsa_sin:'Sem investimentos',
+        subasta_info_title:'Como funciona:',subasta_info:'Prefeitos competem por itens raros: licenças, aceleradores e avatares exclusivos. Dê seu lance antes do tempo acabar. A casa fica com 5%.',
+        exp_info_title:'Como funciona:',exp_info:'Envie mineradores para zonas de risco pagando um custo. Ao retornar, você sempre ganha recurso, mas o desgaste pode reduzir o lucro entre 20% e 50%.',
+        exp_activas:'🚛 Ativas',exp_ninguna:'Nenhuma',
+        craft_info_title:'Como funciona:',craft_info:'Combine diamantes para subir de nível suas ferramentas e instalações. Sem aleatoriedade: cada investimento garante a melhoria.',
+        apuesta_label:'Aposta:',
         daily_titulo:'Recompensa diária',daily_subtitulo:'Resgate grátis!',
         daily_dia:'Dia',daily_recompensa:'Prêmio',daily_reclamar:'RESGATAR',
         ads_ver:'VER ANÚNCIO +20 💎',
@@ -268,13 +284,12 @@ const TRADUCCIONES = {
         onboarding_placeholder:'Nome da cidade',onboarding_fundar:'🏙️ FUNDAR',
         feed_titulo:'Bem-vindo',feed_sub:'Eventos recentes',
         retiros_titulo:'💸 Saques',
-        retiros_info:'Converta em USDT (TON) ou GRAM. Em breve.',
-        retiros_usdt_info:'USDT na rede TON (o mesmo que troca por GRAM). Mínimo de saque: 1 USDT.',
-        retiros_gram_info:'GRAM na rede TON. Mínimo de saque: 1 GRAM.',
+        retiros_info:'Converta em USDT (rede TON) e saque para sua carteira. Em breve.',
+        retiros_usdt_info:'USDT na rede TON (o mesmo que troca por GRAM). Mínimo de saque: 10 USDT.',
         retiros_balance:'Tesouraria',retiros_dia:'Dia',retiros_domingo:'Domingos',
         retiros_minimo:'Mínimo requerido',
         ciudad_titulo:'🏙️ Minha Cidade',ciudad_edificios:'Edifícios da cidade',
-        ciudad_estadisticas:'Estatísticas',ciudad_posicion:'Posição',
+        ciudad_estadisticas:'Estatísticas',ciudad_posicion:'Posição',ciudad_nivel_label:'Nível municipal:',
         ciudad_info:'Veja o estado completo da sua cidade.'
     },
     ru: {
@@ -291,7 +306,7 @@ const TRADUCCIONES = {
         lvl_label:'Уровень',prod_label:'Произв',mejora_label:'Улучшение',
         btn_cerrar:'ЗАКРЫТЬ',btn_mejorar:'УЛУЧШИТЬ',
         perfil_titulo:'Профиль',perfil_amigos:'Друзья',perfil_rango:'Ранг',perfil_bono:'Бонус',
-        perfil_titulo_tratamiento:'Обращение',idioma_titulo:'Язык',
+        perfil_titulo_tratamiento:'Обращение',idioma_titulo:'Язык',idioma_titulo_btn:'🌐 Язык',
         amigos_titulo:'Пригласить',amigos_gana:'Получайте 10%!',amigos_tu_codigo:'Код:',
         amigos_copiar:'📋 КОПИРОВАТЬ',amigos_ganancias:'Доход',
         ranking_titulo:'Рейтинг',ranking_tu_rango:'Ваш ранг',ranking_tu_posicion:'Позиция',
@@ -303,16 +318,23 @@ const TRADUCCIONES = {
         banco_conectada:'Кошелёк подключён',banco_desconectar:'Отключить',banco_metodo:'Способ:',
         premium_titulo:'Премиум',premium_beneficios:'🎁 Преимущества:',
         premium_beneficios_txt:'x2 производство · Без рекламы · Значок',
-        centro_titulo:'🏛️ Финансовый центр',centro_info:'Навык, стратегия, управление.',
+        centro_titulo:'🏛️ Финансовый центр',
+        centro_info:'Финансовый центр — экономический двигатель вашего города: инвестируйте, управляйте ресурсами, соревнуйтесь за редкие предметы и развивайтесь за счёт навыка.',
         centro_sin_diamantes:'Нет алмазов',
         juego_timing:'Timing',juego_timing_sub:'Навык',juego_match:'Match',juego_match_sub:'Память',
         juego_bolsa:'Биржа',juego_bolsa_sub:'Инвестиции',juego_subasta:'Аукцион',juego_subasta_sub:'P2P',
         juego_expedicion:'Экспедиция',juego_expedicion_sub:'Управление',juego_crafting:'Крафт',juego_crafting_sub:'Слияние',
-        timing_info:'Остановите в зелёной зоне.',timing_iniciar:'СТАРТ',timing_detener:'СТОП!',
-        match_info:'Запомните и воспроизведите.',match_comenzar:'НАЧАТЬ',
-        bolsa_info:'Покупайте дешевле.',bolsa_portfolio:'💼 Портфель',bolsa_sin:'Пока нет',
-        subasta_info:'Редкие предметы.',exp_info:'Отправьте шахтёров.',exp_activas:'🚛 Активные',exp_ninguna:'Нет',
-        craft_info:'Без случайности.',apuesta_label:'Ставка:',
+        timing_info_title:'Как играть:',timing_info:'Стрелка движется по шкале. Нажмите "СТОП" в зелёной зоне. Чем ближе к центру — тем больше множитель (2x–5x). Промах — потеря входа.',
+        timing_iniciar:'СТАРТ',timing_detener:'СТОП!',
+        match_info_title:'Как играть:',match_info:'Символы будут вспыхивать по одному. Запомните и воспроизведите порядок. Каждый раунд добавляет 2 символа. До 8 раундов.',
+        match_comenzar:'НАЧАТЬ',
+        bolsa_info_title:'Как работает:',bolsa_info:'Биржа вашего города. Покупайте акции дёшево, продавайте дорого. Цены обновляются каждые 30 секунд.',
+        bolsa_portfolio:'💼 Портфель',bolsa_sin:'Пока нет',
+        subasta_info_title:'Как работает:',subasta_info:'Мэры соревнуются за редкие предметы. Успейте поставить ставку. Комиссия дома — 5%.',
+        exp_info_title:'Как работает:',exp_info:'Отправьте шахтёров в опасные зоны. Ресурсы всегда будут, но износ снижает прибыль на 20%–50%.',
+        exp_activas:'🚛 Активные',exp_ninguna:'Нет',
+        craft_info_title:'Как работает:',craft_info:'Соединяйте алмазы, чтобы улучшать инструменты. Без случайности: каждая инвестиция гарантирует улучшение.',
+        apuesta_label:'Ставка:',
         daily_titulo:'Награда',daily_subtitulo:'Заберите!',
         daily_dia:'День',daily_recompensa:'Награда',daily_reclamar:'ЗАБРАТЬ',
         ads_ver:'СМОТРЕТЬ +20 💎',
@@ -323,13 +345,12 @@ const TRADUCCIONES = {
         onboarding_placeholder:'Название',onboarding_fundar:'🏙️ ОСНОВАТЬ',
         feed_titulo:'Добро пожаловать',feed_sub:'События здесь',
         retiros_titulo:'💸 Выводы',
-        retiros_info:'USDT (TON) или GRAM. Скоро.',
-        retiros_usdt_info:'USDT в сети TON (тот же, что меняется на GRAM). Минимум вывода: 1 USDT.',
-        retiros_gram_info:'GRAM в сети TON. Минимум вывода: 1 GRAM.',
+        retiros_info:'Вывод USDT (TON) на ваш кошелёк. Скоро.',
+        retiros_usdt_info:'USDT в сети TON. Минимум вывода: 10 USDT.',
         retiros_balance:'Казна',retiros_dia:'День',retiros_domingo:'Воскресенье',
         retiros_minimo:'Минимум',
         ciudad_titulo:'🏙️ Мой Город',ciudad_edificios:'Здания города',
-        ciudad_estadisticas:'Статистика',ciudad_posicion:'Позиция',
+        ciudad_estadisticas:'Статистика',ciudad_posicion:'Позиция',ciudad_nivel_label:'Уровень города:',
         ciudad_info:'Полный статус вашего города.'
     }
 };
@@ -364,7 +385,7 @@ function seleccionarIdioma(c) {
 function abrirSelectorIdioma() { closeAll(); showModal('modalIdioma'); }
 
 // ==========================================
-// TEMA CLARO / OSCURO
+// TEMA
 // ==========================================
 function aplicarTema() {
     const th = userData.theme || 'dark';
@@ -587,17 +608,14 @@ function closeAll() {
      'modalAds','modalAsistente','modalIdioma','modalHistorialPremios'
     ].forEach(id => { const m = document.getElementById(id); if (m) m.style.display = 'none'; });
     if (timingInterval) clearInterval(timingInterval);
-    setActiveNav('perfil');
+    // NO reseteamos el navbar aquí: cada openXXX lo setea explícitamente
 }
 
 function setActiveNav(tab) {
-    document.querySelectorAll('.nav-item').forEach((i, idx) => {
-        i.classList.remove('active');
-        if (tab === 'perfil' && idx === 0) i.classList.add('active');
-        if (tab === 'amigos' && idx === 1) i.classList.add('active');
-        if (tab === 'ciudad' && idx === 2) i.classList.add('active');
-        if (tab === 'ranking' && idx === 3) i.classList.add('active');
-        if (tab === 'retiros' && idx === 4) i.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(item => {
+        const nav = item.getAttribute('data-nav');
+        if (nav === tab) item.classList.add('active');
+        else item.classList.remove('active');
     });
 }
 
@@ -655,7 +673,7 @@ function copyReferralCode() {
 }
 
 // ==========================================
-// CIUDAD
+// CIUDAD (con edificios y stats reales)
 // ==========================================
 function openCity() {
     closeAll();
@@ -676,20 +694,20 @@ function actualizarCiudad() {
     if (np) np.textContent = pct + '%';
 
     const edifs = [
-        { id: 'piscina', ico: '🏊', nombre: 'Piscina',  color: '#38bdf8' },
-        { id: 'fabrica', ico: '🏭', nombre: 'Fábrica',  color: '#a78bfa' },
-        { id: 'escuela', ico: '🏫', nombre: 'Escuela',  color: '#fbbf24' },
-        { id: 'hospital',ico: '🏥', nombre: 'Hospital', color: '#f87171' }
+        { id: 'piscina', ico: '🏊', nombre: t('building_piscina'), color: '#38bdf8' },
+        { id: 'fabrica', ico: '🏭', nombre: t('building_fabrica'), color: '#a78bfa' },
+        { id: 'escuela', ico: '🏫', nombre: t('building_escuela'), color: '#fbbf24' },
+        { id: 'hospital',ico: '🏥', nombre: t('building_hospital'), color: '#f87171' }
     ];
     const cont = document.getElementById('ciudad-edificios');
     if (cont) {
         let h = '';
         for (const e of edifs) {
             const lvl = userData['lvl_' + e.id] || 0;
-            h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;border:2px solid ' + e.color + '40;text-align:center;">';
-            h += '<div style="font-size:32px;">' + e.ico + '</div>';
-            h += '<div style="font-weight:700;margin-top:6px;">' + e.nombre + '</div>';
-            h += '<div style="font-size:12px;color:' + e.color + ';font-weight:800;">Nivel ' + lvl + '</div>';
+            h += '<div class="city-edificio" style="border-color:' + e.color + '40;" onclick="closeAll();openBuilding(\'' + e.id + '\')">';
+            h += '<div class="city-edificio-ico">' + e.ico + '</div>';
+            h += '<div class="city-edificio-nombre">' + e.nombre + '</div>';
+            h += '<div class="city-edificio-nivel" style="color:' + e.color + ';">' + t('lvl_label') + ' ' + lvl + '</div>';
             h += '</div>';
         }
         cont.innerHTML = h;
@@ -779,7 +797,7 @@ async function abrirHistorialPremios() {
 }
 
 // ==========================================
-// RETIROS
+// RETIROS (solo USDT TON, min 10)
 // ==========================================
 function openWithdraw() {
     closeAll();
@@ -796,6 +814,13 @@ function openBank() {
     closeAll(); showModal('modalBank'); cambiarMetodoPago('gram');
 }
 
+function actualizarAvisoBanco() {
+    const aviso = document.getElementById('banco-aviso');
+    if (!aviso) return;
+    const conectada = !!(tonConnectUI && tonConnectUI.connected);
+    aviso.style.display = conectada ? 'none' : 'block';
+}
+
 function cambiarMetodoPago(m) {
     metodoPagoBanco = m;
     const g = document.getElementById('tab-gram');
@@ -807,6 +832,7 @@ function cambiarMetodoPago(m) {
 
 function actualizarListaCompra() {
     const conectada = !!(tonConnectUI && tonConnectUI.connected);
+    actualizarAvisoBanco();
     const l = document.getElementById('bankList'); if (!l) return;
     let h = '';
     for (const p of PACKS_DIAMANTES) {
@@ -814,12 +840,12 @@ function actualizarListaCompra() {
             const col = conectada ? '#4ade80' : '#334155';
             const txt = conectada ? 'COMPRAR' : 'CONECTAR WALLET';
             const dis = conectada ? '' : 'disabled';
-            h += '<div style="background:var(--bg-elevated);border-radius:12px;padding:16px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;">';
+            h += '<div style="background:var(--bg-elevated);border-radius:12px;padding:16px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--glass-border);">';
             h += '<div><strong>' + p.diamantes + ' 💎</strong><div style="font-size:12px;color:var(--text-secondary);">' + p.ton.toFixed(2) + ' GRAM</div></div>';
             h += '<button onclick="comprarConGram(' + p.ton + ')" style="background:' + col + ';border:none;padding:10px 20px;border-radius:30px;color:white;font-weight:700;" ' + dis + '>' + txt + '</button>';
             h += '</div>';
         } else {
-            h += '<div style="background:var(--bg-elevated);border-radius:12px;padding:16px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;">';
+            h += '<div style="background:var(--bg-elevated);border-radius:12px;padding:16px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--glass-border);">';
             h += '<div><strong>' + p.diamantes + ' 💎</strong><div style="font-size:12px;color:var(--text-secondary);">' + p.stars + ' ⭐</div></div>';
             h += '<button onclick="comprarConStars(' + p.diamantes + ')" class="btn-stars"><i class="fa-solid fa-star"></i> COMPRAR</button>';
             h += '</div>';
@@ -902,12 +928,12 @@ function renderPlanesPremium() {
             const col = conectada ? '#8b5cf6' : '#334155';
             const txt = conectada ? 'COMPRAR' : 'CONECTAR WALLET';
             const dis = conectada ? '' : 'disabled';
-            h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:20px;margin:12px 0;">';
+            h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:20px;margin:12px 0;border:1px solid var(--glass-border);">';
             h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><strong style="font-size:18px;">' + p.name + '</strong><span style="color:#facc15;font-weight:700;">' + p.ton + ' GRAM</span></div>';
             h += '<button onclick="comprarPremiumGram(' + p.days + ')" style="background:' + col + ';border:none;border-radius:30px;padding:14px;width:100%;color:white;font-weight:700;" ' + dis + '>' + txt + '</button>';
             h += '</div>';
         } else {
-            h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:20px;margin:12px 0;">';
+            h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:20px;margin:12px 0;border:1px solid var(--glass-border);">';
             h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><strong style="font-size:18px;">' + p.name + '</strong><span style="color:#facc15;font-weight:700;">' + p.stars + ' ⭐</span></div>';
             h += '<button onclick="comprarPremiumStars(' + p.days + ')" class="btn-stars" style="width:100%;"><i class="fa-solid fa-star"></i> COMPRAR</button>';
             h += '</div>';
@@ -979,6 +1005,7 @@ async function initTONConnect() {
             const wi = document.getElementById('wallet-info');
             if (w) { if (b) b.style.display = 'none'; if (wi) wi.classList.remove('hidden'); }
             else { if (b) b.style.display = 'flex'; if (wi) wi.classList.add('hidden'); }
+            actualizarAvisoBanco();
             if (document.getElementById('modalBank') && document.getElementById('modalBank').style.display === 'block') actualizarListaCompra();
         });
     } catch (e) { console.error(e); }
@@ -991,6 +1018,7 @@ async function disconnectWallet() {
     const wi = document.getElementById('wallet-info');
     if (b) b.style.display = 'flex';
     if (wi) wi.classList.add('hidden');
+    actualizarAvisoBanco();
     actualizarListaCompra();
 }
 
@@ -999,8 +1027,9 @@ async function disconnectWallet() {
 // ==========================================
 async function initAds() {
     try {
+        console.log('🎬 Iniciando RichAds...');
         let intentos = 0;
-        while (typeof TelegramAdsController === 'undefined' && intentos < 10) {
+        while (typeof TelegramAdsController === 'undefined' && intentos < 12) {
             await new Promise(r => setTimeout(r, 500));
             intentos++;
         }
@@ -1012,14 +1041,14 @@ async function initAds() {
                 debug: CONFIG.RICHADS_DEBUG
             });
             richAdsReady = true;
-            console.log('✅ RichAds OK (intento ' + intentos + ')');
+            console.log('✅ RichAds inicializado correctamente (intento ' + intentos + ')');
         } else {
             richAdsReady = false;
-            console.warn('⚠️ TelegramAdsController no está disponible');
+            console.warn('⚠️ TelegramAdsController no cargó. Verifica: 1) que el script tg-ob.js esté en el <head>, 2) que el dominio esté autorizado en RichAds, 3) que tu pubId/appId estén activos.');
         }
     } catch (e) {
         richAdsReady = false;
-        console.error('❌ RichAds:', e);
+        console.error('❌ Error inicializando RichAds:', e);
     }
 }
 
@@ -1312,7 +1341,7 @@ function detenerTiming() {
 }
 
 // ==========================================
-// MATCH MENTAL — VERSIÓN DIFÍCIL
+// MATCH MENTAL
 // ==========================================
 let mSec = [], mIn = [], mRon = 0, mMos = false;
 const mMax = 8;
@@ -1422,7 +1451,7 @@ function renderBolsa() {
     let h = '';
     for (const a of ACCIONES_BOLSA) {
         const v = a.tendencia; const col = v >= 0 ? '#4ade80' : '#ef4444'; const fle = v >= 0 ? '▲' : '▼';
-        h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">';
+        h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--glass-border);">';
         h += '<div><div style="font-weight:700;">' + a.icono + ' ' + a.nombre + '</div><div style="font-size:12px;color:' + col + ';">' + fle + ' ' + Math.abs(v).toFixed(1) + '% · ' + a.precio + ' 💎</div></div>';
         h += '<div style="display:flex;gap:6px;"><button onclick="comprarAccion(\'' + a.id + '\')" style="background:#4ade80;border:none;color:#000;padding:8px 14px;border-radius:12px;font-weight:700;">+</button>';
         h += '<button onclick="venderAccion(\'' + a.id + '\')" style="background:#ef4444;border:none;color:white;padding:8px 14px;border-radius:12px;font-weight:700;">−</button></div></div>';
@@ -1488,7 +1517,7 @@ function renderSubasta() {
         const r = Math.max(0, Math.floor((it.termina - ah) / 1000));
         const m = Math.floor(r / 60), s = r % 60;
         const act = r > 0;
-        h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;">';
+        h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;border:1px solid var(--glass-border);">';
         h += '<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-weight:700;">' + it.icono + ' ' + it.nombre + '</div>';
         h += '<div style="font-size:12px;color:var(--text-secondary);">' + it.precioActual + ' 💎 · ' + m + ':' + String(s).padStart(2, '0') + '</div>';
         if (it.puja) h += '<div style="font-size:11px;color:#4ade80;">Líder: ' + it.puja + '</div>';
@@ -1520,7 +1549,7 @@ function renderExpedicion() {
     const c = document.getElementById('exp-zonas'); if (!c) return;
     let h = '';
     for (const z of ZONAS_EXPEDICION) {
-        h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;">';
+        h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;border:1px solid var(--glass-border);">';
         h += '<div style="font-weight:700;margin-bottom:6px;">' + z.icono + ' ' + z.nombre + '</div>';
         h += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">' + z.costo + ' 💎 · ' + z.duracion + 's · Riesgo ' + Math.floor(z.riesgo * 100) + '% · Retorno ' + z.recompensaBase + ' 💎</div>';
         h += '<button onclick="lanzarExpedicion(\'' + z.id + '\')" style="background:#f97316;border:none;color:white;padding:10px 20px;border-radius:12px;font-weight:700;width:100%;">LANZAR</button></div>';
@@ -1581,7 +1610,7 @@ function renderCrafting() {
         const n = userData.craft_niveles[r.id] || 0;
         const co = Math.floor(r.costoBase * Math.pow(1.6, n));
         const pu = userData.diamonds >= co;
-        h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;">';
+        h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;border:1px solid var(--glass-border);">';
         h += '<div style="font-weight:700;">' + r.icono + ' ' + r.nombre + ' (Nvl ' + n + ')</div>';
         h += '<div style="font-size:12px;color:var(--text-secondary);margin:6px 0;">Próximo: Nvl ' + (n + 1) + ' · ' + co + ' 💎</div>';
         h += '<button onclick="craftear(\'' + r.id + '\')" style="background:' + (pu ? '#f472b6' : '#334155') + ';color:' + (pu ? '#000' : '#fff') + ';border:none;padding:10px 20px;border-radius:12px;font-weight:700;width:100%;" ' + (pu ? '' : 'disabled') + '>CRAFTEAR</button></div>';
