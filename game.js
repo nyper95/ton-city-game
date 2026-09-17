@@ -1068,12 +1068,13 @@ async function comprarConStars(diamantes) {
         const data = await resp.json();
         if (!data.success || !data.invoiceLink) { alert('⚠️ No se pudo generar el pago.'); return; }
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openInvoice) {
-            window.Telegram.WebApp.openInvoice(data.invoiceLink, function(status) {
+            window.Telegram.WebApp.openInvoice(data.invoiceLink, async function(status) {
                 if (status === 'paid') {
-                    userData.diamonds += p.diamantes;
-                    userData.haInvertido = true;
+                    // FIX doble-crédito: el webhook del Worker YA acreditó en Supabase.
+                    // Recargamos desde la base para mostrar el saldo real.
+                    await loadUserFromDB(userData.id);
                     registrarEvento('⭐', 'Compra con Stars', '+' + p.diamantes + ' 💎');
-                    saveUserData(); actualizarUI(); spawnConfetti();
+                    await saveUserData(); actualizarUI(); spawnConfetti();
                     alert('✅ +' + p.diamantes + ' 💎');
                     closeAll();
                 } else if (status === 'cancelled') { alert('❌ Pago cancelado'); }
@@ -1159,13 +1160,12 @@ async function comprarPremiumStars(days) {
         const data = await resp.json();
         if (!data.success || !data.invoiceLink) return alert('⚠️ No se pudo generar el pago.');
         if (window.Telegram.WebApp.openInvoice) {
-            window.Telegram.WebApp.openInvoice(data.invoiceLink, function(status) {
+            window.Telegram.WebApp.openInvoice(data.invoiceLink, async function(status) {
                 if (status === 'paid') {
-                    const f = new Date(); f.setDate(f.getDate() + days);
-                    userData.premium_expires = f.toISOString();
-                    userData.haInvertido = true;
+                    // FIX doble-crédito: el webhook YA extendió el Premium en Supabase.
+                    await loadUserFromDB(userData.id);
                     registrarEvento('⭐', 'Premium activado', p.name);
-                    saveUserData(); actualizarPremiumUI(); actualizarUI(); spawnConfetti();
+                    await saveUserData(); actualizarPremiumUI(); actualizarUI(); spawnConfetti();
                     alert('✅ Premium ' + p.name + ' activado!');
                     closeAll();
                 } else if (status === 'cancelled') { alert('❌ Pago cancelado'); }
