@@ -1,270 +1,562 @@
-// ======================================================
-// DIAMOND CITY API — Cloudflare Worker v2.0
-// Pagos con Telegram Stars (XTR)
-//
-// SEGURIDAD IMPLEMENTADA:
-// 1. Precios calculados SOLO en el servidor (el cliente no
-//    manda el precio — si lo hiciera, podrían pagar 1 ⭐ por
-//    10,000 💎).
-// 2. Idempotencia: cada cargo (charge_id) se registra una sola
-//    vez en la tabla `payments`. Telegram reintenta el webhook
-//    y sin esto los diamantes se duplicarían.
-// 3. El pago se acredita al PAGADOR real (from.id de Telegram),
-//    no al userId que venga en el payload. Si no coinciden,
-//    se rechaza (anti-tampering).
-// 4. Premium se EXTIENDE desde la fecha actual si aún está
-//    activo (antes sobrescribía y podías "perder" días).
-// 5. Webhook protegido con secret token (X-Telegram-Bot-Api-Secret-Token).
-// ======================================================
-
-// ---- Tarifas OFICIALES del juego (fuente única de verdad) ----
-const PACKS_DIAMANTES = { 100: 160, 500: 800, 1000: 1600, 2000: 3200, 5000: 8000, 10000: 16000 };
-const PREMIUM_PLANS   = { 1: 320, 7: 1600, 30: 4800 };
-const MARGEN_STARS    = 1.15;
-const starsPara = (base) => Math.round(base * MARGEN_STARS);
+// ============================================================
+// DIAMOND CITY · WORKER DE VALIDACIÓN DE initData
+// Único punto de escritura sobre saldo vía service_role
+// ============================================================
 
 export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const path = url.pathname;
+    async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        const cors = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        };
 
-    // Manejo CORS
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
+        if (request.method === 'OPTIONS') {
+            return new Response(null, { headers: cors });
         }
-      });
+
+        try {
+            // --- Health check ---
+            if (url.pathname === '/api/health') {
+                return json({ status: 'ok', service: 'diamond-city-worker' }, 200, cors);
+            }
+
+            // --- Endpoint de escritura de saldo ---
+            if (url.pathname === '/api/saldo/update' && request.method === 'POST') {
+                return handleSaldoUpdate(request, env, cors);
+            }
+
+            // --- Crear invoice de Stars ---
+            if (url.pathname === '/api/create-stars-invoice' && request.method === 'POST') {
+                return handleCreateStarsInvoice(request, env, cors);
+            }
+
+            // --- Webhook de pago de Telegram ---
+            if (url.pathname === '/api/telegram-payment-webhook' && request.method === 'POST') {
+                return handleTelegramWebhook(request, env, cors);
+            }
+
+            // --- Endpoint de retiro ---
+            if (url.pathname === '/api/withdraw' && request.method === 'POST') {
+                return handleWithdraw(request, env, cors);
+            }
+
+            return json({ error: 'not_found' }, 404, cors);
+
+        } catch (error) {
+            console.error('Worker error:', error);
+            return json({ error: error.message }, 500, cors);
+        }
+    }
+};
+
+// ============================================================
+// UTILIDAD: respuesta JSON con CORS
+// ============================================================
+function json(data, status = 200, cors = {}) {
+    return new Response(JSON.stringify(data), {
+        status,
+        headers: { 'Content-Type': 'application/json', ...cors }
+    });
+}
+
+// ============================================================
+// VALIDACIÓN DE initData CON WEB CRYPTO API
+// ============================================================
+// Algoritmo:
+//   1. secretKey = HMAC-SHA256("WebAppData", bot_token)
+//   2. checkString = parámetros (sin hash) ordenados alfabéticamente, uno por línea
+//   3. signature = HMAC-SHA256(secretKey, checkString)
+//   4. Comparar signature con el hash recibido
+// ============================================================
+
+async function validateInitData(initData, botToken) {
+    try {
+        const params = new URLSearchParams(initData);
+        const receivedHash = params.get('hash');
+
+        if (!receivedHash) {
+            console.warn('initData sin hash');
+            return null;
+        }
+
+        params.delete('hash');
+
+        // 1. Derivar la clave secreta: HMAC("WebAppData", botToken)
+        const encoder = new TextEncoder();
+        const webAppDataKey = await crypto.subtle.importKey(
+            'raw',
+            encoder.encode('WebAppData'),
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['sign']
+        );
+
+        const derivedKeyBytes = await crypto.subtle.sign(
+            'HMAC',
+            webAppDataKey,
+            encoder.encode(botToken)
+        );
+
+        // 2. Importar la clave derivada para verificar
+        const verifyKey = await crypto.subtle.importKey(
+            'raw',
+            derivedKeyBytes,
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['verify']
+        );
+
+        // 3. Construir el checkString (ordenado alfabéticamente)
+        const checkString = [...params.entries()]
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([k, v]) => `${k}=${v}`)
+            .join('\n');
+
+        // 4. Convertir el hash recibido de hex a bytes
+        const hashBytes = hexToBytes(receivedHash);
+
+        // 5. Verificar la firma
+        const isValid = await crypto.subtle.verify(
+            'HMAC',
+            verifyKey,
+            hashBytes,
+            encoder.encode(checkString)
+        );
+
+        if (!isValid) {
+            console.warn('initData con firma inválida');
+            return null;
+        }
+
+        // 6. Verificar que no haya expirado (24 horas)
+        const authDate = parseInt(params.get('auth_date') || '0');
+        const ahora = Math.floor(Date.now() / 1000);
+        if (ahora - authDate > 86400) {
+            console.warn('initData expirado');
+            return null;
+        }
+
+        // 7. Extraer datos del usuario
+        const userJson = params.get('user');
+        if (!userJson) return null;
+
+        const user = JSON.parse(decodeURIComponent(userJson));
+        return {
+            user,
+            authDate,
+            raw: params
+        };
+
+    } catch (error) {
+        console.error('Error validando initData:', error);
+        return null;
+    }
+}
+
+function hexToBytes(hex) {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+        bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    }
+    return bytes;
+}
+
+// ============================================================
+// CLIENTE SUPABASE (service_role desde el Worker)
+// ============================================================
+
+async function supabaseFetch(env, path, options = {}) {
+    const url = `${env.SUPABASE_URL}/rest/v1/${path}`;
+    const headers = {
+        'apikey': env.SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+        ...(options.headers || {})
+    };
+
+    const response = await fetch(url, { ...options, headers });
+    const text = await response.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
+
+    if (!response.ok) {
+        throw new Error(`Supabase ${response.status}: ${JSON.stringify(data)}`);
+    }
+    return data;
+}
+
+// ============================================================
+// HANDLER: /api/saldo/update
+// ============================================================
+
+async function handleSaldoUpdate(request, env, cors) {
+    const body = await request.json();
+    const { initData, action, payload } = body;
+
+    if (!initData) {
+        return json({ error: 'initData requerido' }, 400, cors);
     }
 
-    try {
-      // ==================================================
-      // POST /api/create-stars-invoice
-      // ==================================================
-      if (path === '/api/create-stars-invoice' && request.method === 'POST') {
-        const body = await request.json();
-        const { userId, type, amount, days } = body;
+    const auth = await validateInitData(initData, env.TELEGRAM_BOT_TOKEN);
+    if (!auth) {
+        return json({ error: 'initData inválido o expirado' }, 401, cors);
+    }
 
-        // Solo IDs reales de Telegram (números). Los "test_..." del
-        // navegador no pueden pagar con Stars de todas formas.
-        if (!userId || !/^\d+$/.test(String(userId))) {
-          return json({ success: false, error: 'userId de Telegram requerido' }, 400);
-        }
+    const userId = auth.user.id.toString();
+    const accionesPermitidas = ['add_soft', 'add_hard', 'spend_soft', 'spend_hard'];
 
-        let titulo = '', descripcion = '', payload = '', stars = 0;
+    if (!accionesPermitidas.includes(action)) {
+        return json({ error: 'acción no permitida' }, 400, cors);
+    }
 
-        if (type === 'diamonds') {
-          // PRECIO SERVER-SIDE: no confiamos en lo que mande el cliente
-          if (!PACKS_DIAMANTES[amount]) {
-            return json({ success: false, error: 'Pack inválido' }, 400);
-          }
-          stars = starsPara(PACKS_DIAMANTES[amount]);
-          titulo = `💎 ${amount} Diamantes`;
-          descripcion = `${amount} diamantes para tu ciudad en Diamond City`;
-          payload = `dc_diamonds_${amount}_${userId}_${Date.now()}`;
-        } else if (type === 'premium') {
-          const d = parseInt(days, 10);
-          if (!PREMIUM_PLANS[d]) {
-            return json({ success: false, error: 'Plan inválido' }, 400);
-          }
-          stars = starsPara(PREMIUM_PLANS[d]);
-          titulo = `⭐ Premium ${d} días`;
-          descripcion = `Suscripción Premium ${d} días en Diamond City (x2 producción, sin anuncios)`;
-          payload = `dc_premium_${d}_${userId}_${Date.now()}`;
-        } else {
-          return json({ success: false, error: 'type inválido' }, 400);
-        }
+    const amount = Number(payload?.amount);
+    if (!amount || amount <= 0 || amount > 100000) {
+        return json({ error: 'amount inválido' }, 400, cors);
+    }
 
-        const params = new URLSearchParams();
-        params.append('title', titulo);
-        params.append('description', descripcion);
-        params.append('payload', payload);
-        params.append('currency', 'XTR'); // Telegram Stars
-        params.append('prices', JSON.stringify([{ label: titulo, amount: stars }]));
+    // Leer el usuario actual
+    const usuarios = await supabaseFetch(
+        env,
+        `game_data?telegram_id=eq.${userId}&select=diamonds_soft,diamonds_hard`
+    );
 
-        const resp = await fetch(
-          `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/createInvoiceLink`,
-          {
+    if (!usuarios || usuarios.length === 0) {
+        return json({ error: 'usuario no encontrado' }, 404, cors);
+    }
+
+    const u = usuarios[0];
+    let soft = Number(u.diamonds_soft) || 0;
+    let hard = Number(u.diamonds_hard) || 0;
+    let tier = 'soft';
+
+    if (action === 'add_soft') { soft += amount; tier = 'soft'; }
+    else if (action === 'add_hard') { hard += amount; tier = 'hard'; }
+    else if (action === 'spend_soft') {
+        if (soft < amount) return json({ error: 'saldo soft insuficiente' }, 400, cors);
+        soft -= amount;
+        tier = 'soft';
+    }
+    else if (action === 'spend_hard') {
+        if (hard < amount) return json({ error: 'saldo hard insuficiente' }, 400, cors);
+        hard -= amount;
+        tier = 'hard';
+    }
+
+    // Actualizar el saldo
+    await supabaseFetch(env, `game_data?telegram_id=eq.${userId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+            diamonds_soft: soft,
+            diamonds_hard: hard
+        })
+    });
+
+    // Registrar en el ledger (append-only)
+    await supabaseFetch(env, 'diamond_ledger', {
+        method: 'POST',
+        body: JSON.stringify({
+            user_id: userId,
+            amount: action.startsWith('add_') ? amount : -amount,
+            tier: tier,
+            source: action
+        })
+    });
+
+    return json({
+        success: true,
+        diamonds_soft: soft,
+        diamonds_hard: hard
+    }, 200, cors);
+}
+
+// ============================================================
+// HANDLER: /api/create-stars-invoice
+// ============================================================
+
+async function handleCreateStarsInvoice(request, env, cors) {
+    const body = await request.json();
+    const { initData, type, amount, days, stars } = body;
+
+    if (!initData) return json({ error: 'initData requerido' }, 400, cors);
+
+    const auth = await validateInitData(initData, env.TELEGRAM_BOT_TOKEN);
+    if (!auth) return json({ error: 'initData inválido' }, 401, cors);
+
+    const userId = auth.user.id.toString();
+
+    let titulo, descripcion, payload;
+    if (type === 'diamonds') {
+        titulo = `💎 ${amount} Diamantes`;
+        descripcion = `Compra de ${amount} diamantes en Diamond City`;
+        payload = `diamonds_${amount}_${userId}_${Date.now()}`;
+    } else if (type === 'premium') {
+        titulo = `⭐ Premium ${days} días`;
+        descripcion = `Suscripción Premium ${days} días en Diamond City`;
+        payload = `premium_${days}_${userId}_${Date.now()}`;
+    } else {
+        return json({ error: 'type inválido' }, 400, cors);
+    }
+
+    const params = new URLSearchParams();
+    params.append('title', titulo);
+    params.append('description', descripcion);
+    params.append('payload', payload);
+    params.append('currency', 'XTR');
+    params.append('prices', JSON.stringify([{ label: titulo, amount: parseInt(stars) }]));
+
+    const resp = await fetch(
+        `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/createInvoiceLink`,
+        {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: params.toString()
-          }
-        );
-
-        const data = await resp.json();
-        if (!data.ok) {
-          return json({ success: false, error: data.description || 'Error creando invoice' }, 500);
         }
+    );
 
-        return json({ success: true, invoiceLink: data.result });
-      }
+    const data = await resp.json();
+    if (!data.ok) {
+        return json({ error: data.description || 'Error creando invoice' }, 500, cors);
+    }
 
-      // ==================================================
-      // POST /api/telegram-payment-webhook
-      // ==================================================
-      if (path === '/api/telegram-payment-webhook' && request.method === 'POST') {
-        // Verificación del secret token (si lo configuraste en setWebhook)
-        if (env.WEBHOOK_SECRET) {
-          const secretHeader = request.headers.get('X-Telegram-Bot-Api-Secret-Token');
-          if (secretHeader !== env.WEBHOOK_SECRET) {
-            return json({ error: 'Unauthorized' }, 401);
-          }
-        }
+    return json({ success: true, invoiceLink: data.result }, 200, cors);
+}
 
-        const update = await request.json();
+// ============================================================
+// HANDLER: /api/telegram-payment-webhook
+// ============================================================
 
-        // ---- Pre-checkout: validar ANTES de autorizar el pago ----
-        if (update.pre_checkout_query) {
-          const pq = update.pre_checkout_query;
-          const parts = (pq.invoice_payload || '').split('_');
-          // Formato: dc_tipo_valor_userId_timestamp
-          let ok = parts.length === 5 && parts[0] === 'dc';
-          let starsEsperados = 0;
+async function handleTelegramWebhook(request, env, cors) {
+    // Verificar el secret token que configuras al registrar el webhook
+    const secretToken = request.headers.get('X-Telegram-Bot-Api-Secret-Token');
+    if (env.WEBHOOK_SECRET && secretToken !== env.WEBHOOK_SECRET) {
+        console.warn('Webhook con secret inválido');
+        return json({ error: 'invalid secret' }, 401, cors);
+    }
 
-          if (ok && parts[1] === 'diamonds' && PACKS_DIAMANTES[parseInt(parts[2], 10)]) {
-            starsEsperados = starsPara(PACKS_DIAMANTES[parseInt(parts[2], 10)]);
-          } else if (ok && parts[1] === 'premium' && PREMIUM_PLANS[parseInt(parts[2], 10)]) {
-            starsEsperados = starsPara(PREMIUM_PLANS[parseInt(parts[2], 10)]);
-          } else {
-            ok = false;
-          }
+    const update = await request.json();
 
-          // Verificar que el monto cobrado sea el oficial
-          const total = pq.total_amount || 0;
-          if (ok && starsEsperados > 0 && total !== starsEsperados) ok = false;
-
-          await fetch(
+    // --- pre_checkout_query ---
+    if (update.pre_checkout_query) {
+        const pcqId = update.pre_checkout_query.id;
+        await fetch(
             `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/answerPreCheckoutQuery`,
             {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                pre_checkout_query_id: pq.id,
-                ok,
-                error_message: ok ? undefined : 'Datos de pago inválidos. Intenta de nuevo.'
-              })
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pre_checkout_query_id: pcqId, ok: true })
             }
-          );
-          return json({ ok: true });
+        );
+        return json({ ok: true }, 200, cors);
+    }
+
+    // --- successful_payment ---
+    if (update.message && update.message.successful_payment) {
+        const sp = update.message.successful_payment;
+        const userId = update.message.from.id.toString();
+        const partes = sp.invoice_payload.split('_');
+        const tipo = partes[0];
+        const chargeId = sp.telegram_payment_charge_id;
+
+        // Idempotencia: verificar si ya procesamos este pago
+        const existentes = await supabaseFetch(
+            env,
+            `diamond_ledger?source=eq.payment_${chargeId}&select=id`
+        );
+        if (existentes && existentes.length > 0) {
+            console.log('Pago ya procesado:', chargeId);
+            return json({ ok: true }, 200, cors);
         }
 
-        // ---- Pago exitoso ----
-        if (update.message && update.message.successful_payment) {
-          const sp = update.message.successful_payment;
-          const payerId = update.message.from.id.toString();
-          const chargeId = sp.telegram_payment_charge_id;
-          const parts = (sp.invoice_payload || '').split('_');
+        if (tipo === 'diamonds') {
+            const diamantes = parseInt(partes[1]);
 
-          if (parts.length !== 5 || parts[0] !== 'dc') {
-            return json({ ok: true }); // payload extraño: ignorar con calma
-          }
+            const usuarios = await supabaseFetch(
+                env,
+                `game_data?telegram_id=eq.${userId}&select=diamonds_hard`
+            );
+            const hardActual = Number(usuarios[0]?.diamonds_hard) || 0;
+            const nuevoHard = hardActual + diamantes;
 
-          const tipo = parts[1];            // 'diamonds' | 'premium'
-          const valor = parseInt(parts[2], 10);
-          const payloadUserId = parts[3];
-
-          // ANTI-TAMPERING: el pago se acredita al PAGADOR, no al userId del payload
-          if (payloadUserId !== payerId) {
-            console.error(`⚠️ Payload no coincide con pagador: ${payloadUserId} vs ${payerId}`);
-            return json({ ok: true });
-          }
-
-          if (tipo === 'diamonds' && !PACKS_DIAMANTES[valor]) return json({ ok: true });
-          if (tipo === 'premium' && !PREMIUM_PLANS[valor]) return json({ ok: true });
-
-          const sb = `${env.SUPABASE_URL}/rest/v1`;
-          const headers = {
-            'apikey': env.SUPABASE_SERVICE_KEY,
-            'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-            'Content-Type': 'application/json'
-          };
-
-          // ---- IDEMPOTENCIA: registrar el cargo (único por charge_id) ----
-          const reg = await fetch(`${sb}/payments`, {
-            method: 'POST',
-            headers: { ...headers, 'Prefer': 'return=representation' },
-            body: JSON.stringify({
-              charge_id: chargeId,
-              telegram_id: payerId,
-              tipo,
-              detalle: tipo === 'diamonds' ? `${valor} diamantes` : `Premium ${valor} dias`,
-              stars: sp.total_amount || 0,
-              payload: sp.invoice_payload
-            })
-          });
-
-          if (reg.status === 409) {
-            // Ya fue procesado (Telegram reintentó el webhook) → no duplicar
-            return json({ ok: true, duplicated: true });
-          }
-
-          // ---- Acreditar según tipo ----
-          if (tipo === 'diamonds') {
-            const getResp = await fetch(`${sb}/game_data?telegram_id=eq.${payerId}&select=diamonds`, { headers });
-            const users = await getResp.json();
-            const actuales = (Array.isArray(users) && users[0] && Number(users[0].diamonds)) || 0;
-
-            await fetch(`${sb}/game_data?telegram_id=eq.${payerId}`, {
-              method: 'PATCH',
-              headers: { ...headers, 'Prefer': 'return=minimal' },
-              body: JSON.stringify({ diamonds: actuales + valor, haInvertido: true })
+            await supabaseFetch(env, `game_data?telegram_id=eq.${userId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    diamonds_hard: nuevoHard,
+                    haInvertido: true
+                })
             });
-          } else if (tipo === 'premium') {
-            const getResp = await fetch(`${sb}/game_data?telegram_id=eq.${payerId}&select=premium_expires`, { headers });
-            const users = await getResp.json();
 
-            // EXTENDER desde la fecha actual si aún está activo
-            const base = (users[0] && users[0].premium_expires && new Date(users[0].premium_expires) > new Date())
-              ? new Date(users[0].premium_expires)
-              : new Date();
-            base.setDate(base.getDate() + valor);
-
-            await fetch(`${sb}/game_data?telegram_id=eq.${payerId}`, {
-              method: 'PATCH',
-              headers: { ...headers, 'Prefer': 'return=minimal' },
-              body: JSON.stringify({ premium_expires: base.toISOString(), haInvertido: true })
+            await supabaseFetch(env, 'diamond_ledger', {
+                method: 'POST',
+                body: JSON.stringify({
+                    user_id: userId,
+                    amount: diamantes,
+                    tier: 'hard',
+                    source: `payment_${chargeId}`
+                })
             });
-          }
 
-          // ---- Notificar al jugador por el bot ----
-          try {
-            const msg = tipo === 'diamonds'
-              ? `✅ ¡Pago confirmado!\n\n+${valor} 💎 diamantes ya están en tu ciudad.\n\n¡Gracias por apoyar Diamond City!`
-              : `⭐ ¡Premium activado!\n\nSuscripción de ${valor} días activa: x2 producción y sin anuncios.\n\n¡Gracias por apoyar Diamond City!`;
-            await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ chat_id: payerId, text: msg })
+            console.log(`✅ Pago Stars: +${diamantes} 💎 hard a ${userId}`);
+
+        } else if (tipo === 'premium') {
+            const dias = parseInt(partes[1]);
+            const expira = new Date();
+            expira.setDate(expira.getDate() + dias);
+
+            await supabaseFetch(env, `game_data?telegram_id=eq.${userId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    premium_expires: expira.toISOString(),
+                    haInvertido: true
+                })
             });
-          } catch (e) { /* el mensaje es opcional */ }
+
+            await supabaseFetch(env, 'diamond_ledger', {
+                method: 'POST',
+                body: JSON.stringify({
+                    user_id: userId,
+                    amount: 0,
+                    tier: 'hard',
+                    source: `premium_${dias}d_${chargeId}`
+                })
+            });
+
+            console.log(`✅ Premium Stars: ${dias} días a ${userId}`);
         }
-
-        return json({ ok: true });
-      }
-
-      // Endpoint de salud
-      if (path === '/' || path === '/health') {
-        return json({ status: 'healthy', service: 'Diamond City API v2.0' });
-      }
-
-      return json({ error: 'Not found' }, 404);
-
-    } catch (error) {
-      console.error('Worker error:', error);
-      return json({ error: error.message }, 500);
     }
-  }
-};
 
-// Función auxiliar
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+    return json({ ok: true }, 200, cors);
+}
+
+// ============================================================
+// HANDLER: /api/withdraw
+// ============================================================
+
+async function handleWithdraw(request, env, cors) {
+    const body = await request.json();
+    const { initData, amount_usdt, address } = body;
+
+    if (!initData) return json({ error: 'initData requerido' }, 400, cors);
+
+    const auth = await validateInitData(initData, env.TELEGRAM_BOT_TOKEN);
+    if (!auth) return json({ error: 'initData inválido' }, 401, cors);
+
+    const userId = auth.user.id.toString();
+
+    // Validaciones básicas
+    if (!amount_usdt || amount_usdt < 10) {
+        return json({ error: 'Mínimo de retiro: 10 USDT' }, 400, cors);
     }
-  });
+    if (!address || address.length < 10) {
+        return json({ error: 'Dirección inválida' }, 400, cors);
+    }
+
+    // Obtener datos del usuario
+    const usuarios = await supabaseFetch(
+        env,
+        `game_data?telegram_id=eq.${userId}&select=diamonds_hard,account_created_at,first_withdrawal_reviewed`
+    );
+
+    if (!usuarios || usuarios.length === 0) {
+        return json({ error: 'usuario no encontrado' }, 404, cors);
+    }
+
+    const u = usuarios[0];
+    const hard = Number(u.diamonds_hard) || 0;
+
+    // Verificar antigüedad mínima (ej: 7 días)
+    const created = new Date(u.account_created_at);
+    const diasAntiguedad = (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24);
+    if (diasAntiguedad < 7) {
+        return json({ error: 'Cuenta demasiado nueva. Requiere 7 días de antigüedad.' }, 400, cors);
+    }
+
+    // Tasa de conversión: ajusta según tu economía
+    // Ejemplo: 1000 diamantes hard = 1 USDT
+    const TASA_DIAMANTES_POR_USDT = 1000;
+    const diamantesRequeridos = amount_usdt * TASA_DIAMANTES_POR_USDT;
+
+    if (hard < diamantesRequeridos) {
+        return json({
+            error: `Saldo insuficiente. Necesitas ${diamantesRequeridos} 💎 hard, tienes ${hard}.`
+        }, 400, cors);
+    }
+
+    // Verificar límite diario global
+    const limites = await supabaseFetch(
+        env,
+        'global_limits?id=eq.withdraw_daily_used&select=value'
+    );
+    const usadoHoy = Number(limites[0]?.value) || 0;
+
+    const limitesMax = await supabaseFetch(
+        env,
+        'global_limits?id=eq.withdraw_daily_max&select=value'
+    );
+    const maxDiario = Number(limitesMax[0]?.value) || 5000;
+
+    const pausado = await supabaseFetch(
+        env,
+        'global_limits?id=eq.withdraw_paused&select=value'
+    );
+    if (Number(pausado[0]?.value) === 1) {
+        return json({ error: 'Retiros pausados temporalmente por mantenimiento.' }, 503, cors);
+    }
+
+    if (usadoHoy + amount_usdt > maxDiario) {
+        return json({ error: 'Límite diario global alcanzado. Intenta mañana.' }, 429, cors);
+    }
+
+    // Si es el primer retiro, marcar para revisión manual
+    const esPrimero = !u.first_withdrawal_reviewed;
+    const estado = esPrimero ? 'pending_review' : 'pending';
+
+    // Descontar del saldo hard
+    const nuevoHard = hard - diamantesRequeridos;
+    await supabaseFetch(env, `game_data?telegram_id=eq.${userId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+            diamonds_hard: nuevoHard,
+            first_withdrawal_reviewed: true
+        })
+    });
+
+    // Registrar en ledger
+    await supabaseFetch(env, 'diamond_ledger', {
+        method: 'POST',
+        body: JSON.stringify({
+            user_id: userId,
+            amount: -diamantesRequeridos,
+            tier: 'hard',
+            source: `withdraw_${amount_usdt}usdt`
+        })
+    });
+
+    // Registrar el retiro
+    await supabaseFetch(env, 'withdrawals', {
+        method: 'POST',
+        body: JSON.stringify({
+            user_id: userId,
+            amount_usdt: amount_usdt,
+            address: address,
+            status: estado
+        })
+    });
+
+    // Actualizar límite diario
+    await supabaseFetch(env, 'global_limits?id=eq.withdraw_daily_used', {
+        method: 'PATCH',
+        body: JSON.stringify({ value: usadoHoy + amount_usdt })
+    });
+
+    return json({
+        success: true,
+        status: estado,
+        message: esPrimero
+            ? 'Primer retiro en revisión manual. Te notificaremos cuando se procese.'
+            : 'Retiro en cola de procesamiento.',
+        nuevo_saldo_hard: nuevoHard
+    }, 200, cors);
 }
