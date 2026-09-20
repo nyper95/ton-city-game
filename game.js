@@ -1,8 +1,6 @@
 // ======================================================
 // DIAMOND CITY - v3.3 FINAL
-// Economía centralizada y rentable · Navbar persistente
-// Ciudad = pantalla principal · Valeria personalizada con
-// hipervínculos · Retiros USDT TON (min 10) · RichAds
+// Navbar fix + Ripple + Stars listo
 // ======================================================
 console.log('🚀 DIAMOND CITY v3.3');
 
@@ -14,54 +12,15 @@ tg.expand(); tg.ready();
 // ==========================================
 const CONFIG = {
     BILLETERA_PROPIETARIO: "UQB9UHu9CB6usvZOKTZzCYx5DPcSlxKSxKaqo9UMF59t3BVw",
-    PRECIO_COMPRA: 0.001,          // 1 GRAM = 1,000 💎 (corrige el bug de acreditación)
+    PRECIO_COMPRA: 0.008,
     TON_A_STARS: 200,
     MARGEN_STARS: 1.15,
     RICHADS_PUB_ID: '1022600',
-    RICHADS_APP_ID: '8877',        // corregido según tu resumen (antes 8877)
+    RICHADS_APP_ID: '8877',
     RICHADS_DEBUG: false,
     SUPABASE_URL: 'https://xkkifqxxglcuyruwkbih.supabase.co',
     SUPABASE_KEY: 'sb_publishable_4vyBOxq_vIumZ4EcXyNlsw_XPbJ2iKE',
-    API_BASE: ''                   // pon aquí la URL de tu Cloudflare Worker cuando lo despliegues
-};
-
-// ==========================================
-// SISTEMA ECONÓMICO CENTRALIZADO
-// ==========================================
-// DISEÑO DE RENTABILIDAD:
-// · ENTRADAS (💎 que entran al juego): producción de edificios
-//   (tope 12h offline), anuncios (+20/h), recompensa diaria
-//   (promedio ~78/día), rescate (1/día), referidos (10%),
-//   premios del ranking (20,000/semana).
-// · SALIDAS (💎 que el juego quema): mejoras ×1.12, crafting ×1.6,
-//   expediciones con riesgo 15-45%, comisión de subasta 5%,
-//   entradas de los juegos (pérdida al fallar).
-// · REGLA DE ORO: el pool semanal de 20,000 💎 debe financiarse
-//   con las compras GRAM/Stars y los ingresos por anuncios.
-//   Si el pool supera ~40% de los ingresos semanales brutos,
-//   sube PRECIO_BASE o baja POOL_RANKING_SEMANAL.
-// Todo se ajusta desde aquí, sin tocar la lógica del juego.
-// ==========================================
-const ECONOMIA = {
-    // Producción por nivel (💎/h)
-    PRODUCCION: { piscina: 10, fabrica: 25, escuela: 15, hospital: 18 },
-    PREMIUM_MULTIPLICADOR: 2,
-    MAX_OFFLINE_HORAS: 12,
-    // Entradas gratuitas
-    ANUNCIO_RECOMPENSA: 20,
-    RESCATE_SIN_DIAMANTES: 50,
-    DIARIA_BASE: 5,
-    DIARIO_INCREMENTO: 3,
-    DIARIA_MAX: 150,
-    DIARIA_RACHA_MAX: 30,
-    REFERIDO_PCT: 0.10,
-    POOL_RANKING_SEMANAL: 20000,
-    // Sumideros / costos
-    PRECIO_BASE: { piscina: 800, fabrica: 1500, escuela: 500, hospital: 1200 },
-    CRECIMIENTO_MEJORA: 1.12,
-    CRECIMIENTO_CRAFT: 1.6,
-    COMISION_SUBASTA: 0.05,
-    LIMITES_JUEGOS: { timing: 20, matchmental: 15, bolsa: 30, subasta: 20, expedicion: 10, crafting: 30 }
+    API_BASE: '' // ← REEMPLAZA con la URL de tu Worker: https://tu-worker.tu-subdominio.workers.dev
 };
 
 const _supabase = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
@@ -79,7 +38,8 @@ let globalPoolData = { user_rankings: [] };
 
 let userData = {
     id: null, first_name: 'Usuario', username: 'Usuario',
-    diamonds: 0, lvl_piscina: 0, lvl_fabrica: 0, lvl_escuela: 0, lvl_hospital: 0,
+    diamonds: 0, diamonds_soft: 0, diamonds_hard: 0,
+    lvl_piscina: 0, lvl_fabrica: 0, lvl_escuela: 0, lvl_hospital: 0,
     referral_code: null, city_name: null, newsFeed: [],
     genero: 'M', idioma: 'es', theme: 'dark',
     referral_earnings: 0, referred_users: [],
@@ -440,6 +400,31 @@ function toggleTheme() {
 }
 
 // ==========================================
+// EFECTO RIPPLE UNIVERSAL
+// ==========================================
+function inyectarRipple() {
+    // Se aplica a todos los elementos clicables
+    const selector = 'button, .building-card, .nav-item, .action-banner, .centro-card, .city-edificio, .idioma-opcion, .genero-opcion, .theme-btn, .modal-back, .asistente-boton, .copy-btn, .upgrade-btn, .retiro-card, .sequence-card, .ranking-fila, .daily-day';
+    document.addEventListener('pointerdown', function(e) {
+        const target = e.target.closest(selector);
+        if (!target) return;
+        const rect = target.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const ripple = document.createElement('span');
+        ripple.className = 'ripple';
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+        ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+        // Limpiar ripples previos
+        target.querySelectorAll('.ripple').forEach(r => r.remove());
+        target.appendChild(ripple);
+        setTimeout(() => { if (ripple.parentNode) ripple.remove(); }, 650);
+        // Vibrar si el dispositivo lo soporta
+        if (navigator.vibrate) navigator.vibrate(8);
+    }, { passive: true });
+}
+
+// ==========================================
 // UTILIDADES
 // ==========================================
 function esPremium() {
@@ -453,11 +438,8 @@ function actualizarPremiumUI() {
 }
 
 function getTotalProduction() {
-    let base = (userData.lvl_escuela * ECONOMIA.PRODUCCION.escuela) +
-               (userData.lvl_fabrica * ECONOMIA.PRODUCCION.fabrica) +
-               (userData.lvl_piscina * ECONOMIA.PRODUCCION.piscina) +
-               (userData.lvl_hospital * ECONOMIA.PRODUCCION.hospital);
-    if (esPremium()) base *= ECONOMIA.PREMIUM_MULTIPLICADOR;
+    let base = (userData.lvl_escuela * 15) + (userData.lvl_fabrica * 25) + (userData.lvl_piscina * 10) + (userData.lvl_hospital * 18);
+    if (esPremium()) base *= 2;
     return base;
 }
 
@@ -544,161 +526,28 @@ function spawnConfetti() {
 }
 
 // ==========================================
-// ASISTENTE VALERIA (personalizada + hipervínculos)
+// ASISTENTE
 // ==========================================
 function getSaludoValeria() {
     const h = new Date().getHours();
-    const nombre = userData.first_name || '';
-    if (h < 12) return '🏛️ Buenos días, ' + getTituloAlcalde() + ' ' + nombre + '.';
-    if (h < 19) return '🏛️ Buenas tardes, ' + getTituloAlcalde() + ' ' + nombre + '.';
-    return '🏛️ Buenas noches, ' + getTituloAlcalde() + ' ' + nombre + '.';
+    if (h < 12) return '🏛️ Buenos días, ' + getTituloAlcalde() + '.';
+    if (h < 19) return '🏛️ Buenas tardes, ' + getTituloAlcalde() + '.';
+    return '🏛️ Buenas noches, ' + getTituloAlcalde() + '.';
 }
 
-// Mejora más barata disponible (para consejo personalizado)
-function getConsejoMejoraBarata() {
-    let mejor = null;
-    for (const b of ['piscina','fabrica','escuela','hospital']) {
-        const n = userData['lvl_' + b] || 0;
-        const costo = Math.floor(ECONOMIA.PRECIO_BASE[b] * Math.pow(ECONOMIA.CRECIMIENTO_MEJORA, n));
-        if (!mejor || costo < mejor.costo) mejor = { b: b, n: n, costo: costo };
-    }
-    return mejor;
-}
-
-// Jugadas gratuitas restantes hoy en el Centro Financiero
-function getJugadasRestantes() {
-    if (userData.haInvertido) return null; // ilimitadas tras invertir
-    const hoy = new Date().toDateString();
-    let usadas = 0;
-    if (userData.jugadasHoy && userData.jugadasHoy.fecha === hoy) {
-        for (const k in ECONOMIA.LIMITES_JUEGOS) usadas += (userData.jugadasHoy[k] || 0);
-    }
-    const total = Object.values(ECONOMIA.LIMITES_JUEGOS).reduce((a, c) => a + c, 0);
-    return Math.max(0, total - usadas);
-}
-
-// Cada consejo es un hipervínculo: {icono, texto, accion, cta}
-function construirConsejosValeria() {
-    const consejos = [];
-    const nombre = userData.first_name || '';
-    const titulo = getTituloAlcalde();
-    const ciudad = userData.city_name || 'su ciudad';
+function getConsejosAsistente() {
     const hoy = new Date().toDateString();
     const uR = userData.last_daily_claim ? new Date(userData.last_daily_claim).toDateString() : null;
-    const premium = esPremium();
-    const dia = Math.min((userData.daily_streak || 0) + 1, ECONOMIA.DIARIA_RACHA_MAX);
-    const tesoreria = Math.floor(userData.diamonds || 0);
-    const prod = Math.floor(getTotalProduction());
-
-    // 1) Recompensa diaria pendiente
-    if (uR !== hoy) {
-        consejos.push({
-            icono: '🎁',
-            texto: nombre + ', la recaudación diaria de ' + ciudad + ' está lista: día ' + dia + ' le corresponden ' + getDailyRewardAmount(dia) + ' 💎.',
-            accion: 'daily', cta: 'Reclamar ahora'
-        });
-    }
-
-    // 2) Arcas bajas → anuncio o Banco
-    if (tesoreria < 200) {
-        if (!premium) {
-            consejos.push({
-                icono: '📺',
-                texto: 'Las arcas de ' + ciudad + ' están bajas (' + tesoreria + ' 💎). Un anuncio en el Parque le daría ' + ECONOMIA.ANUNCIO_RECOMPENSA + ' 💎 gratis.',
-                accion: 'ads', cta: 'Ver anuncio'
-            });
-        } else {
-            consejos.push({
-                icono: '🏦',
-                texto: titulo + ' ' + nombre + ', sus arcas están en ' + tesoreria + ' 💎. El Banco tiene packs desde 0.10 GRAM.',
-                accion: 'banco', cta: 'Ir al Banco'
-            });
-        }
-    }
-
-    // 3) Mejora de edificio personalizada (cálculo real de costo y producción)
-    const mj = getConsejoMejoraBarata();
-    if (mj) {
-        const nombres = { piscina: 'la Piscina', fabrica: 'la Fábrica', escuela: 'la Escuela', hospital: 'el Hospital' };
-        const prodNueva = (mj.n + 1) * ECONOMIA.PRODUCCION[mj.b];
-        if (tesoreria >= mj.costo) {
-            consejos.push({
-                icono: '🏗️',
-                texto: 'Puede mejorar ' + nombres[mj.b] + ' al nivel ' + (mj.n + 1) + ' por ' + mj.costo.toLocaleString() + ' 💎: pasará a producir ' + prodNueva + ' 💎/h.',
-                accion: 'upgrade:' + mj.b, cta: 'Mejorar ' + nombres[mj.b]
-            });
-        } else {
-            consejos.push({
-                icono: '📈',
-                texto: 'Le faltan ' + (mj.costo - tesoreria).toLocaleString() + ' 💎 para subir ' + nombres[mj.b] + ' al nivel ' + (mj.n + 1) + '. Su producción total pasaría de ' + prod + ' a ' + (prod + ECONOMIA.PRODUCCION[mj.b]) + ' 💎/h.',
-                accion: 'ads', cta: 'Ganar 💎'
-            });
-        }
-    }
-
-    // 4) Centro Financiero (jugadas gratuitas + sugerencia según tesorería)
-    const restantes = getJugadasRestantes();
-    if (restantes !== null && restantes > 0 && tesoreria >= 10) {
-        let sugerencia = 'Timing Tap paga hasta x5.';
-        if (tesoreria >= 300) sugerencia = 'Con ' + tesoreria + ' 💎 podría lanzar una Expedición a la Mina Abandonada (retorno 600 💎).';
-        consejos.push({
-            icono: '🏛️',
-            texto: 'Aún tiene ' + restantes + ' jugadas gratuitas hoy en el Centro Financiero. ' + sugerencia,
-            accion: 'centro', cta: 'Ir al Centro Financiero'
-        });
-    }
-
-    // 5) Premium
-    if (!premium) {
-        consejos.push({
-            icono: '👑',
-            texto: 'Con Premium duplicaría su producción (de ' + prod + ' a ' + (prod * ECONOMIA.PREMIUM_MULTIPLICADOR) + ' 💎/h) y sin anuncios. Desde 0.20 GRAM.',
-            accion: 'premium', cta: 'Ver planes'
-        });
-    }
-
-    // 6) Referidos
-    if ((userData.referred_users || []).length === 0) {
-        consejos.push({
-            icono: '👥',
-            texto: 'Sin referidos aún: cada amigo que invite le pagará el ' + Math.round(ECONOMIA.REFERIDO_PCT * 100) + '% de sus ganancias de por vida.',
-            accion: 'friends', cta: 'Invitar amigos'
-        });
-    }
-
-    // 7) Ranking
-    if (userData.weekly_rank && userData.weekly_rank <= 10) {
-        consejos.push({
-            icono: '🏆',
-            texto: '¡Excelente! Va #' + userData.weekly_rank + ' en el Ranking Municipal con bono estimado de ' + Math.floor(userData.projectedReward || 0) + ' 💎 semanales. A defender la posición.',
-            accion: 'ranking', cta: 'Ver ranking'
-        });
-    }
-
-    if (consejos.length === 0) {
-        consejos.push({
-            icono: '✅',
-            texto: 'Todo en orden, ' + titulo + ' ' + nombre + '. ' + ciudad + ' produce ' + prod + ' 💎/h. Vuelva mañana por su recompensa diaria.',
-            accion: 'centro', cta: 'Ir al Centro Financiero'
-        });
-    }
-    return consejos.slice(0, 4);
-}
-
-// Hipervínculos de Valeria: llevan al jugador directo al destino
-function valeriaAccion(accion) {
-    if (!accion) return;
-    closeAll();
-    if (accion.indexOf('upgrade:') === 0) { openBuilding(accion.split(':')[1]); return; }
-    switch (accion) {
-        case 'daily':   openDailyReward(); break;
-        case 'ads':     showAdsModal(); break;
-        case 'banco':   openBank(); break;
-        case 'centro':  openCasino(); break;
-        case 'premium': openStore(); break;
-        case 'friends': openFriends(); break;
-        case 'ranking': openRanking(); break;
-    }
+    const ciudad = userData.city_name || 'esta ciudad';
+    const c = [];
+    if (uR !== hoy) c.push('🔔 Informe pendiente: la recaudación diaria de ' + ciudad + ' no ha sido reclamada.');
+    if ((userData.diamonds || 0) < 200) c.push('💎 Arcas bajas. Sugiero ver un anuncio en el Parque.');
+    const nB = ['lvl_piscina','lvl_fabrica','lvl_escuela','lvl_hospital'].filter(k => (userData[k] || 0) < 5);
+    if (nB.length > 0) c.push('📊 Varios edificios por debajo de su capacidad.');
+    if (!esPremium()) c.push('⚡ Premium duplica la producción y elimina anuncios.');
+    if ((userData.referred_users || []).length === 0) c.push('👥 Sin referidos. Cada invitación genera diamantes.');
+    if (c.length === 0) c.push('✅ Todo en orden en ' + ciudad + '.');
+    return c.slice(0, 3);
 }
 
 function hayAlgoUrgenteParaValeria() {
@@ -721,14 +570,9 @@ function abrirAsistente() {
     closeAll(); showModal('modalAsistente');
     const m = document.getElementById('asistente-mensaje');
     if (m) {
-        const cs = construirConsejosValeria();
+        const cs = getConsejosAsistente();
         let h = '<div style="margin-bottom:10px;">' + getSaludoValeria() + '</div>';
-        for (const c of cs) {
-            h += '<div class="valeria-consejo" onclick="valeriaAccion(\'' + c.accion + '\')">';
-            h += '<div>' + c.icono + ' ' + c.texto + '</div>';
-            h += '<div class="valeria-cta">' + c.cta + ' →</div>';
-            h += '</div>';
-        }
+        for (const c of cs) h += '<div class="valeria-consejo">' + c + '</div>';
         m.innerHTML = h;
     }
     actualizarBadgeValeria();
@@ -789,10 +633,11 @@ function closeAll() {
      'modalAds','modalAsistente','modalIdioma','modalHistorialPremios'
     ].forEach(id => { const m = document.getElementById(id); if (m) m.style.display = 'none'; });
     if (timingInterval) clearInterval(timingInterval);
-    // NO reseteamos el navbar aquí: el ícono activo se queda amarillo
-    // mientras su ventana esté abierta (cada openXXX lo setea explícitamente)
 }
 
+// ==========================================
+// NAVBAR ACTIVO (usa data-nav)
+// ==========================================
 function setActiveNav(tab) {
     document.querySelectorAll('.nav-item').forEach(item => {
         const nav = item.getAttribute('data-nav');
@@ -855,17 +700,15 @@ function copyReferralCode() {
 }
 
 // ==========================================
-// CIUDAD → ahora lleva a la PANTALLA PRINCIPAL
-// (donde están el nombre de la ciudad, el usuario y los edificios)
+// CIUDAD
 // ==========================================
 function openCity() {
     closeAll();
+    actualizarCiudad();
+    showModal('modalCiudad');
     setActiveNav('ciudad');
-    actualizarUI();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Panel completo de ciudad (se conserva para uso futuro)
 function actualizarCiudad() {
     const nombre = document.getElementById('ciudad-nombre');
     if (nombre) nombre.textContent = userData.city_name || 'Sin nombre';
@@ -981,7 +824,7 @@ async function abrirHistorialPremios() {
 }
 
 // ==========================================
-// RETIROS (solo USDT TON, min 10)
+// RETIROS
 // ==========================================
 function openWithdraw() {
     closeAll();
@@ -1040,7 +883,6 @@ function actualizarListaCompra() {
 
 async function comprarConGram(tonAmount) {
     if (!tonConnectUI || !tonConnectUI.connected) return alert('❌ Conecta tu wallet');
-    // CORREGIDO: 1 GRAM = 1,000 💎 → cuadra exacto con los packs del Banco
     const d = Math.max(100, Math.floor(tonAmount / CONFIG.PRECIO_COMPRA));
     if (!confirm('¿Pagar ' + tonAmount.toFixed(2) + ' GRAM por ' + d + ' 💎?')) return;
     try {
@@ -1048,8 +890,10 @@ async function comprarConGram(tonAmount) {
             validUntil: Math.floor(Date.now() / 1000) + 300,
             messages: [{ address: CONFIG.BILLETERA_PROPIETARIO, amount: Math.floor(tonAmount * 1e9).toString() }]
         });
-        userData.diamonds += d; userData.haInvertido = true;
-        registrarEvento('💎', 'Compra confirmada', '+' + d + ' 💎');
+        userData.diamonds_hard += d;
+        userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+        userData.haInvertido = true;
+        registrarEvento('💎', 'Compra confirmada', '+' + d + ' 💎 hard');
         await saveUserData(); actualizarUI(); spawnConfetti();
         alert('✅ +' + d + ' 💎');
         closeAll();
@@ -1059,22 +903,34 @@ async function comprarConGram(tonAmount) {
 async function comprarConStars(diamantes) {
     const p = PACKS_DIAMANTES.find(x => x.diamantes === diamantes);
     if (!p) return alert('❌ Pack no encontrado');
+    if (!CONFIG.API_BASE) {
+        alert('⚠️ El backend aún no está configurado. Falta desplegar el Worker de Cloudflare.');
+        return;
+    }
     try {
-        const resp = await fetch((CONFIG.API_BASE || '') + '/api/create-stars-invoice', {
+        const resp = await fetch(CONFIG.API_BASE + '/api/create-stars-invoice', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userData.id, type: 'diamonds', amount: p.diamantes, stars: p.stars })
+            body: JSON.stringify({
+                initData: tg.initData,
+                type: 'diamonds',
+                amount: p.diamantes,
+                stars: p.stars
+            })
         });
         const data = await resp.json();
-        if (!data.success || !data.invoiceLink) { alert('⚠️ No se pudo generar el pago.'); return; }
+        if (!data.success || !data.invoiceLink) {
+            alert('⚠️ No se pudo generar el pago: ' + (data.error || 'error desconocido'));
+            return;
+        }
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openInvoice) {
-            window.Telegram.WebApp.openInvoice(data.invoiceLink, async function(status) {
+            window.Telegram.WebApp.openInvoice(data.invoiceLink, function(status) {
                 if (status === 'paid') {
-                    // FIX doble-crédito: el webhook del Worker YA acreditó en Supabase.
-                    // Recargamos desde la base para mostrar el saldo real.
-                    await loadUserFromDB(userData.id);
-                    registrarEvento('⭐', 'Compra con Stars', '+' + p.diamantes + ' 💎');
-                    await saveUserData(); actualizarUI(); spawnConfetti();
+                    userData.diamonds_hard += p.diamantes;
+                    userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+                    userData.haInvertido = true;
+                    registrarEvento('⭐', 'Compra con Stars', '+' + p.diamantes + ' 💎 hard');
+                    saveUserData(); actualizarUI(); spawnConfetti();
                     alert('✅ +' + p.diamantes + ' 💎');
                     closeAll();
                 } else if (status === 'cancelled') { alert('❌ Pago cancelado'); }
@@ -1085,7 +941,7 @@ async function comprarConStars(diamantes) {
         }
     } catch (e) {
         console.error(e);
-        alert('⚠️ El backend de Stars aún no está configurado.');
+        alert('⚠️ Error de red: ' + e.message);
     }
 }
 
@@ -1151,28 +1007,40 @@ async function comprarPremiumGram(days) {
 async function comprarPremiumStars(days) {
     const p = PREMIUM_PLANS.find(x => x.days === days);
     if (!p) return;
+    if (!CONFIG.API_BASE) {
+        alert('⚠️ El backend aún no está configurado. Falta desplegar el Worker de Cloudflare.');
+        return;
+    }
     try {
-        const resp = await fetch((CONFIG.API_BASE || '') + '/api/create-stars-invoice', {
+        const resp = await fetch(CONFIG.API_BASE + '/api/create-stars-invoice', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userData.id, type: 'premium', days: days, stars: p.stars })
+            body: JSON.stringify({
+                initData: tg.initData,
+                type: 'premium',
+                days: days,
+                stars: p.stars
+            })
         });
         const data = await resp.json();
-        if (!data.success || !data.invoiceLink) return alert('⚠️ No se pudo generar el pago.');
+        if (!data.success || !data.invoiceLink) {
+            alert('⚠️ No se pudo generar el pago: ' + (data.error || 'error'));
+            return;
+        }
         if (window.Telegram.WebApp.openInvoice) {
-            window.Telegram.WebApp.openInvoice(data.invoiceLink, async function(status) {
+            window.Telegram.WebApp.openInvoice(data.invoiceLink, function(status) {
                 if (status === 'paid') {
-                    // FIX doble-crédito: el webhook YA extendió el Premium en Supabase.
-                    await loadUserFromDB(userData.id);
+                    const f = new Date(); f.setDate(f.getDate() + days);
+                    userData.premium_expires = f.toISOString();
+                    userData.haInvertido = true;
                     registrarEvento('⭐', 'Premium activado', p.name);
-                    await saveUserData(); actualizarPremiumUI(); actualizarUI(); spawnConfetti();
+                    saveUserData(); actualizarPremiumUI(); actualizarUI(); spawnConfetti();
                     alert('✅ Premium ' + p.name + ' activado!');
                     closeAll();
-                } else if (status === 'cancelled') { alert('❌ Pago cancelado'); }
-                else if (status === 'failed') { alert('❌ Pago fallido'); }
+                }
             });
         }
-    } catch (e) { alert('⚠️ Backend de Stars no configurado.'); }
+    } catch (e) { alert('⚠️ Error de red: ' + e.message); }
 }
 
 // ==========================================
@@ -1227,10 +1095,10 @@ async function initAds() {
                 debug: CONFIG.RICHADS_DEBUG
             });
             richAdsReady = true;
-            console.log('✅ RichAds inicializado correctamente (intento ' + intentos + ')');
+            console.log('✅ RichAds inicializado (intento ' + intentos + ')');
         } else {
             richAdsReady = false;
-            console.warn('⚠️ TelegramAdsController no cargó. Verifica: 1) que el script tg-ob.js esté en el <head>, 2) que el dominio esté autorizado en RichAds, 3) que tu pubId/appId estén activos.');
+            console.warn('⚠️ TelegramAdsController no cargó. Verifica que el script tg-ob.js esté en el <head> y que el dominio esté autorizado en RichAds.');
         }
     } catch (e) {
         richAdsReady = false;
@@ -1268,7 +1136,7 @@ function actualizarEstadoAnuncio() {
     else if (new Date() - new Date(userData.last_ad_watch) > 3600000) puede = true;
     if (puede) {
         b.disabled = false;
-        if (e) e.innerHTML = '✅ ¡Anuncio disponible! Gana ' + ECONOMIA.ANUNCIO_RECOMPENSA + ' 💎';
+        if (e) e.innerHTML = '✅ ¡Anuncio disponible!';
     } else {
         b.disabled = true;
         let m = 60;
@@ -1301,10 +1169,11 @@ async function reintentarRichAds() {
 }
 
 function showRichAds() {
-    // FIX anti-exploit: Premium ya no recibe +20 infinitos por tocar el botón
     if (esPremium()) {
-        alert('⭐ Eres Premium: sin anuncios. Su producción ya está duplicada.');
-        return;
+        userData.diamonds_soft += 20;
+        userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+        saveUserData(); actualizarUI();
+        alert('⭐ +20 💎'); closeAll(); return;
     }
     if (!richAdsReady || !window.TelegramAdsController) {
         reintentarRichAds();
@@ -1314,11 +1183,12 @@ function showRichAds() {
     try {
         window.TelegramAdsController.triggerNativeNotification(true)
             .then(() => {
-                userData.diamonds += ECONOMIA.ANUNCIO_RECOMPENSA;
+                userData.diamonds_soft += 20;
+                userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
                 userData.last_ad_watch = new Date().toISOString();
-                registrarEvento('📺', 'Anuncio visto', '+' + ECONOMIA.ANUNCIO_RECOMPENSA + ' 💎');
+                registrarEvento('📺', 'Anuncio visto', '+20 💎');
                 saveUserData(); actualizarUI(); spawnConfetti();
-                alert('🎁 +' + ECONOMIA.ANUNCIO_RECOMPENSA + ' 💎'); closeAll();
+                alert('🎁 +20 💎'); closeAll();
             })
             .catch((err) => {
                 console.warn('⚠️ RichAds error:', err);
@@ -1332,24 +1202,27 @@ function showRichAds() {
 }
 
 function rescueWithAd() {
-    // FIX anti-exploit: el rescate es 1 por día para TODOS (Premium salta el anuncio, no el límite)
+    if (esPremium()) {
+        userData.diamonds_soft += 50;
+        userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+        actualizarUI();
+        alert('⭐ +50 💎'); return;
+    }
     if (userData.diamonds > 0) return alert('Solo con 0 diamantes');
     const hoy = new Date();
     if (userData.last_casino_rescue && hoy.toDateString() === new Date(userData.last_casino_rescue).toDateString()) return alert('Ya usado hoy');
-    const darRescate = async () => {
-        userData.last_casino_rescue = new Date().toISOString();
-        userData.diamonds += ECONOMIA.RESCATE_SIN_DIAMANTES;
-        registrarEvento('🚑', 'Rescate municipal', '+' + ECONOMIA.RESCATE_SIN_DIAMANTES + ' 💎');
-        await saveUserData(); actualizarUI();
-        alert('🎁 +' + ECONOMIA.RESCATE_SIN_DIAMANTES + ' 💎'); closeAll();
-    };
-    if (esPremium()) { darRescate(); return; }
     if (!richAdsReady || !window.TelegramAdsController) {
         reintentarRichAds();
         return alert('📺 Red recargando. Intenta de nuevo.');
     }
     window.TelegramAdsController.triggerNativeNotification(true)
-        .then(darRescate)
+        .then(() => {
+            userData.last_casino_rescue = new Date().toISOString();
+            userData.diamonds_soft += 50;
+            userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+            saveUserData(); actualizarUI();
+            alert('🎁 +50 💎'); closeAll();
+        })
         .catch(() => alert('❌ No se pudo mostrar'));
 }
 
@@ -1358,9 +1231,9 @@ function rescueWithAd() {
 // ==========================================
 function getDailyRewardAmount(day) {
     if (day <= 0) return 0;
-    if (day >= ECONOMIA.DIARIA_RACHA_MAX) return esPremium() ? ECONOMIA.DIARIA_MAX * 2 : ECONOMIA.DIARIA_MAX;
-    let b = ECONOMIA.DIARIA_BASE + (day - 1) * ECONOMIA.DIARIO_INCREMENTO;
-    if (b > ECONOMIA.DIARIA_MAX) b = ECONOMIA.DIARIA_MAX;
+    if (day >= 30) return esPremium() ? 300 : 150;
+    let b = 5 + (day - 1) * 3;
+    if (b > 150) b = 150;
     return esPremium() ? b * 2 : b;
 }
 
@@ -1374,7 +1247,7 @@ function puedeReclamarDiaria() {
 function openDailyReward() {
     closeAll();
     const racha = userData.daily_streak || 0;
-    const dia = Math.min(racha + 1, ECONOMIA.DIARIA_RACHA_MAX);
+    const dia = Math.min(racha + 1, 30);
     const puede = puedeReclamarDiaria();
     const de = document.getElementById('current-day'); if (de) de.textContent = dia;
     const re = document.getElementById('today-reward'); if (re) re.textContent = getDailyRewardAmount(dia) + ' 💎';
@@ -1382,7 +1255,7 @@ function openDailyReward() {
     const cal = document.getElementById('daily-calendar');
     if (cal) {
         let h = '';
-        for (let i = 1; i <= ECONOMIA.DIARIA_RACHA_MAX; i++) {
+        for (let i = 1; i <= 30; i++) {
             let c = 'daily-day';
             if (i <= racha) c += ' completed';
             else if (i === racha + 1 && puede) c += ' current';
@@ -1401,13 +1274,15 @@ async function claimDailyReward() {
         const hs = (new Date() - new Date(userData.last_daily_claim)) / 3600000;
         if (hs < 48) nuevoDia = userData.daily_streak + 1;
     }
-    if (nuevoDia > ECONOMIA.DIARIA_RACHA_MAX) nuevoDia = ECONOMIA.DIARIA_RACHA_MAX;
+    if (nuevoDia > 30) nuevoDia = 30;
     const p = getDailyRewardAmount(nuevoDia);
-    userData.diamonds += p; userData.daily_streak = nuevoDia;
+    userData.diamonds_soft += p;
+    userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+    userData.daily_streak = nuevoDia;
     userData.last_daily_claim = new Date().toISOString();
     registrarEvento('🎁', 'Recompensa diaria', 'Día ' + nuevoDia + ' · +' + p + ' 💎');
     await saveUserData(); actualizarUI(); spawnConfetti();
-    alert('✅ +' + p + ' 💎\nDía ' + nuevoDia + '/' + ECONOMIA.DIARIA_RACHA_MAX);
+    alert('✅ +' + p + ' 💎\nDía ' + nuevoDia + '/30');
     closeAll();
 }
 
@@ -1452,7 +1327,8 @@ function puedeJugar(juego, cant) {
     if (userData.haInvertido) return true;
     const hoy = new Date().toDateString();
     if (userData.jugadasHoy.fecha !== hoy) userData.jugadasHoy = { timing:0, matchmental:0, bolsa:0, subasta:0, expedicion:0, crafting:0, fecha: hoy };
-    return ((userData.jugadasHoy[juego] || 0) + cant) <= (ECONOMIA.LIMITES_JUEGOS[juego] || 10);
+    const lim = { timing:20, matchmental:15, bolsa:30, subasta:20, expedicion:10, crafting:30 };
+    return ((userData.jugadasHoy[juego] || 0) + cant) <= (lim[juego] || 10);
 }
 
 function registrarJugada(juego, cant) {
@@ -1485,7 +1361,9 @@ function iniciarTiming() {
     const ap = apuestaActual.timing || 10;
     if (userData.diamonds < ap) return alert('❌ Insuficiente');
     if (!puedeJugar('timing')) return alert('❌ Límite diario');
-    userData.diamonds -= ap; registrarJugada('timing'); actualizarUI();
+    userData.diamonds_soft -= ap;
+    userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+    registrarJugada('timing'); actualizarUI();
     const b = document.getElementById('timing-balance'); if (b) b.textContent = Math.floor(userData.diamonds);
     const sb = document.getElementById('timing-start-btn'); if (sb) sb.classList.add('hidden');
     const tb = document.getElementById('timing-tap-btn'); if (tb) tb.classList.remove('hidden');
@@ -1513,7 +1391,9 @@ function detenerTiming() {
     else if (dist < tZA) mult = 1;
     const r = document.getElementById('timing-result');
     if (mult > 0) {
-        const pre = Math.floor(ap * mult); userData.diamonds += pre;
+        const pre = Math.floor(ap * mult);
+        userData.diamonds_soft += pre;
+        userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
         if (r) r.innerHTML = '<span style="color:#4ade80;font-size:20px;">🎯 ¡x' + mult.toFixed(1) + '! +' + pre + ' 💎</span>';
         spawnConfetti(); if (navigator.vibrate) navigator.vibrate(50);
         destelloResultado('modalTiming', true);
@@ -1555,7 +1435,9 @@ async function iniciarMatch() {
     const ap = apuestaActual.matchmental || 10;
     if (userData.diamonds < ap) return alert('❌ Insuficiente');
     if (!puedeJugar('matchmental')) return alert('❌ Límite diario');
-    userData.diamonds -= ap; registrarJugada('matchmental'); actualizarUI();
+    userData.diamonds_soft -= ap;
+    userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+    registrarJugada('matchmental'); actualizarUI();
     const b = document.getElementById('match-balance'); if (b) b.textContent = Math.floor(userData.diamonds);
     mRon = 1;
     mSec = [];
@@ -1619,7 +1501,8 @@ function finalizarMatch() {
     const ap = apuestaActual.matchmental || 10;
     const mult = 1.5 + (mRon - 1) * 0.6;
     const pre = Math.floor(ap * Math.max(1.5, mult));
-    userData.diamonds += pre;
+    userData.diamonds_soft += pre;
+    userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
     const r = document.getElementById('match-result');
     if (r) r.innerHTML = '<span style="color:#4ade80;font-size:20px;">🧠 ¡MAESTRO! ' + (mRon - 1) + ' rondas → +' + pre + ' 💎 (x' + mult.toFixed(1) + ')</span>';
     spawnConfetti(); if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
@@ -1664,7 +1547,8 @@ function renderPortfolio() {
 function comprarAccion(id) {
     const a = ACCIONES_BOLSA.find(x => x.id === id); if (!a) return;
     if (userData.diamonds < a.precio) return alert('❌ Insuficiente');
-    userData.diamonds -= a.precio;
+    userData.diamonds_soft -= a.precio;
+    userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
     if (!userData.bolsa_portfolio) userData.bolsa_portfolio = {};
     userData.bolsa_portfolio[id] = (userData.bolsa_portfolio[id] || 0) + 1;
     registrarJugada('bolsa'); actualizarUI(); saveUserData(); renderBolsa();
@@ -1673,7 +1557,9 @@ function comprarAccion(id) {
 function venderAccion(id) {
     const a = ACCIONES_BOLSA.find(x => x.id === id); if (!a) return;
     if (!userData.bolsa_portfolio || !userData.bolsa_portfolio[id]) return alert('❌ No tienes');
-    userData.bolsa_portfolio[id]--; userData.diamonds += a.precio;
+    userData.bolsa_portfolio[id]--;
+    userData.diamonds_soft += a.precio;
+    userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
     registrarJugada('bolsa'); actualizarUI(); saveUserData(); renderBolsa();
 }
 
@@ -1698,7 +1584,13 @@ let subastaItems = [
 
 function renderSubasta() {
     const c = document.getElementById('subasta-lista'); if (!c) return;
-    let h = ''; const ah = Date.now();
+    let h = '';
+    // Banner modo práctica
+    h += '<div style="background:rgba(250,204,21,0.08);border-left:4px solid var(--primary);padding:12px 14px;border-radius:12px;margin-bottom:14px;">';
+    h += '<div style="font-weight:800;color:var(--primary);font-size:13px;">🧪 Modo Práctica</div>';
+    h += '<div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">Las subastas aún no son P2P real. Los ítems y pujas se reinician al recargar la app.</div>';
+    h += '</div>';
+    const ah = Date.now();
     for (const it of subastaItems) {
         const r = Math.max(0, Math.floor((it.termina - ah) / 1000));
         const m = Math.floor(r / 60), s = r % 60;
@@ -1723,7 +1615,9 @@ function pujarSubasta(id) {
     const np = it.precioActual + inc;
     if (userData.diamonds < np) return alert('❌ Necesitas ' + np);
     if (!confirm('¿Pujar ' + np + ' 💎?')) return;
-    userData.diamonds -= np; it.precioActual = np; it.puja = userData.first_name || userData.username;
+    userData.diamonds_soft -= np;
+    userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+    it.precioActual = np; it.puja = userData.first_name || userData.username;
     registrarJugada('subasta'); actualizarUI(); saveUserData(); renderSubasta();
     alert('✅ Líder!');
 }
@@ -1767,7 +1661,9 @@ function lanzarExpedicion(id) {
     const z = ZONAS_EXPEDICION.find(x => x.id === id); if (!z) return;
     if (userData.diamonds < z.costo) return alert('❌ Necesitas ' + z.costo);
     if (!puedeJugar('expedicion')) return alert('❌ Límite diario');
-    userData.diamonds -= z.costo; registrarJugada('expedicion');
+    userData.diamonds_soft -= z.costo;
+    userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+    registrarJugada('expedicion');
     if (!userData.expediciones_activas) userData.expediciones_activas = {};
     const uid = 'e_' + Date.now() + '_' + Math.floor(Math.random() * 999);
     userData.expediciones_activas[uid] = { id: z.id, nombre: z.nombre, icono: z.icono, inicio: Date.now(), duracion: z.duracion, recompensa: z.recompensaBase, riesgo: z.riesgo };
@@ -1780,7 +1676,9 @@ function reclamarExpedicion(uid) {
     const roll = Math.random();
     if (roll < e.riesgo) { const p = Math.floor(r * (0.2 + Math.random() * 0.3)); r -= p; nota = ' (-' + p + ' desgaste)'; }
     else if (roll > 0.9) { const b = Math.floor(r * 0.2); r += b; nota = ' (+' + b + ' bonus)'; }
-    userData.diamonds += r; delete userData.expediciones_activas[uid];
+    userData.diamonds_soft += r;
+    userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+    delete userData.expediciones_activas[uid];
     actualizarUI(); saveUserData(); renderExpedicion();
     alert('⛏️ +' + r + ' 💎' + nota);
 }
@@ -1794,7 +1692,7 @@ function renderCrafting() {
     let h = '';
     for (const r of RECETAS_CRAFT) {
         const n = userData.craft_niveles[r.id] || 0;
-        const co = Math.floor(r.costoBase * Math.pow(ECONOMIA.CRECIMIENTO_CRAFT, n));
+        const co = Math.floor(r.costoBase * Math.pow(1.6, n));
         const pu = userData.diamonds >= co;
         h += '<div style="background:var(--bg-elevated);border-radius:16px;padding:14px;margin-bottom:10px;border:1px solid var(--glass-border);">';
         h += '<div style="font-weight:700;">' + r.icono + ' ' + r.nombre + ' (Nvl ' + n + ')</div>';
@@ -1809,9 +1707,11 @@ function craftear(id) {
     const r = RECETAS_CRAFT.find(x => x.id === id); if (!r) return;
     if (!userData.craft_niveles) userData.craft_niveles = {};
     const n = userData.craft_niveles[r.id] || 0;
-    const co = Math.floor(r.costoBase * Math.pow(ECONOMIA.CRECIMIENTO_CRAFT, n));
+    const co = Math.floor(r.costoBase * Math.pow(1.6, n));
     if (userData.diamonds < co) return alert('❌ Insuficiente');
-    userData.diamonds -= co; userData.craft_niveles[r.id] = n + 1;
+    userData.diamonds_soft -= co;
+    userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+    userData.craft_niveles[r.id] = n + 1;
     registrarJugada('crafting'); actualizarUI(); saveUserData(); renderCrafting();
     alert('✨ ' + r.nombre + ' Nvl ' + (n + 1));
 }
@@ -1841,8 +1741,10 @@ function openBuilding(b) {
 
 function actualizarPanelMejora(b) {
     const n = userData['lvl_' + b] || 0;
-    const p = n * ECONOMIA.PRODUCCION[b];
-    const precio = Math.floor(ECONOMIA.PRECIO_BASE[b] * Math.pow(ECONOMIA.CRECIMIENTO_MEJORA, n));
+    const pr = { escuela:15, fabrica:25, piscina:10, hospital:18 };
+    const pb = { escuela:500, fabrica:1500, piscina:800, hospital:1200 };
+    const p = n * pr[b];
+    const precio = Math.floor(pb[b] * Math.pow(1.12, n));
     const ne = document.getElementById(b + '-level'); if (ne) ne.textContent = n;
     const pe = document.getElementById(b + '-prod'); if (pe) pe.textContent = p + ' 💎/h';
     const pre = document.getElementById(b + '-price'); if (pre) pre.textContent = precio.toLocaleString() + ' 💎';
@@ -1854,14 +1756,17 @@ function actualizarPanelMejora(b) {
 }
 
 function buyUpgrade(b) {
+    const pb = { escuela:500, fabrica:1500, piscina:800, hospital:1200 };
     const n = userData['lvl_' + b] || 0;
-    const precio = Math.floor(ECONOMIA.PRECIO_BASE[b] * Math.pow(ECONOMIA.CRECIMIENTO_MEJORA, n));
+    const precio = Math.floor(pb[b] * Math.pow(1.12, n));
     if (userData.diamonds < precio) return alert('❌ Insuficiente');
     userData['lvl_' + b] = (userData['lvl_' + b] || 0) + 1;
-    userData.diamonds -= precio; saveUserData(); actualizarUI(); actualizarPanelMejora(b);
+    userData.diamonds_soft -= precio;
+    userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+    saveUserData(); actualizarUI(); actualizarPanelMejora(b);
     const nom = { escuela:'Escuela', fabrica:'Fábrica', piscina:'Piscina', hospital:'Hospital' };
     const ico = { escuela:'🏫', fabrica:'🏭', piscina:'🏊', hospital:'🏥' };
-    registrarEvento(ico[b], nom[b] + ' Nvl ' + userData['lvl_' + b], 'Produce ' + (userData['lvl_' + b] * ECONOMIA.PRODUCCION[b]) + ' 💎/h');
+    registrarEvento(ico[b], nom[b] + ' Nvl ' + userData['lvl_' + b], 'Produce ' + (userData['lvl_' + b] * { escuela:15, fabrica:25, piscina:10, hospital:18 }[b]) + ' 💎/h');
     alert('✅ ' + nom[b] + ' Nvl ' + userData['lvl_' + b]);
 }
 
@@ -1876,11 +1781,8 @@ async function updateRankingAndPool() {
         if (!r.error && r.data) {
             const ah = new Date();
             globalPoolData.user_rankings = r.data.map(u => {
-                let p = (u.lvl_escuela || 0) * ECONOMIA.PRODUCCION.escuela +
-                        (u.lvl_fabrica || 0) * ECONOMIA.PRODUCCION.fabrica +
-                        (u.lvl_piscina || 0) * ECONOMIA.PRODUCCION.piscina +
-                        (u.lvl_hospital || 0) * ECONOMIA.PRODUCCION.hospital;
-                if (u.premium_expires && new Date(u.premium_expires) > ah) p *= ECONOMIA.PREMIUM_MULTIPLICADOR;
+                let p = (u.lvl_escuela || 0) * 15 + (u.lvl_fabrica || 0) * 25 + (u.lvl_piscina || 0) * 10 + (u.lvl_hospital || 0) * 18;
+                if (u.premium_expires && new Date(u.premium_expires) > ah) p *= 2;
                 return {
                     id: u.telegram_id,
                     first_name: u.first_name || '',
@@ -1900,7 +1802,7 @@ async function updateRankingAndPool() {
             else userData.rank = 'Ciudadano';
             userData.weekly_rank = pos + 1;
         }
-        const PS = ECONOMIA.POOL_RANKING_SEMANAL;
+        const PS = 20000;
         if (pos < 3) userData.projectedReward = (PS * 0.4) / 3;
         else if (pos < 10) userData.projectedReward = (PS * 0.25) / 7;
         else if (pos < 50) userData.projectedReward = (PS * 0.20) / 40;
@@ -1921,17 +1823,13 @@ async function saveUserData() {
         const d = {
             first_name: userData.first_name,
             username: userData.username,
-            diamonds: Math.floor(userData.diamonds),
             lvl_piscina: userData.lvl_piscina, lvl_fabrica: userData.lvl_fabrica,
             lvl_escuela: userData.lvl_escuela, lvl_hospital: userData.lvl_hospital,
             last_online: new Date().toISOString(),
-            premium_expires: userData.premium_expires,
             daily_streak: userData.daily_streak,
             last_daily_claim: userData.last_daily_claim,
             gamestats: userData.gameStats || {},
             referral_earnings: userData.referral_earnings || 0,
-            referred_users: userData.referred_users || [],
-            haInvertido: !!userData.haInvertido,
             last_ad_watch: userData.last_ad_watch,
             last_casino_rescue: userData.last_casino_rescue,
             last_production_update: userData.last_production_update || new Date().toISOString(),
@@ -1944,6 +1842,8 @@ async function saveUserData() {
             expediciones_activas: userData.expediciones_activas || {},
             craft_niveles: userData.craft_niveles || {}
         };
+        // NOTA: Ya NO escribimos diamonds ni premium_expires desde el cliente.
+        // Esos campos solo se modifican desde el Worker de Cloudflare.
         const r = await _supabase.from('game_data').update(d).eq('telegram_id', userData.id);
         if (r.error) console.error('Guardado:', r.error);
     } catch (e) { console.error(e); }
@@ -1958,7 +1858,8 @@ async function loadUserFromDB(tgId) {
                 telegram_id: tgId.toString(),
                 first_name: userData.first_name,
                 username: userData.username,
-                diamonds: 0, lvl_piscina: 0, lvl_fabrica: 0, lvl_escuela: 0, lvl_hospital: 0,
+                diamonds: 0, diamonds_soft: 0, diamonds_hard: 0,
+                lvl_piscina: 0, lvl_fabrica: 0, lvl_escuela: 0, lvl_hospital: 0,
                 referral_code: 'REF' + tgId.toString().slice(-6),
                 last_online: new Date().toISOString(),
                 last_production_update: new Date().toISOString(),
@@ -1972,6 +1873,8 @@ async function loadUserFromDB(tgId) {
                 id: tgId.toString(),
                 first_name: d.first_name || userData.first_name,
                 diamonds: Number(d.diamonds) || 0,
+                diamonds_soft: Number(d.diamonds_soft) || 0,
+                diamonds_hard: Number(d.diamonds_hard) || 0,
                 lvl_piscina: Number(d.lvl_piscina) || 0,
                 lvl_fabrica: Number(d.lvl_fabrica) || 0,
                 lvl_escuela: Number(d.lvl_escuela) || 0,
@@ -1995,6 +1898,11 @@ async function loadUserFromDB(tgId) {
                 expediciones_activas: d.expediciones_activas || {},
                 craft_niveles: d.craft_niveles || {}
             });
+            // Si las columnas nuevas están vacías pero diamonds tiene valor, migrar
+            if (userData.diamonds_soft === 0 && userData.diamonds_hard === 0 && userData.diamonds > 0) {
+                userData.diamonds_soft = userData.diamonds;
+            }
+            userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
             aplicarProduccionOffline();
         }
     } catch (e) { console.error(e); }
@@ -2006,7 +1914,9 @@ async function loadUserFromDB(tgId) {
 function startProduction() {
     setInterval(() => {
         if (!userData.id) return;
-        userData.diamonds += getTotalProduction() / 3600;
+        const p = getTotalProduction() / 3600;
+        userData.diamonds_soft += p;
+        userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
         userData.last_production_update = new Date().toISOString();
         const d = document.getElementById('diamonds');
         if (d) d.textContent = Math.floor(userData.diamonds);
@@ -2017,10 +1927,13 @@ function aplicarProduccionOffline() {
     if (!userData.last_production_update) { userData.last_production_update = new Date().toISOString(); return; }
     let s = (new Date() - new Date(userData.last_production_update)) / 1000;
     if (s <= 0) return;
-    const T = ECONOMIA.MAX_OFFLINE_HORAS * 3600;
+    const T = 12 * 3600;
     if (s > T) s = T;
     const p = (getTotalProduction() / 3600) * s;
-    if (p > 0) userData.diamonds += p;
+    if (p > 0) {
+        userData.diamonds_soft += p;
+        userData.diamonds = userData.diamonds_soft + userData.diamonds_hard;
+    }
     userData.last_production_update = new Date().toISOString();
 }
 
@@ -2028,8 +1941,10 @@ function aplicarProduccionOffline() {
 // INICIALIZACIÓN
 // ==========================================
 async function initApp() {
-    console.log('🔄 Iniciando DIAMOND CITY v3.3...');
+    console.log('🔄 Iniciando DIAMOND CITY...');
     tg.expand(); tg.ready();
+    inyectarRipple();
+
     let usuario = null;
     if (tg.initDataUnsafe && tg.initDataUnsafe.user) usuario = tg.initDataUnsafe.user;
     if (usuario) {
@@ -2060,7 +1975,7 @@ async function initApp() {
     actualizarPremiumUI();
     const li = document.getElementById('idioma-actual-label');
     if (li) li.textContent = NOMBRES_IDIOMA[userData.idioma] || 'Español';
-    console.log('✅ DIAMOND CITY v3.3 listo');
+    console.log('✅ DIAMOND CITY listo');
 }
 
 window.addEventListener('DOMContentLoaded', initApp);
@@ -2096,7 +2011,6 @@ window.copyReferralCode = copyReferralCode;
 window.disconnectWallet = disconnectWallet;
 window.confirmarNombreCiudad = confirmarNombreCiudad;
 window.abrirAsistente = abrirAsistente;
-window.valeriaAccion = valeriaAccion;
 window.abrirHistorialPremios = abrirHistorialPremios;
 window.seleccionarIdioma = seleccionarIdioma;
 window.abrirSelectorIdioma = abrirSelectorIdioma;
